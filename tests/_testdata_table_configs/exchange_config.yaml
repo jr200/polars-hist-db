@@ -1,0 +1,18 @@
+table_configs:
+  - schema: test
+    name: exchanges
+    columns:
+      - id
+      - [name<website_name, website<website_url]
+      - country
+      - created_at
+    primary_keys:
+      - id
+
+column_definitions:
+  - { name: id, data_type: INT, autoincrement: true, nullable: false }
+  - { name: website_name, data_type: VARCHAR(100), nullable: false }
+  - { name: website_url, data_type: VARCHAR(255), nullable: true }
+  - { name: country, data_type: VARCHAR(50), nullable: true }
+  - { name: created_at, data_type: TIMESTAMP, nullable: false }
+  - { name: unselected_column, data_type: INT }

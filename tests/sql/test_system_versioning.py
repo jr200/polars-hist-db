@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from polars_db_engine.core import DbOps
+from polars_hist_db.core import DbOps
 from tests.utils import setup_fixture_tableconfigs
 
 

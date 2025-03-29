@@ -1,7 +1,7 @@
 import dateutil.parser
 import logging
 import re
-from typing import Dict, List, Mapping, Optional, Tuple, Union
+from typing import Collection, Dict, List, Mapping, Optional, Tuple, Union
 
 import polars as pl
 from sql_metadata import Parser
@@ -138,7 +138,7 @@ class PolarsType:
     @staticmethod
     def get_dataframe_schema_from_sqltext(
         sql_statement: str, connection: Connection
-    ) -> Mapping[str, pl.DataType]:
+    ) -> Dict[str, pl.DataType]:
         dtype_schema: Dict[str, pl.DataType] = {}
         for fqtn in Parser(sql_statement).tables:
             table_schema, table_name = fqtn.split(".")
@@ -230,8 +230,14 @@ class PolarsType:
         return df
 
     @staticmethod
-    def cast_str_to_cat(df: pl.DataFrame) -> pl.DataFrame:
-        df = df.with_columns(pl.col([pl.String, pl.Utf8]).cast(pl.Categorical))
+    def cast_str_to_cat(
+        df: pl.DataFrame, ignore_cols: Optional[Collection[str]] = None
+    ) -> pl.DataFrame:
+        if ignore_cols is None:
+            ignore_cols = []
+        df = df.with_columns(
+            pl.col([pl.String, pl.Utf8]).exclude(ignore_cols).cast(pl.Categorical)
+        )
         return df
 
     @staticmethod

@@ -87,6 +87,6 @@ def scrape_extract_item(
         src_tgt_colname_map=col_map_dict,
     )
 
-    LOGGER.info("(item %d) upserted %d rows", -1, ni + nu + nd)
+    LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu + nd)
 
     # TODO: trigger table mod notification

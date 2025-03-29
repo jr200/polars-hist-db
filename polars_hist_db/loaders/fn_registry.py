@@ -26,6 +26,10 @@ class FunctionRegistry:
 
         return self._registry
 
+    def delete_function(self, name: str) -> None:
+        if name in self._registry:
+            del self._registry[name]
+
     def register_function(self, name: str, fn: FnSignature) -> None:
         if name in self._registry:
             raise ValueError(
@@ -41,4 +45,12 @@ class FunctionRegistry:
 
         LOGGER.info("applying fn %s to dataframe %s", name, df.shape)
         fn = self._registry[name]
-        return fn(df, args)
+        result_df = fn(df, args)
+
+        if result_df is None:
+            raise ValueError(f"function {name} returned None")
+
+        return result_df
+
+    def list_functions(self) -> List[str]:
+        return list(self._registry.keys())

@@ -1,6 +1,7 @@
 import logging
 from types import MappingProxyType
 from typing import Mapping, Optional, Sequence
+import warnings
 from sqlalchemy import (
     Column,
     ColumnCollection,
@@ -12,6 +13,8 @@ from sqlalchemy import (
     Table,
     text,
 )
+
+from sqlalchemy.exc import SAWarning
 
 from .db import DbOps
 
@@ -53,7 +56,13 @@ class TableOps:
         if not autoload_metadata:
             return Table(self.table_name, metadata)
 
-        tbl = Table(self.table_name, metadata, autoload_with=self.connection)
+        with warnings.catch_warnings():
+            # skip this annoying SQLAlchemy warning:
+            # SAWarning: Unknown schema content: '  PERIOD FOR SYSTEM_TIME (`__valid_from`, `__valid_to`),'
+            warning_regex = r"Unknown schema content:.*PERIOD FOR SYSTEM_TIME [()].*"
+            warnings.filterwarnings("ignore", message=warning_regex, category=SAWarning)
+
+            tbl = Table(self.table_name, metadata, autoload_with=self.connection)
 
         return tbl
 

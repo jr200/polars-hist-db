@@ -8,7 +8,7 @@ from .engine import DbEngineConfig
 from .table import ColumnDefinitions, TableConfigs
 
 
-class BaseConfig:
+class Config:
     def __init__(
         self,
         cfg_dict: Mapping[str, Any],
@@ -20,17 +20,17 @@ class BaseConfig:
     ):
         if db_config_path:
             self.db_config = DbEngineConfig(
-                **BaseConfig.get_nested_key(cfg_dict, db_config_path)
+                **Config.get_nested_key(cfg_dict, db_config_path)
             )
 
         if column_definitions_path and table_configs_path:
             column_defintions = ColumnDefinitions(
-                column_definitions=BaseConfig.get_nested_key(
+                column_definitions=Config.get_nested_key(
                     cfg_dict, column_definitions_path
                 )
             )
             self.tables = TableConfigs(
-                table_configs=BaseConfig.get_nested_key(cfg_dict, table_configs_path),
+                table_configs=Config.get_nested_key(cfg_dict, table_configs_path),
                 column_definitions=column_defintions,
             )
 
@@ -39,7 +39,7 @@ class BaseConfig:
                 None if config_filename is None else os.path.dirname(config_filename)
             )
             self.datasets = DatasetsConfig(
-                datasets=BaseConfig.get_nested_key(cfg_dict, datasets_path),
+                datasets=Config.get_nested_key(cfg_dict, datasets_path),
                 base_dir=config_dir,
             )
 
@@ -77,9 +77,9 @@ class BaseConfig:
         table_configs_path: str = "table_configs",
         datasets_path: str = "datasets",
         db_config_path: str = "db",
-    ) -> "BaseConfig":
+    ) -> "Config":
         yaml_dict: Mapping[str, Any] = cls.yaml_to_dict(filename)
-        config = BaseConfig(
+        config = Config(
             yaml_dict,
             db_config_path=db_config_path.split("."),
             column_definitions_path=column_definitions_path.split("."),

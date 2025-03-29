@@ -1,4 +1,4 @@
-from .base_config import BaseConfig
+from .config import Config
 from .dataset import DatasetConfig, DatasetsConfig
 from .engine import DbEngineConfig
 from .table import (
@@ -11,7 +11,7 @@ from .table import (
 )
 
 __all__ = [
-    "BaseConfig",
+    "Config",
     "DatasetConfig",
     "DatasetsConfig",
     "DbEngineConfig",

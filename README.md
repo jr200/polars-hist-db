@@ -1,7 +1,15 @@
-# polars-db-engine
+# polars-hist-db
 
-A Python library that provides seamless integration between Polars DataFrames and MariaDB, with built-in support for bitemporal data management. This library uses SQLAlchemy (non-ORM) to interface with Polars and leverages MariaDB's system versioning capabilities.
+This library is for scraping data from CSV style files, temporally, into MariaDB.
 
+Main features are:
+- Uploading data from strongly-typed Polars DataFrames.
+- Querying data into Polars DataFrames, with column types inferred from the database schema.
+- A scrape specification that:
+    - Defines pipelines for typing, enriching, and normalizing data before uploading.
+    - Allows construction of the 'as-of' time from file attributes or as a function of the input columns.
+    - Catalogs the history of scrape inputs to prevent duplication.
+    - Supports per-file transactional scraping (either the processing for a file succeeds, or the transaction is rolled back).
 
 ## Development Setup
 
@@ -20,13 +28,23 @@ poetry install --with dev
 poetry run pytest
 ```
 
-## MariaDB System Versioning
+4. Make docs. The documentation will be generated in the ``docs/_build/html`` directory:
+```bash
+cd docs && poetry run make html
+```
 
-This library leverages MariaDB's system versioning capabilities for bitemporal data management. Tables are automatically created with:
+## Code Style
 
-- `__valid_from` and `__valid_to` timestamp columns
-- System versioning enabled
-- Partitioning by system time
+This project follows the following code style guidelines:
+
+* Use type hints for all function parameters and return values
+* Follow PEP 8 style guide
+* Use Google-style docstrings
+* Keep functions focused and single-purpose
+* Write comprehensive tests for new features
+
+Run ``make check`` to check the code style.
+
 
 ## Contributing
 
@@ -43,6 +61,6 @@ This project is licensed under the terms specified in the LICENSE file.
 ## References
 
 - [Polars Documentation](https://docs.pola.rs/api/python/stable/reference/index.html)
-- [MariaDB Performance Optimization](https://www.youtube.com/watch?v=zISiQifPNT8)
-- [MariaDB EXPLAIN Documentation](https://mariadb.com/kb/en/explain/)
+- [SQLAlchemy Core Documentation](https://docs.sqlalchemy.org/en/20/core/index.html)
+- [MariaDB Bitemporal Tables](https://mariadb.com/kb/en/bitemporal-tables)
 

@@ -20,7 +20,7 @@ def scrape_primary_item(
     delta_table_name = dataset.name
     main_table_config = tables[pipeline.get_main_table_name()]
     assert main_table_config.delta_config is not None
-    LOGGER.info("(item %d) scraping item %s", -1, main_table_config.name)
+    LOGGER.debug("(item %d) scraping item %s", -1, main_table_config.name)
 
     selected_columns = (
         pipeline.extract_items(main_table_config.name).get_column("source").to_list()
@@ -45,6 +45,6 @@ def scrape_primary_item(
         common_columns,
     )
 
-    LOGGER.info("(item %d) upserted %d rows", -1, ni + nu)
+    LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu)
 
     # TODO: trigger table mod notification

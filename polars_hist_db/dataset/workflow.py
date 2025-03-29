@@ -5,7 +5,7 @@ import time
 from sqlalchemy import Engine
 
 from ..config import (
-    BaseConfig,
+    Config,
     DatasetConfig,
     ColumnDefinitions,
     TableConfigs,
@@ -18,7 +18,7 @@ from .scrape import scrape_pipeline_as_transaction
 LOGGER = logging.getLogger(__name__)
 
 
-def run_workflows(config: BaseConfig, engine: Engine):
+def run_workflows(config: Config, engine: Engine):
     for dataset in config.datasets.datasets:
         LOGGER.info("scraping dataset %s", dataset.name)
 

@@ -5,10 +5,10 @@ import polars as pl
 from polars.testing import assert_frame_equal
 from decimal import Decimal
 
-from polars_db_engine.loaders import FunctionRegistry
-from polars_db_engine.dataset import run_workflows
-from polars_db_engine.core.dataframe import TimeHint
-from polars_db_engine.core.dataframe import DataframeOps
+from polars_hist_db.loaders import FunctionRegistry
+from polars_hist_db.dataset import run_workflows
+from polars_hist_db.core.dataframe import TimeHint
+from polars_hist_db.core.dataframe import DataframeOps
 from tests.utils import (
     from_test_result,
     setup_fixture_dataset,

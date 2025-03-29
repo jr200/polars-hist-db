@@ -1,8 +1,8 @@
 import pytest
 
-from polars_db_engine.core.table_config import TableConfigOps
-from polars_db_engine.config import TableConfig
-from polars_db_engine.core.table import TableOps
+from polars_hist_db.core.table_config import TableConfigOps
+from polars_hist_db.config import TableConfig
+from polars_hist_db.core.table import TableOps
 from tests.utils import setup_fixture_tableconfigs
 
 

@@ -305,6 +305,9 @@ class TableConfigs:
 
         raise ValueError(f"TableConfig {name} not found")
 
+    def names(self) -> List[str]:
+        return [tc.name for tc in self.table_configs]
+
     def schemas(self) -> List[str]:
         schemas = {tc.schema for tc in self.table_configs}
         return sorted(schemas)

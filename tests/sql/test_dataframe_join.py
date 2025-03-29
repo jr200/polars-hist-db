@@ -3,7 +3,7 @@ import pytest
 import polars as pl
 from polars.testing import assert_frame_equal
 
-from polars_db_engine.core.dataframe import TimeHint, DataframeOps
+from polars_hist_db.core.dataframe import TimeHint, DataframeOps
 
 from tests.utils import (
     add_random_row,

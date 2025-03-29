@@ -2,9 +2,9 @@ import pytest
 import polars as pl
 from sqlalchemy import select
 
-from polars_db_engine.core.dataframe import DataframeOps
+from polars_hist_db.core.dataframe import DataframeOps
 
-from polars_db_engine.core.table import TableOps
+from polars_hist_db.core.table import TableOps
 from tests.utils import (
     from_test_result,
     modify_and_read,

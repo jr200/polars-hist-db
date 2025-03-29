@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 import pytest
 import polars as pl
 
-from polars_db_engine.core import AuditOps
-from polars_db_engine.loaders import find_files
+from polars_hist_db.core import AuditOps
+from polars_hist_db.loaders import find_files
 from tests.utils import create_temp_file_tree, setup_fixture_tableconfigs
 
 

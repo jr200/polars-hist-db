@@ -63,19 +63,35 @@ class DataframeOps:
 
         return df
 
-    def from_selectable(self, query: Selectable) -> pl.DataFrame:
-        dtypes = PolarsType.get_dataframe_schema_from_selectable(query)
-        df = pl.read_database(query, self.connection, schema_overrides=dtypes).pipe(
-            PolarsType.cast_str_to_cat
-        )
+    def from_selectable(
+        self,
+        query: Selectable,
+        schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
+    ) -> pl.DataFrame:
+        inferred_dtypes = PolarsType.get_dataframe_schema_from_selectable(query)
+        if schema_overrides is None:
+            schema_overrides = dict()
+
+        inferred_dtypes.update(schema_overrides)
+        df = pl.read_database(
+            query, self.connection, schema_overrides=inferred_dtypes
+        ).pipe(PolarsType.cast_str_to_cat, ignore_cols=schema_overrides.keys())
 
         return df
 
-    def from_raw_sql(self, query: str) -> pl.DataFrame:
-        dtypes = PolarsType.get_dataframe_schema_from_sqltext(query, self.connection)
-        df = pl.read_database(query, self.connection, schema_overrides=dtypes).pipe(
-            PolarsType.cast_str_to_cat
+    def from_raw_sql(
+        self, query: str, schema_overrides: Optional[Mapping[str, pl.DataType]] = None
+    ) -> pl.DataFrame:
+        inferred_dtypes = PolarsType.get_dataframe_schema_from_sqltext(
+            query, self.connection
         )
+        if schema_overrides is None:
+            schema_overrides = dict()
+
+        inferred_dtypes.update(schema_overrides)
+        df = pl.read_database(
+            query, self.connection, schema_overrides=inferred_dtypes
+        ).pipe(PolarsType.cast_str_to_cat, ignore_cols=schema_overrides.keys())
 
         return df
 

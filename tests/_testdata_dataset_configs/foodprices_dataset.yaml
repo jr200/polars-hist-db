@@ -14,7 +14,6 @@ table_configs:
       # pre_prune_idential_rows: false
       # truncate_table_first: false
       on_duplicate_key: take_last
-      # group_take_last_row: true
     primary_keys:
       - id
     columns:
@@ -29,7 +28,6 @@ table_configs:
       # pre_prune_idential_rows: false
       # truncate_table_first: false
       on_duplicate_key: take_last
-      # group_take_last_row: true
     primary_keys:
       - id
     columns:
@@ -43,7 +41,6 @@ table_configs:
       drop_unchanged_rows: true
       # pre_prune_idential_rows: true
       # truncate_table_first: true
-      # group_take_last_row: false
       time_partition:
         column: time
         truncate: 5d

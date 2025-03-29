@@ -1,4 +1,4 @@
-from polars_db_engine.config import (
+from polars_hist_db.config import (
     ColumnConfig,
     DeltaConfig,
     ForeignKeyConfig,

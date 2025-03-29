@@ -15,9 +15,9 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
-from polars_db_engine.loaders import load_typed_dsv
-from polars_db_engine.config import BaseConfig, TableConfig, TableConfigs
-from polars_db_engine.core import (
+from polars_hist_db.loaders import load_typed_dsv
+from polars_hist_db.config import Config, TableConfig, TableConfigs
+from polars_hist_db.core import (
     AuditOps,
     DataframeOps,
     DbOps,
@@ -26,8 +26,8 @@ from polars_db_engine.core import (
     TableOps,
     make_engine,
 )
-from polars_db_engine.config.parser import parse_col_exprs
-from polars_db_engine.types import SQLAlchemyType, PolarsType
+from polars_hist_db.config.parser import parse_col_exprs
+from polars_hist_db.types import SQLAlchemyType, PolarsType
 
 # some test defaults for debugging
 pl.Config(
@@ -147,7 +147,7 @@ def setup_fixture_tableconfigs(*test_files: str):
 
 def setup_fixture_dataset(test_file: str):
     engine = mariadb_engine_test()
-    config = BaseConfig.from_yaml(get_dataset_config(test_file))
+    config = Config.from_yaml(get_dataset_config(test_file))
     table_schema = config.tables.schemas()[0]
     table_configs = config.tables
     audit_table = AuditOps(table_schema)

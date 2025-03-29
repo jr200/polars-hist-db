@@ -51,7 +51,7 @@ def scrape_pipeline_as_transaction(
     df = load_typed_dsv(csv_file, tables.column_definitions.column_definitions)
     df = DataframeOps.populate_nulls(df, main_table_config)
 
-    LOGGER.info("loaded %d rows", len(df))
+    LOGGER.debug("loaded %d rows", len(df))
 
     if main_table_config.delta_config.time_partition:
         tp = main_table_config.delta_config.time_partition

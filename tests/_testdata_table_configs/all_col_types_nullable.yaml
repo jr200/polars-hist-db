@@ -1,0 +1,59 @@
+table_configs:
+  - schema: test
+    name: all_col_types
+    is_temporal: true
+    columns:
+      - id
+      - col_bigint
+      - col_bit
+      - col_bool
+      - col_boolean
+      - col_char
+      - col_date
+      - col_datetime
+      - col_decimal
+      - col_double
+      - col_float
+      - col_int
+      - col_integer
+      - col_mediumint
+      - col_numeric
+      - col_real
+      - col_smallint
+      - col_text
+      - col_time
+      - col_timestamp
+      - col_tinyint
+      - col_varchar
+    primary_keys:
+      - id
+    foreign_keys: []
+    delta_config:
+      drop_unchanged_rows: false
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: true
+      row_finality: disabled
+
+column_definitions:
+  - { name: id, data_type: INT, autoincrement: true, nullable: false }
+  - { name: col_bigint, data_type: BIGINT, header: bigint_col }
+  - { name: col_bit, data_type: BIT, header: bit_col }
+  - { name: col_bool, data_type: BOOL, header: bool_col }
+  - { name: col_boolean, data_type: BOOLEAN, header: boolean_col }
+  - { name: col_char, data_type: CHAR(1), header: char_col }
+  - { name: col_date, data_type: DATE, header: date_col }
+  - { name: col_datetime, data_type: DATETIME, header: datetime_col }
+  - { name: col_decimal, data_type: "DECIMAL(10,2)", header: decimal_col }
+  - { name: col_double, data_type: DOUBLE, header: double_col }
+  - { name: col_float, data_type: FLOAT, header: float_col }
+  - { name: col_int, data_type: INT, header: int_col }
+  - { name: col_integer, data_type: INTEGER, header: integer_col }
+  - { name: col_mediumint, data_type: MEDIUMINT, header: mediumint_col }
+  - { name: col_numeric, data_type: "NUMERIC(8,2)", header: numeric_col }
+  - { name: col_real, data_type: REAL, header: real_col }
+  - { name: col_smallint, data_type: SMALLINT, header: smallint_col }
+  - { name: col_text, data_type: TEXT(LENGTH=128), header: text_col }
+  - { name: col_time, data_type: TIME, header: time_col }
+  - { name: col_timestamp, data_type: TIMESTAMP, header: timestamp_col }
+  - { name: col_tinyint, data_type: TINYINT, header: tinyint_col }
+  - { name: col_varchar, data_type: VARCHAR(LENGTH=255), header: varchar_col }

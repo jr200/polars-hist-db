@@ -1,0 +1,16 @@
+services:
+  mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: docker.io/library/mariadb:11.7.2-noble
+    environment:
+      - MYSQL_DATABASE=mariadb
+      - MYSQL_ROOT_PASSWORD=admin
+      - MYSQL_USER=test
+      - MYSQL_PASSWORD=test
+    volumes:
+      - mariadb_vol:/var/lib/mysql
+    ports:
+      - "127.0.0.1:3306:3306"
+
+volumes:
+  mariadb_vol: {}

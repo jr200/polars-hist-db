@@ -1,0 +1,59 @@
+table_configs:
+  - name: all_col_types
+    schema: test
+    is_temporal: true
+    columns:
+    - id
+    - col_bigint
+    - col_bit
+    - col_bool
+    - col_boolean
+    - col_char
+    - col_date
+    - col_datetime
+    - col_decimal
+    - col_double
+    - col_float
+    - col_int
+    - col_integer
+    - col_mediumint
+    - col_numeric
+    - col_real
+    - col_smallint
+    - col_text
+    - col_time
+    - col_timestamp
+    - col_tinyint
+    - col_varchar
+    primary_keys:
+      - id
+    foreign_keys: []
+    delta_config:
+      drop_unchanged_rows: true
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: true
+      row_finality: disabled
+
+column_definitions:
+  - { name: id, data_type: INT, autoincrement: true, nullable: false }
+  - { name: col_bigint, data_type: BIGINT, header: bigint_col, default_value: "9223372036854775807" }
+  - { name: col_bit, data_type: BIT, header: bit_col, default_value: "0" }
+  - { name: col_bool, data_type: BOOL, header: bool_col, default_value: "0" }
+  - { name: col_boolean, data_type: BOOLEAN, header: boolean_col, default_value: "0" }
+  - { name: col_char, data_type: CHAR(1), header: char_col, default_value: "?" }
+  - { name: col_date, data_type: DATE, header: date_col, default_value: "1985-10-26" }
+  - { name: col_datetime, data_type: DATETIME, header: datetime_col, default_value: "1985-10-26T01:21:00" }
+  - { name: col_decimal, data_type: "DECIMAL(10,2)", header: decimal_col, default_value: "2.71" }
+  - { name: col_double, data_type: DOUBLE, header: double_col, default_value: "1.618033988749895" }
+  - { name: col_float, data_type: FLOAT, header: float_col, default_value: "1.1" }
+  - { name: col_int, data_type: INT, header: int_col, default_value: "1" }
+  - { name: col_integer, data_type: INTEGER, header: integer_col, default_value: "1" }
+  - { name: col_mediumint, data_type: MEDIUMINT, header: mediumint_col, default_value: "1" }
+  - { name: col_numeric, data_type: "NUMERIC(8,5)", header: numeric_col, default_value: "3.14159" }
+  - { name: col_real, data_type: REAL, header: real_col, default_value: "1.616255e-35" }
+  - { name: col_smallint, data_type: SMALLINT, header: smallint_col, default_value: "1" }
+  - { name: col_text, data_type: TEXT(LENGTH=16), header: text_col, default_value: "?abcdef?" }
+  - { name: col_time, data_type: TIME, header: time_col, default_value: "01:20:00" }
+  - { name: col_timestamp, data_type: TIMESTAMP, header: timestamp_col, default_value: "1985-10-26T01:20:00" }
+  - { name: col_tinyint, data_type: TINYINT, header: tinyint_col, default_value: "1" }
+  - { name: col_varchar, data_type: VARCHAR(LENGTH=32), header: varchar_col, default_value: "?abcdefghijklmn?" }

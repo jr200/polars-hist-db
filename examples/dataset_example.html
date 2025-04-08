@@ -1,0 +1,617 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turkish Food Prices Dataset Example &mdash; Polars Hist DB 0.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api.html" />
+    <link rel="prev" title="Basic Usage Example" href="basic_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Polars Hist DB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic_example.html">Basic Usage Example</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Turkish Food Prices Dataset Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Initialise-Configuration-and-Logging">Initialise Configuration and Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Create-a-SQLAlchemy-Engine-to-connect-to-the-database">Create a SQLAlchemy Engine to connect to the database</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Register-a-custom-parser-function">Register a custom parser function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Run-the-workflow">Run the workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Querying-the-temporal-tables">Querying the temporal tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Delete-the-data-associated-with-the-dataset">Delete the data associated with the dataset</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Polars Hist DB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../examples.html">Examples</a></li>
+      <li class="breadcrumb-item active">Turkish Food Prices Dataset Example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/dataset_example.nblink.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Turkish-Food-Prices-Dataset-Example">
+<h1>Turkish Food Prices Dataset Example<a class="headerlink" href="#Turkish-Food-Prices-Dataset-Example" title="Link to this heading"></a></h1>
+<p>This example assumes you have the test database up and running locally. From the root of the project run the command: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">infra-up</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from datetime import datetime
+import logging
+from typing import Any, List
+
+import polars as pl
+
+from polars_hist_db.config import Config
+from polars_hist_db.core import (
+    AuditOps,
+    DataframeOps,
+    TableConfigOps,
+    TimeHint,
+    make_engine,
+)
+from polars_hist_db.dataset import run_workflows
+from polars_hist_db.loaders import FunctionRegistry
+</pre></div>
+</div>
+</div>
+<section id="Initialise-Configuration-and-Logging">
+<h2>Initialise Configuration and Logging<a class="headerlink" href="#Initialise-Configuration-and-Logging" title="Link to this heading"></a></h2>
+<p>This example uses configuration and data used in the test suite.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>config_path = &quot;../tests/_testdata_dataset_configs/foodprices_dataset.yaml&quot;
+data_path = &quot;../tests/_testdata_dataset_configs/foodprices_data.csv&quot;
+
+logging.basicConfig(level=logging.INFO)
+
+config = Config.from_yaml(config_path)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+loading Config from: ../tests/_testdata_dataset_configs/foodprices_dataset.yaml
+</pre></div></div>
+</div>
+<p>(Optionally) Print the config file to the console</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with open(config_path, &quot;r&quot;) as f:
+    print(f.read())
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+db:
+  backend: mariadb
+  hostname: 127.0.0.1
+  port: 3306
+  username: root
+  password: admin
+
+table_configs:
+  - name: unit_info
+    schema: test
+    is_temporal: false
+    delta_config:
+      drop_unchanged_rows: false
+      # pre_prune_idential_rows: false
+      # truncate_table_first: false
+      on_duplicate_key: take_last
+    primary_keys:
+      - id
+    columns:
+      - id&lt;um_id
+      - name&lt;um_name
+
+  - name: product_info
+    schema: test
+    is_temporal: false
+    delta_config:
+      drop_unchanged_rows: false
+      # pre_prune_idential_rows: false
+      # truncate_table_first: false
+      on_duplicate_key: take_last
+    primary_keys:
+      - id
+    columns:
+      - id&lt;product_id
+      - name&lt;product_name
+
+  - name: food_prices
+    schema: test
+    is_temporal: true
+    delta_config:
+      drop_unchanged_rows: true
+      # pre_prune_idential_rows: true
+      # truncate_table_first: true
+      time_partition:
+        column: time
+        truncate: 5d
+        unique_strategy: last
+    primary_keys:
+      - product_id
+      - um_id
+    foreign_keys:
+      - { name: product_id, references: { table: product_info, column: id } }
+      - { name: um_id, references: { table: unit_info, column: id } }
+    columns:
+        - product_id
+        - um_id
+        - price
+        - price_usd
+
+column_definitions:
+  - { name: region, data_type: VARCHAR(32), header: Place, nullable: false }
+  - { name: product_id, data_type: INT, header: ProductId, nullable: false }
+  - { name: product_name, data_type: VARCHAR(64), header: ProductName }
+  - { name: um_id, data_type: INT, header: UmId, nullable: false }
+  - { name: um_name, data_type: VARCHAR(16), header: UmName }
+  - {
+      name: price,
+      data_type: &#39;DECIMAL(10,4)&#39;,
+      header: Price
+    }
+  - {
+      name: price_usd,
+      data_type: &#39;DECIMAL(10,4)&#39;,
+      transforms: {
+        try_to_usd: [ &#39;Price&#39;, &#39;Year&#39; ]
+      }
+    }
+  - { name: month, data_type: VARCHAR(2), header: Month }
+  - { name: year, data_type: INT, header: Year }
+  - {
+      name: time,
+      data_type: DATETIME,
+      transforms: { combine_columns: [&#39;${Year}&#39;, &#39;-&#39;, &#39;${Month}&#39;, &#39;-01&#39; ] }
+    }
+
+datasets:
+  - name: turkey_food_prices
+    delta_table_schema: test
+    scrape_limit: ~
+    search_paths:
+      - root_path: ../_testdata_dataset_data
+        file_include: [&#39;turkey_food_prices.csv&#39;]
+        is_enabled: true
+        timestamp:
+          source_tz: Europe/London
+          target_tz: UTC
+          method: mtime
+
+    pipeline:
+      - table: unit_info
+        columns:
+          - id&lt;um_id!
+          - name&lt;um_name!
+
+      - table: product_info
+        columns:
+          - id&lt;product_id!
+          - name&lt;product_name!
+
+      - table: food_prices
+        type: primary
+        columns:
+        - product_id!
+        - um_id!
+        - price!
+        - price_usd!
+
+</pre></div></div>
+</div>
+</section>
+<section id="Create-a-SQLAlchemy-Engine-to-connect-to-the-database">
+<h2>Create a SQLAlchemy Engine to connect to the database<a class="headerlink" href="#Create-a-SQLAlchemy-Engine-to-connect-to-the-database" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>engine = make_engine(
+    backend=&quot;mariadb&quot;,
+    hostname=&quot;127.0.0.1&quot;,
+    port=3306,
+    username=&quot;root&quot;,
+    password=&quot;admin&quot;,
+)
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Register-a-custom-parser-function">
+<h2>Register a custom parser function<a class="headerlink" href="#Register-a-custom-parser-function" title="Link to this heading"></a></h2>
+<p>The food prices from the data soruce are given in Turkish TRY.</p>
+<p>For some reason, the team only cares about the USD price. As per the dataset config, a yearly TRYUSD fx-rate is applied to the <code class="docutils literal notranslate"><span class="pre">price</span></code> column at scrape time, creating a derived <code class="docutils literal notranslate"><span class="pre">price_usd</span></code> column of type <code class="docutils literal notranslate"><span class="pre">DECIMAL(10,4)</span></code> in the database.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>registry = FunctionRegistry()
+
+
+def custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -&gt; pl.DataFrame:
+    usdtry_fx_rates = pl.from_dict(
+        {
+            &quot;Year&quot;: [
+                2010,
+                2011,
+                2012,
+                2013,
+                2014,
+                2015,
+                2016,
+                2017,
+                2018,
+                2019,
+                2020,
+                2021,
+                2022,
+                2023,
+            ],
+            &quot;fx_usdtry&quot;: [
+                1.507,
+                1.674,
+                1.802,
+                1.915,
+                2.188,
+                2.724,
+                3.020,
+                3.646,
+                4.830,
+                5.680,
+                7.004,
+                8.886,
+                16.566,
+                23.085,
+            ],
+        }
+    )
+
+    col_result = args[0]
+    col_try = args[1]
+    col_year = args[2]
+    df = (
+        df.join(usdtry_fx_rates, left_on=col_year, right_on=&quot;Year&quot;, how=&quot;left&quot;)
+        .with_columns((pl.col(col_try) * 1 / pl.col(&quot;fx_usdtry&quot;)).alias(col_result))
+        .drop(&quot;fx_usdtry&quot;)
+    )
+
+    return df
+
+
+registry.delete_function(&quot;try_to_usd&quot;)
+registry.register_function(&quot;try_to_usd&quot;, custom_try_to_usd)
+
+print(&quot;loaded functions&quot;, registry.list_functions())
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+loaded functions [&#39;null_if_gte&#39;, &#39;apply_type_casts&#39;, &#39;combine_columns&#39;, &#39;try_to_usd&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Run-the-workflow">
+<h2>Run the workflow<a class="headerlink" href="#Run-the-workflow" title="Link to this heading"></a></h2>
+<p>This scrapes any new files into to the database.</p>
+<p>(Try running the function a second time…)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>run_workflows(config, engine)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:polars_hist_db.dataset.workflow:scraping dataset turkey_food_prices
+INFO:polars_hist_db.dataset.workflow:starting ingest for food_prices
+INFO:polars_hist_db.loaders.file_search:searching files [&#39;turkey_food_prices.csv&#39;] in ../tests/_testdata_dataset_data
+INFO:polars_hist_db.loaders.file_search:found 1 files
+INFO:polars_hist_db.loaders.file_search:found total 1 files
+INFO:polars_hist_db.core.table_config:creating table test.__audit_log
+INFO:polars_hist_db.core.table_config:creating table test.unit_info
+INFO:polars_hist_db.core.table_config:creating table test.product_info
+INFO:polars_hist_db.core.table_config:creating table test.food_prices
+INFO:polars_hist_db.core.table_config:creating table test.turkey_food_prices
+INFO:polars_hist_db.dataset.workflow:[1/1] processing file mtime=2025-01-01 00:00:01
+INFO:polars_hist_db.loaders.dsv_loader:loading csv ../tests/_testdata_dataset_data/turkey_food_prices.csv
+INFO:polars_hist_db.loaders.fn_registry:applying fn try_to_usd to dataframe (7381, 8)
+INFO:polars_hist_db.loaders.fn_registry:applying fn combine_columns to dataframe (7381, 9)
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (1/75) 2013-04-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (2/75) 2013-05-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (3/75) 2013-11-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (4/75) 2013-12-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (5/75) 2013-12-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (6/75) 2014-01-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (7/75) 2014-03-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (8/75) 2014-04-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (9/75) 2014-05-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (10/75) 2014-06-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (11/75) 2014-07-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (12/75) 2014-08-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (13/75) 2014-09-27T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (14/75) 2014-11-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (15/75) 2014-12-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (16/75) 2014-12-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (17/75) 2015-01-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (18/75) 2015-03-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (19/75) 2015-03-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (20/75) 2015-04-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (21/75) 2015-05-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (22/75) 2015-06-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (23/75) 2015-07-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (24/75) 2015-08-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (25/75) 2015-09-27T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (26/75) 2015-11-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (27/75) 2015-12-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (28/75) 2015-12-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (29/75) 2016-01-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (30/75) 2016-02-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (31/75) 2016-03-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (32/75) 2016-04-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (33/75) 2016-05-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (34/75) 2016-06-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (35/75) 2016-07-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (36/75) 2016-09-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (37/75) 2016-10-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (38/75) 2016-10-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (39/75) 2016-11-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (40/75) 2016-12-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (41/75) 2017-01-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (42/75) 2017-02-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (43/75) 2017-03-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (44/75) 2017-04-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (45/75) 2017-05-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (46/75) 2017-06-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (47/75) 2017-07-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (48/75) 2017-09-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (49/75) 2017-10-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (50/75) 2017-10-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (51/75) 2017-11-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (52/75) 2017-12-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (53/75) 2018-01-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (54/75) 2018-02-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (55/75) 2018-03-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (56/75) 2018-04-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (57/75) 2018-05-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (58/75) 2018-06-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (59/75) 2018-07-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (60/75) 2018-09-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (61/75) 2018-10-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (62/75) 2018-10-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (63/75) 2018-11-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (64/75) 2018-12-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (65/75) 2019-01-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (66/75) 2019-02-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (67/75) 2019-03-30T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (68/75) 2019-04-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (69/75) 2019-05-29T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (70/75) 2019-06-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (71/75) 2019-07-28T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (72/75) 2019-09-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (73/75) 2019-10-01T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (74/75) 2019-10-31T00:00:00
+INFO:polars_hist_db.dataset.scrape:-- processing time_partition (75/75) 2019-11-30T00:00:00
+INFO:polars_hist_db.dataset.workflow:stopped scrape - food_prices
+</pre></div></div>
+</div>
+</section>
+<section id="Querying-the-temporal-tables">
+<h2>Querying the temporal tables<a class="headerlink" href="#Querying-the-temporal-tables" title="Link to this heading"></a></h2>
+<p>Query the latest food prices.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    latest_food_prices_df = DataframeOps(connection).from_table(&quot;test&quot;, &quot;food_prices&quot;)
+</pre></div>
+</div>
+</div>
+<p>Query all the food prices.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    time_hint = TimeHint(mode=&quot;all&quot;)
+    all_food_prices = DataframeOps(connection).from_table(
+        &quot;test&quot;, &quot;food_prices&quot;, time_hint
+    )
+
+
+all_food_prices
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div><style>
+.dataframe > thead > tr,
+.dataframe > tbody > tr {
+  text-align: right;
+  white-space: pre-wrap;
+}
+</style>
+<small>shape: (2_847, 6)</small><table border="1" class="dataframe"><thead><tr><th>product_id</th><th>um_id</th><th>price</th><th>price_usd</th><th>__valid_from</th><th>__valid_to</th></tr><tr><td>i32</td><td>i32</td><td>decimal[10,4]</td><td>decimal[10,4]</td><td>datetime[μs]</td><td>datetime[μs]</td></tr></thead><tbody><tr><td>52</td><td>5</td><td>4.4920</td><td>2.3456</td><td>2013-04-30 00:00:00</td><td>2013-05-30 00:00:00</td></tr><tr><td>52</td><td>5</td><td>4.5786</td><td>2.3909</td><td>2013-05-30 00:00:00</td><td>2013-11-01 00:00:00</td></tr><tr><td>52</td><td>5</td><td>4.7865</td><td>2.4994</td><td>2013-11-01 00:00:00</td><td>2013-12-01 00:00:00</td></tr><tr><td>52</td><td>5</td><td>5.1337</td><td>2.6807</td><td>2013-12-01 00:00:00</td><td>2013-12-31 00:00:00</td></tr><tr><td>52</td><td>5</td><td>5.5099</td><td>2.5182</td><td>2013-12-31 00:00:00</td><td>2014-01-30 00:00:00</td></tr><tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr><tr><td>502</td><td>5</td><td>47.9040</td><td>8.4338</td><td>2019-07-28 00:00:00</td><td>2019-09-01 00:00:00</td></tr><tr><td>502</td><td>5</td><td>49.1176</td><td>8.6474</td><td>2019-09-01 00:00:00</td><td>2019-10-01 00:00:00</td></tr><tr><td>502</td><td>5</td><td>50.8347</td><td>8.9497</td><td>2019-10-01 00:00:00</td><td>2019-10-31 00:00:00</td></tr><tr><td>502</td><td>5</td><td>51.7985</td><td>9.1194</td><td>2019-10-31 00:00:00</td><td>2019-11-30 00:00:00</td></tr><tr><td>502</td><td>5</td><td>51.6071</td><td>9.0857</td><td>2019-11-30 00:00:00</td><td>2106-02-07 06:28:15.999999</td></tr></tbody></table></div></div>
+</div>
+<p>Query the food prices at a specific point in time. In this case <em>1-Jan-2015</em>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    time_hint = TimeHint(mode=&quot;asof&quot;, asof_utc=datetime(2015, 1, 1))
+    food_prices_at_2015_date = DataframeOps(connection).from_table(
+        &quot;test&quot;, &quot;food_prices&quot;, time_hint
+    )
+
+
+food_prices_at_2015_date
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div><style>
+.dataframe > thead > tr,
+.dataframe > tbody > tr {
+  text-align: right;
+  white-space: pre-wrap;
+}
+</style>
+<small>shape: (34, 6)</small><table border="1" class="dataframe"><thead><tr><th>product_id</th><th>um_id</th><th>price</th><th>price_usd</th><th>__valid_from</th><th>__valid_to</th></tr><tr><td>i32</td><td>i32</td><td>decimal[10,4]</td><td>decimal[10,4]</td><td>datetime[μs]</td><td>datetime[μs]</td></tr></thead><tbody><tr><td>52</td><td>5</td><td>6.7550</td><td>2.4798</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>58</td><td>5</td><td>2.6840</td><td>0.9853</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>66</td><td>5</td><td>7.6650</td><td>2.8138</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>92</td><td>33</td><td>0.3210</td><td>0.1178</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>94</td><td>5</td><td>6.6720</td><td>2.4493</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td><td>&hellip;</td></tr><tr><td>360</td><td>5</td><td>1.1160</td><td>0.4096</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>401</td><td>5</td><td>13.4840</td><td>4.9500</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>433</td><td>5</td><td>28.2390</td><td>10.3667</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>463</td><td>15</td><td>2.8410</td><td>1.0429</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr><tr><td>502</td><td>5</td><td>37.3370</td><td>13.7066</td><td>2014-12-31 00:00:00</td><td>2015-01-30 00:00:00</td></tr></tbody></table></div></div>
+</div>
+</section>
+<section id="Delete-the-data-associated-with-the-dataset">
+<h2>Delete the data associated with the dataset<a class="headerlink" href="#Delete-the-data-associated-with-the-dataset" title="Link to this heading"></a></h2>
+<p>Reset the example. Subsequent attempts to upload the same data (or past data) into the database will fail.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    TableConfigOps(connection).drop_all(config.tables)
+    AuditOps(config.tables.schemas()[0]).drop(connection)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+INFO:polars_hist_db.core.table_config:dropped table food_prices
+INFO:polars_hist_db.core.table_config:dropped table product_info
+INFO:polars_hist_db.core.table_config:dropped table unit_info
+INFO:polars_hist_db.core.table_config:dropped table __audit_log
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="basic_example.html" class="btn btn-neutral float-left" title="Basic Usage Example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, jr200.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

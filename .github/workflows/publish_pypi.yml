@@ -46,7 +46,7 @@ jobs:
           ${{ toJson(github.event.client_payload) }}
           EOF
           
-          cat old_payload.json | jq '. + {"artifact_run_id": "${{ github.run_id }}"}' > new_payload.json
+          cat old_payload.json | jq '. + {"pypi_run_id": "${{ github.run_id }}"}' > new_payload.json
           echo "payload=$(cat new_payload.json | jq -c '.')" >> $GITHUB_OUTPUT
 
       - name: dispatch-next-workflow

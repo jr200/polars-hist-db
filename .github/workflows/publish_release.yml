@@ -36,6 +36,6 @@ jobs:
     with:
       tag: ${{ fromJson(needs.configure.outputs.context).tag }}
       artifact_name: ${{ fromJson(needs.configure.outputs.context).artifact_name }}
-      artifact_run_id: ${{ fromJson(needs.configure.outputs.context).artifact_run_id }}
+      artifact_run_id: ${{ fromJson(needs.configure.outputs.context).pywheel_run_id }}
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}

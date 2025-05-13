@@ -15,3 +15,5 @@ check:
 	ruff format
 	mypy .
 
+test:
+	pytest tests/

@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 import time
+from typing import Optional, List
 
 from sqlalchemy import Engine
 
@@ -18,8 +19,13 @@ from .scrape import scrape_pipeline_as_transaction
 LOGGER = logging.getLogger(__name__)
 
 
-def run_workflows(config: Config, engine: Engine):
-    for dataset in config.datasets.datasets:
+def run_workflows(config: Config, engine: Engine, dataset_filter:Optional[List[str]] = None):
+    worklist = filter(
+        lambda d: dataset_filter is None or d.name in dataset_filter,
+        config.datasets.datasets
+    )
+
+    for dataset in worklist:
         LOGGER.info("scraping dataset %s", dataset.name)
 
         _run_workflow(dataset, config.tables.column_definitions, config.tables, engine)
@@ -56,18 +62,23 @@ def _run_workflow(
 
     if table_config.delta_config is not None:
         with engine.begin() as connection:
+            column_selection = dataset.pipeline.referenced_column_definitions()
+            if table_config.delta_config.time_partition:
+                column_selection.append(table_config.delta_config.time_partition.column)
+
             delta_table_config = DeltaTableOps(
                 dataset.delta_table_schema,
                 dataset.name,
                 table_config.delta_config,
                 connection,
-            ).table_config(column_definitions)
+            ).table_config(column_definitions, column_selection)
 
             if not TableOps(
                 delta_table_config.schema, delta_table_config.name, connection
             ).table_exists():
                 TableConfigOps(connection).create(
                     delta_table_config,
+                    column_selection,
                     is_delta_table=True,
                     is_temporary_table=True,
                 )

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence
 import os
 
 import polars as pl
@@ -76,6 +76,9 @@ class Pipeline:
         table_name: str = self.items.filter(type="primary")[0, "table"]
         return table_name
 
+    def referenced_column_definitions(self) -> List[str]:
+        assert self._extract_spec is not None
+        return sorted(self._extract_spec['source'].unique())
 
 @dataclass
 class DatasetConfig:

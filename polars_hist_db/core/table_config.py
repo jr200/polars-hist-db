@@ -217,6 +217,9 @@ class TableConfigOps:
             prefixes=prefixes,
         )
 
+        if len(tbl.primary_key) == 0:
+            LOGGER.warning("table %s.%s has no primary key", tbo.table_schema, tbo.table_name)
+
         DbOps(self.connection).db_create(tbo.table_schema)
         create_stmt = text(str(CreateTable(tbl).compile(self.connection)))
         # LOGGER.debug("table_create.sql: %s", str(create_stmt))

@@ -41,11 +41,16 @@ class DeltaTableOps:
         self.delta_config = delta_config
         self.connection = connection
 
-    def table_config(self, column_definitions: ColumnDefinitions) -> TableConfig:
+    def table_config(self, column_definitions: ColumnDefinitions, filtered_columns: Optional[List[str]] = None) -> TableConfig:
+        if filtered_columns is None:
+            filtered_columns = [c.name for c in column_definitions.column_definitions]
+        else:
+            filtered_columns = [c.name for c in column_definitions.column_definitions if c.name in filtered_columns]
+
         return TableConfig(
             self.table_name,
             self.table_schema,
-            [c.name for c in column_definitions.column_definitions],
+            filtered_columns,
             column_definitions=column_definitions,
         )
 

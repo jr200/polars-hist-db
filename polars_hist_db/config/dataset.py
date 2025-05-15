@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence
 import os
 
 import polars as pl
@@ -62,12 +62,21 @@ class Pipeline:
         result: str = df[0, "type"]
         return result
 
-    def extract_items(self, table: str) -> pl.DataFrame:
+    def extract_items(self) -> pl.DataFrame:
+        if self._extract_spec is None:
+            raise ValueError("missing _extract_spec")
+
+        return self._extract_spec
+
+    def extract_item(self, table: str) -> pl.DataFrame:
         if self._extract_spec is None:
             raise ValueError("missing _extract_spec")
 
         df = self._extract_spec.filter(table=table).drop("table")
         return df
+    
+    def table_names(self) -> List[str]:
+        return self.items["table"].unique().to_list()
 
     def get_main_table_name(self) -> str:
         if self.items.is_empty():
@@ -79,6 +88,13 @@ class Pipeline:
     def referenced_column_definitions(self) -> List[str]:
         assert self._extract_spec is not None
         return sorted(self._extract_spec['source'].unique())
+
+    def column_definition_mappings(self, table_name: str) -> Dict[str, str]:
+        assert self._extract_spec is not None
+        table_df = self._extract_spec.filter(table=table_name).select("target", "source")
+        column_mappings = dict(table_df.iter_rows())
+        return column_mappings
+
 
 @dataclass
 class DatasetConfig:

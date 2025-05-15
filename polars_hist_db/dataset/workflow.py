@@ -1,3 +1,4 @@
+from copy import deepcopy
 import logging
 from pathlib import Path
 import time
@@ -9,7 +10,7 @@ from ..config import (
     Config,
     DatasetConfig,
     ColumnDefinitions,
-    TableConfigs,
+    TableConfigs
 )
 from ..core import AuditOps, DeltaTableOps, TableConfigOps, TableOps
 from ..loaders import find_files
@@ -27,8 +28,11 @@ def run_workflows(config: Config, engine: Engine, dataset_filter:Optional[List[s
 
     for dataset in worklist:
         LOGGER.info("scraping dataset %s", dataset.name)
+        dataset_table_names = dataset.pipeline.table_names()
+        tables = deepcopy(config.tables)
+        tables.table_configs = list(filter(lambda t: t.name in dataset_table_names, tables.table_configs))
 
-        _run_workflow(dataset, config.tables.column_definitions, config.tables, engine)
+        _run_workflow(dataset, config.tables.column_definitions, tables, engine)
 
 
 def _run_workflow(
@@ -58,7 +62,9 @@ def _run_workflow(
         aops.prevalidate_new_items(table_name, csv_files_df, connection)
 
     with engine.begin() as connection:
-        TableConfigOps(connection).create_all(tables)
+        for tc in tables.table_configs:
+            column_mappings = dataset.pipeline.column_definition_mappings(tc.name)
+            TableConfigOps(connection).create(tc, column_mappings)
 
     if table_config.delta_config is not None:
         with engine.begin() as connection:
@@ -78,7 +84,7 @@ def _run_workflow(
             ).table_exists():
                 TableConfigOps(connection).create(
                     delta_table_config,
-                    column_selection,
+                    None,
                     is_delta_table=True,
                     is_temporary_table=True,
                 )

@@ -127,15 +127,17 @@ class DataframeOps:
             df, table_schema, table_name, primary_keys, default_categorical_length=64
         )
 
+        table_config.name = table_name
+
         if tbl_for_types is not None:
             sql_types = SQLType.from_table(tbl_for_types)
             for col_cfg in table_config.column_definitions.column_definitions:
                 if col_cfg.name in sql_types:
                     col_cfg.data_type = sql_types[col_cfg.name]
 
-        TableConfigOps(self.connection)._create_nontemporal(
-            table_name,
+        TableConfigOps(self.connection).create(
             table_config,
+            is_delta_table=False,
             is_temporary_table=is_temporary_table,
         )
 

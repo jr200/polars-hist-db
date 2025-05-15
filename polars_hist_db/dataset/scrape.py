@@ -48,7 +48,7 @@ def scrape_pipeline_as_transaction(
     aops = AuditOps(table_schema)
     assert main_table_config.delta_config is not None
 
-    column_selection = pipeline.referenced_column_definitions()
+    column_selection = list(pipeline.extract_items()["source"].unique())
     if main_table_config.delta_config.time_partition:
         column_selection.append(main_table_config.delta_config.time_partition.column)
 
@@ -130,7 +130,7 @@ def scrape_pipeline_as_transaction(
                 raise
 
             except Exception as e:
-                LOGGER.error("error in scrape_pipeline_as_transaction: %s", e)
+                LOGGER.error("error in scrape_pipeline_as_transaction: %s", e, exc_info=e)
 
                 connection.rollback()
                 if num_retries == 0:

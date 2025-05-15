@@ -45,7 +45,8 @@ class DeltaTableOps:
         if filtered_columns is None:
             filtered_columns = [c.name for c in column_definitions.column_definitions]
         else:
-            filtered_columns = [c.name for c in column_definitions.column_definitions if c.name in filtered_columns]
+            col_configs = [c for c in column_definitions.column_definitions if c.name in filtered_columns]
+            column_definitions = ColumnDefinitions(col_configs)
 
         return TableConfig(
             self.table_name,

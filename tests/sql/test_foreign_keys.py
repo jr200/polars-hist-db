@@ -74,4 +74,5 @@ def test_column_selection(fixture_with_column_selection):
         tbl = tbo.get_table_metadata()
         read_cols = tbl.columns
 
-    assert len(all_column_defs) == len(column_selection) == len(read_cols) == 5
+    assert len(all_column_defs) == 6
+    assert len(column_selection) == len(read_cols) == 5

@@ -5,7 +5,7 @@ import polars as pl
 from polars.testing import assert_frame_equal
 from decimal import Decimal
 
-from polars_hist_db.loaders import FunctionRegistry
+from polars_hist_db.loaders import FunctionRegistry, DataFrameTransform
 from polars_hist_db.dataset import run_workflows
 from polars_hist_db.core.dataframe import TimeHint
 from polars_hist_db.core.dataframe import DataframeOps
@@ -15,60 +15,122 @@ from tests.utils import (
 )
 
 
-def _custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -> pl.DataFrame:
-    usdtry_fx_rates = pl.from_dict(
-        {
-            "Year": [
-                2010,
-                2011,
-                2012,
-                2013,
-                2014,
-                2015,
-                2016,
-                2017,
-                2018,
-                2019,
-                2020,
-                2021,
-                2022,
-                2023,
-            ],
-            "fx_usdtry": [
-                1.507,
-                1.674,
-                1.802,
-                1.915,
-                2.188,
-                2.724,
-                3.020,
-                3.646,
-                4.830,
-                5.680,
-                7.004,
-                8.886,
-                16.566,
-                23.085,
-            ],
-        }
-    )
+class CustomTryToUsd(DataFrameTransform):
 
-    col_result = args[0]
-    col_try = args[1]
-    col_year = args[2]
-    df = (
-        df.join(usdtry_fx_rates, left_on=col_year, right_on="Year", how="left")
-        .with_columns((pl.col(col_try) * 1 / pl.col("fx_usdtry")).alias(col_result))
-        .drop("fx_usdtry")
-    )
+    @classmethod
+    def name(cls):
+        return "try_to_usd"
 
-    return df
+    def __init__(self, args: List[Any]):
+        self.col_result = args[0]
+        self.col_try = args[1]
+        self.col_year = args[2]
+
+    def dependencies(self) -> List[str]:
+        return [self.col_try, self.col_year]
+
+    def apply(self, df: pl.DataFrame) -> pl.DataFrame:
+        usdtry_fx_rates = pl.from_dict(
+            {
+                "Year": [
+                    2010,
+                    2011,
+                    2012,
+                    2013,
+                    2014,
+                    2015,
+                    2016,
+                    2017,
+                    2018,
+                    2019,
+                    2020,
+                    2021,
+                    2022,
+                    2023,
+                ],
+                "fx_usdtry": [
+                    1.507,
+                    1.674,
+                    1.802,
+                    1.915,
+                    2.188,
+                    2.724,
+                    3.020,
+                    3.646,
+                    4.830,
+                    5.680,
+                    7.004,
+                    8.886,
+                    16.566,
+                    23.085,
+                ],
+            }
+        )
+
+        df = (
+            df.join(usdtry_fx_rates, left_on=self.col_year, right_on="Year", how="left")
+            .with_columns((pl.col(self.col_try) * 1 / pl.col("fx_usdtry")).alias(self.col_result))
+            .drop("fx_usdtry")
+        )
+
+        return df
+
+
+
+# def _custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -> pl.DataFrame:
+#     usdtry_fx_rates = pl.from_dict(
+#         {
+#             "Year": [
+#                 2010,
+#                 2011,
+#                 2012,
+#                 2013,
+#                 2014,
+#                 2015,
+#                 2016,
+#                 2017,
+#                 2018,
+#                 2019,
+#                 2020,
+#                 2021,
+#                 2022,
+#                 2023,
+#             ],
+#             "fx_usdtry": [
+#                 1.507,
+#                 1.674,
+#                 1.802,
+#                 1.915,
+#                 2.188,
+#                 2.724,
+#                 3.020,
+#                 3.646,
+#                 4.830,
+#                 5.680,
+#                 7.004,
+#                 8.886,
+#                 16.566,
+#                 23.085,
+#             ],
+#         }
+#     )
+
+#     col_result = args[0]
+#     col_try = args[1]
+#     col_year = args[2]
+#     df = (
+#         df.join(usdtry_fx_rates, left_on=col_year, right_on="Year", how="left")
+#         .with_columns((pl.col(col_try) * 1 / pl.col("fx_usdtry")).alias(col_result))
+#         .drop("fx_usdtry")
+#     )
+
+#     return df
 
 
 @pytest.fixture
 def fixture_with_config():
     fn_reg = FunctionRegistry()
-    fn_reg.register_function("try_to_usd", _custom_try_to_usd)
+    fn_reg.register_function(CustomTryToUsd)
 
     yield from setup_fixture_dataset("foodprices_dataset.yaml")
 
@@ -117,6 +179,7 @@ def test_load_file(fixture_with_config):
     102,Package
     """,
         base_config.tables["unit_info"],
+        base_config.datasets["turkey_food_prices"].pipeline.column_definition_mappings("unit_info")
     )
 
     assert_frame_equal(unit_info_df, expected_unit_info_df)
@@ -178,6 +241,7 @@ def test_load_file(fixture_with_config):
         502,Cocoa (powder) - Retail
         """,
         base_config.tables["product_info"],
+        base_config.datasets["turkey_food_prices"].pipeline.column_definition_mappings("product_info")
     )
 
     assert_frame_equal(product_info_df, expected_product_info_df)
@@ -239,6 +303,7 @@ def test_load_file(fixture_with_config):
         502,5,51.6071,9.0857,2019-11-30T00:00:00.000000,2106-02-07T06:28:15.999999
         """,
         base_config.tables["food_prices"],
+        base_config.datasets["turkey_food_prices"].pipeline.column_definition_mappings("food_prices")
     )
 
     assert_frame_equal(food_prices_latest_df, expected_food_prices_latest_df)
@@ -282,6 +347,7 @@ def test_load_file(fixture_with_config):
         502,5,36.9200,13.5535,2015-03-31T00:00:00.000000,2015-04-30T00:00:00.000000
     """,
         base_config.tables["food_prices"],
+        base_config.datasets["turkey_food_prices"].pipeline.column_definition_mappings("food_prices")
     )
 
     # (
@@ -364,6 +430,7 @@ def test_load_file(fixture_with_config):
         502,5,36.9200,13.5535,2015-03-31T00:00:00.000000,2015-04-30T00:00:00.000000
     """,
         base_config.tables["food_prices"],
+        base_config.datasets["turkey_food_prices"].pipeline.column_definition_mappings("food_prices")
     )
 
     assert_frame_equal(food_prices_t1_t2_df, expected_food_prices_t1_t2_df)

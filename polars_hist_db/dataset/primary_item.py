@@ -23,7 +23,7 @@ def scrape_primary_item(
     LOGGER.debug("(item %d) scraping item %s", -1, main_table_config.name)
 
     selected_columns = (
-        pipeline.extract_items(main_table_config.name).get_column("source").to_list()
+        pipeline.extract_item(main_table_config.name).get_column("source").to_list()
     )
 
     TableConfigOps(connection).create(main_table_config)
@@ -37,12 +37,14 @@ def scrape_primary_item(
             )
             raise ValueError(f"column mismatch on {cols_not_configured}")
 
+    src_to_tgt_colname_map = {v: k for k, v in pipeline.column_definition_mappings(main_table_config.name).items()}
     ni, nu, nd = DeltaTableOps(
         delta_table_schema, delta_table_name, main_table_config.delta_config, connection
     ).upsert(
         main_table_config.name,
         upload_time,
         common_columns,
+        src_to_tgt_colname_map
     )
 
     LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu)

@@ -1,6 +1,6 @@
 from collections import defaultdict
 import logging
-from typing import List, Mapping, Optional
+from typing import Dict, List, Mapping, Optional
 
 from sqlalchemy import (
     Column,
@@ -30,32 +30,28 @@ class TableConfigOps:
     def __init__(self, connection: Connection):
         self.connection = connection
 
-    def create_all(self, tcs: TableConfigs):
-        for tc in tcs.table_configs:
-            if tc.is_temporal:
-                self._create_temporal(tc.name, tc)
-            else:
-                self._create_nontemporal(tc.name, tc)
-
     def create(
         self,
         table_config: TableConfig,
-        column_selection: Optional[List[str]] = None,
+        column_mappings: Optional[Dict[str, str]] = None,
         is_delta_table: bool = False,
         is_temporary_table: bool = False,
     ) -> Table:
         inspector = inspect(self.connection, raiseerr=False)
         table_schema = table_config.schema
 
+        if column_mappings is None:
+            column_mappings = { c.name: c.name for c in table_config.column_definitions.column_definitions }
+
         if table_config.is_temporal:
             tbl = self._create_temporal(
-                table_config.name, table_config, column_selection
+                table_config.name, table_config, column_mappings
             )
         else:
             tbl = self._create_nontemporal(
                 table_config.name,
                 table_config,
-                column_selection,
+                column_mappings,
                 is_delta_table=is_delta_table,
                 is_temporary_table=is_temporary_table,
             )
@@ -143,13 +139,13 @@ class TableConfigOps:
         self,
         table_name: str,
         table_config: TableConfig,
-        column_selection: Optional[List[str]] = None,
+        column_mappings: Dict[str, str],
     ) -> Table:
         tbo = TableOps(table_config.schema, table_name, self.connection)
         if tbo.table_exists():
             return tbo.get_table_metadata()
 
-        tbl = self._create_nontemporal(table_name, table_config, column_selection)
+        tbl = self._create_nontemporal(table_name, table_config, column_mappings)
         tbo.enable_system_versioning()
         return tbl
 
@@ -157,7 +153,7 @@ class TableConfigOps:
         self,
         table_name: str,
         table_config: TableConfig,
-        column_selection: Optional[List[str]] = None,
+        column_mappings: Dict[str, str],
         additional_columns: Optional[List[Column]] = None,
         is_delta_table: bool = False,
         is_temporary_table: bool = False,
@@ -168,17 +164,18 @@ class TableConfigOps:
 
         LOGGER.info("creating table %s.%s", tbo.table_schema, tbo.table_name)
 
-        columns = table_config.build_sqlalchemy_columns(is_delta_table)
+        columns = table_config.build_sqlalchemy_columns(is_delta_table, column_mappings)
 
         if additional_columns is not None:
             columns.extend(additional_columns)
 
         unique_constraint_items: Mapping[str, List[str]] = defaultdict(list)
         for col in table_config.columns:
-            col_def = table_config.column_definitions[col]
+            col_def_name = column_mappings.get(col, col)
+            col_def = table_config.column_definitions[col_def_name]
             for uc_name in col_def.unique_constraint:
                 uc_guid = f"{uc_name}_{table_name}"
-                unique_constraint_items[uc_guid].append(col_def.name)
+                unique_constraint_items[uc_guid].append(col)
 
         unique_constraints = [
             UniqueConstraint(*uc_cols, name=uc_guid)

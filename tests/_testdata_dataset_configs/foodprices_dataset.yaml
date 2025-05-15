@@ -17,8 +17,8 @@ table_configs:
     primary_keys:
       - id
     columns:
-      - id<um_id
-      - name<um_name
+      - id
+      - name
 
   - name: product_info
     schema: test
@@ -31,8 +31,8 @@ table_configs:
     primary_keys:
       - id
     columns:
-      - id<product_id
-      - name<product_name
+      - id
+      - name
 
   - name: food_prices
     schema: test
@@ -63,11 +63,7 @@ column_definitions:
   - { name: product_name, data_type: VARCHAR(64), header: ProductName }
   - { name: um_id, data_type: INT, header: UmId, nullable: false }
   - { name: um_name, data_type: VARCHAR(16), header: UmName }
-  - { 
-      name: price,
-      data_type: 'DECIMAL(10,4)',
-      header: Price
-    }
+  - { name: price, data_type: 'DECIMAL(10,4)', header: Price }
   - {
       name: price_usd,
       data_type: 'DECIMAL(10,4)',
@@ -77,11 +73,7 @@ column_definitions:
     }
   - { name: month, data_type: VARCHAR(2), header: Month }
   - { name: year, data_type: INT, header: Year }
-  - { 
-      name: time,
-      data_type: DATETIME,
-      transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ] } 
-    }
+  - { name: time, data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ] } }
 
 datasets:
   - name: turkey_food_prices

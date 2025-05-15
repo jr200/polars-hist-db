@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass, field
-from typing import Any, Iterable, List, Literal, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional
 
 import polars as pl
 from sqlalchemy import Column, Identity
@@ -129,23 +129,14 @@ class TableConfig:
         if not isinstance(self.delta_config, DeltaConfig):
             self.delta_config = DeltaConfig(**self.delta_config)
 
-        parsed_cols = []
-        found_col_defs = []
-        column_definitions = self.column_definitions.clone()
-        for col_expr in flatten_list(self.columns):
-            _, col_def_name, _ = parse_col_spec(col_expr)
-
-            col_def = column_definitions[col_def_name]
-            found_col_defs.append(col_def)
-            parsed_cols.append(col_expr)
-
-        self.columns = parsed_cols
-        self.column_definitions = ColumnDefinitions(column_definitions=found_col_defs)
-
         self.foreign_keys = [
             fk if isinstance(fk, ForeignKeyConfig) else ForeignKeyConfig(**fk)
             for fk in self.foreign_keys
         ]
+
+        self.columns = flatten_list(self.columns)
+
+
 
     def table_dependencies(self) -> Iterable[str]:
         deps = [self.name]
@@ -233,11 +224,16 @@ class TableConfig:
 
         return pl.DataFrame(schema=schema)
 
-    def build_sqlalchemy_columns(self, is_delta_table: bool) -> List[Column]:
+    def build_sqlalchemy_columns(
+            self,
+            is_delta_table: bool,
+            column_mappings: Dict[str, str],
+        ) -> List[Column]:
         columns: List[Column] = []
 
         for col_name in self.columns:
-            col_cfg = self.column_definitions[col_name]
+            col_def_name = column_mappings.get(col_name, col_name)
+            col_cfg = self.column_definitions[col_def_name]
             default_value = (
                 str(col_cfg.default_value)
                 if col_cfg.default_value is not None
@@ -248,11 +244,11 @@ class TableConfig:
             )
 
             col: Column = Column(
-                col_cfg.name,
+                col_name,
                 SQLAlchemyType.from_sql(col_cfg.data_type),
                 *autoincrement_spec,
                 autoincrement=col_cfg.autoincrement,
-                primary_key=col_cfg.name in self.primary_keys,
+                primary_key=col_name in self.primary_keys,
                 nullable=col_cfg.nullable
                 or (is_delta_table and col_cfg.deduce_foreign_key),
                 server_default=default_value,

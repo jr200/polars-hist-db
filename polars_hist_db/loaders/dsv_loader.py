@@ -65,7 +65,7 @@ def load_typed_dsv(
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
     delimiter: Optional[str] = None,
 ) -> pl.DataFrame:
-    LOGGER.info("loading csv %s", str(file_or_bytes))
+    LOGGER.info("loading dsv %s", str(file_or_bytes))
 
     sep, headers = _parse_header_row(file_or_bytes, delimiter)
 
@@ -119,15 +119,15 @@ def load_typed_dsv(
         if not col_def.header or not col_def.deduce_foreign_key
     }
 
-    undefined_headers = (
+    ignored_dsv_column_names = (
         set(dsv_df.columns)
         .difference(expected_headers.keys())
         .difference(schema_overrides.keys())
     )
 
-    if len(undefined_headers) > 0:
-        undefined_headers_str = "],[".join(undefined_headers)
-        raise ValueError(f"missing header definitions for [{undefined_headers_str}]")
+    if len(ignored_dsv_column_names) > 0:
+        ignored_dsv_column_names_str = "],[".join(ignored_dsv_column_names)
+        LOGGER.info(f"ignoring {len(ignored_dsv_column_names)} DSV cols (headers): [{ignored_dsv_column_names_str}]")
 
     defined_but_missing_headers = set(expected_headers.keys()).difference(
         dsv_df.columns
@@ -147,6 +147,9 @@ def load_typed_dsv(
         )
 
         LOGGER.debug(missing_columns_df)
+
+
+    dsv_df = dsv_df.drop(ignored_dsv_column_names)
 
     header_to_db_col_map = {
         dsv_header: db_col_name

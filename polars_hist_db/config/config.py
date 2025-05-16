@@ -23,6 +23,15 @@ class Config:
                 **Config.get_nested_key(cfg_dict, db_config_path)
             )
 
+        if datasets_path:
+            config_dir = (
+                None if config_filename is None else os.path.dirname(config_filename)
+            )
+            self.datasets = DatasetsConfig(
+                datasets=Config.get_nested_key(cfg_dict, datasets_path),
+                base_dir=config_dir,
+            )
+
         if column_definitions_path and table_configs_path:
             column_defintions = ColumnDefinitions(
                 column_definitions=Config.get_nested_key(
@@ -34,14 +43,6 @@ class Config:
                 column_definitions=column_defintions,
             )
 
-        if datasets_path:
-            config_dir = (
-                None if config_filename is None else os.path.dirname(config_filename)
-            )
-            self.datasets = DatasetsConfig(
-                datasets=Config.get_nested_key(cfg_dict, datasets_path),
-                base_dir=config_dir,
-            )
 
     @staticmethod
     def get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):

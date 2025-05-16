@@ -1,13 +1,13 @@
 import logging
-from typing import Any, Callable, List, Dict
+from typing import Any, List, Dict
 import polars as pl
 
-from .fn_builtins import apply_type_casts, combine_columns, null_if_gte
+from .fn_transform import DataFrameTransform
+from .fn_builtins import ApplyTypeCasts, CombineColumns, NullIfGte
 
 LOGGER = logging.getLogger(__name__)
 
-FnSignature = Callable[[pl.DataFrame, List[Any]], pl.DataFrame]
-RegistryStore = Dict[str, FnSignature]
+RegistryStore = Dict[str, DataFrameTransform]
 
 
 class FunctionRegistry:
@@ -20,9 +20,9 @@ class FunctionRegistry:
     def _one_time_init(self) -> RegistryStore:
         if self._registry is None:
             self._registry = dict()
-            self.register_function("null_if_gte", null_if_gte)
-            self.register_function("apply_type_casts", apply_type_casts)
-            self.register_function("combine_columns", combine_columns)
+            self.register_function(NullIfGte)
+            self.register_function(ApplyTypeCasts)
+            self.register_function(CombineColumns)
 
         return self._registry
 
@@ -30,12 +30,12 @@ class FunctionRegistry:
         if name in self._registry:
             del self._registry[name]
 
-    def register_function(self, name: str, fn: FnSignature) -> None:
-        if name in self._registry:
+    def register_function(self, transform: DataFrameTransform) -> None:
+        if transform.name() in self._registry:
             raise ValueError(
-                f"A function with the name '{name}' is already registered."
+                f"A function with the name '{transform.name()}' is already registered."
             )
-        self._registry[name] = fn
+        self._registry[transform.name()] = transform
 
     def call_function(
         self, name: str, df: pl.DataFrame, args: List[Any]
@@ -44,8 +44,9 @@ class FunctionRegistry:
             raise ValueError(f"No function registered with the name '{name}'.")
 
         LOGGER.info("applying fn %s to dataframe %s", name, df.shape)
-        fn = self._registry[name]
-        result_df = fn(df, args)
+        class_obj = self._registry[name]
+        fn = class_obj(args)
+        result_df = fn.apply(df)
 
         if result_df is None:
             raise ValueError(f"function {name} returned None")

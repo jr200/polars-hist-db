@@ -26,7 +26,6 @@ from polars_hist_db.core import (
     TableOps,
     make_engine,
 )
-from polars_hist_db.config.parser import parse_col_exprs
 from polars_hist_db.types import SQLAlchemyType, PolarsType
 
 # some test defaults for debugging
@@ -87,7 +86,11 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
     return tempDir
 
 
-def from_test_result(x: str, table_config: TableConfig) -> pl.DataFrame:
+def from_test_result(
+        x: str,
+        table_config: TableConfig,
+        column_mappings: Optional[Dict[str, str]] = None,
+    ) -> pl.DataFrame:
     def _clean_csv_data(data: str) -> str:
         input_io = StringIO(data.strip())
         output_io = StringIO()
@@ -103,9 +106,14 @@ def from_test_result(x: str, table_config: TableConfig) -> pl.DataFrame:
         return csv_output
 
     x_cleaned = _clean_csv_data(x)
+    if column_mappings:
+        col_defs = [c for c in table_config.column_definitions.column_definitions if c.name in column_mappings.values()]
+    else:
+        col_defs = table_config.column_definitions.column_definitions
+
     df = load_typed_dsv(
         bytes(textwrap.dedent(x_cleaned), "UTF8"),
-        table_config.column_definitions.column_definitions,
+        col_defs,
         schema_overrides={
             **{c: pl.Datetime("us") for c in TableOps.system_versioning_columns()},
             "__is_override": pl.Boolean(),
@@ -117,8 +125,9 @@ def from_test_result(x: str, table_config: TableConfig) -> pl.DataFrame:
         pl.col(k).cast(t) for k, t in table_config.dtypes().items() if k in df.columns
     ).pipe(PolarsType.cast_str_to_cat)
 
-    renamings = {v: k for k, v, _ in parse_col_exprs(table_config.columns)}
-    df = df.rename(renamings)
+    if column_mappings:
+        renamings = {v: k for k, v in column_mappings.items()}
+        df = df.rename(renamings)
 
     return df
 
@@ -156,13 +165,19 @@ def setup_fixture_dataset(test_file: str):
         TableConfigOps(connection).drop_all(table_configs)
         audit_table.drop(connection)
 
-        for tc in table_configs.table_configs:
-            DbOps(connection).db_create(tc.schema)
-            TableConfigOps(connection).create(tc)
-            if tc.schema != table_schema:
-                raise ValueError(
-                    "mixed-schema tests not supported (to keep things simple)"
-                )
+        for ds in config.datasets.datasets:
+            tables_df = ds.pipeline.extract_items()
+            table_list = list(tables_df["table"].unique(maintain_order=True))
+            for table_name in table_list:
+                tc = next(filter(lambda tc: tc.name == table_name, table_configs.table_configs))
+                column_mappings = dict(tables_df.filter(table=table_name).select("target", "source").iter_rows())
+                DbOps(connection).db_create(tc.schema)
+                TableConfigOps(connection).create(tc, column_mappings)
+                if tc.schema != table_schema:
+                    raise ValueError(
+                        "mixed-schema tests not supported (to keep things simple)"
+                    )
+
 
     yield engine, config
 

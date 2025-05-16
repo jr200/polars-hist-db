@@ -49,8 +49,8 @@ def test_exchange_config_deserialization():
 
     assert config.name == "exchanges"
     assert len(config.columns) == 5
-    assert len(config.column_definitions.column_definitions) == 5
-    assert config.column_definitions.column_definitions[1].name == "website_name"
+    assert len(config.column_definitions.column_definitions) == 6
+    assert config.column_definitions.column_definitions[1].name == "name"
     assert config.column_definitions.column_definitions[1].data_type == "VARCHAR(100)"
     assert not config.column_definitions.column_definitions[1].nullable
 

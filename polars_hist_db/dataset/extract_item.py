@@ -35,7 +35,7 @@ def scrape_extract_item(
 
     TableConfigOps(connection).create(target_table_config)
 
-    extract_spec = pipeline.extract_items(target_table)
+    extract_spec = pipeline.extract_item(target_table)
     main_table_cols_df = main_table_config.columns_df()
     col_info = extract_spec.join(
         main_table_cols_df, how="left", left_on="source", right_on="name"

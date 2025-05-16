@@ -287,43 +287,37 @@ class ForeignKeyConfig:
 
 @dataclass
 class TableConfigs:
-    table_configs: List[TableConfig]
-    column_definitions: ColumnDefinitions
+    items: List[TableConfig]
 
     def __post_init__(self):
-        self.table_configs = [
+        self.items = [
             TableConfig(column_definitions=self.column_definitions, **tc_dict)
-            for tc_dict in self.table_configs
+            for tc_dict in self.items
         ]
-        for tc in self.table_configs:
-            tc._resolve_foreign_keys(*self.table_configs)
+        for tc in self.items:
+            tc._resolve_foreign_keys(*self.items)
 
     def __getitem__(self, name: str) -> TableConfig:
-        tc = next((tc for tc in self.table_configs if tc.name == name), None)
+        tc = next((tc for tc in self.items if tc.name == name), None)
         if tc:
             return tc
 
         raise ValueError(f"TableConfig {name} not found")
 
     def names(self) -> List[str]:
-        return [tc.name for tc in self.table_configs]
+        return [tc.name for tc in self.items]
 
     def schemas(self) -> List[str]:
-        schemas = {tc.schema for tc in self.table_configs}
+        schemas = {tc.schema for tc in self.items}
         return sorted(schemas)
 
     @classmethod
     def from_yamls(cls, *file_path: str):
         all_tcs = []
-        all_col_defs = []
         for yf in file_path:
             with open(yf, "r") as fp:
                 cfg_i = yaml.safe_load(fp)
                 all_tcs.extend(cfg_i["table_configs"])
-                all_col_defs.extend(cfg_i["column_definitions"])
 
-        result = TableConfigs(
-            table_configs=all_tcs,
-            column_definitions=ColumnDefinitions(column_definitions=all_col_defs),
-        )
+        result = TableConfigs(items=all_tcs)
         return result

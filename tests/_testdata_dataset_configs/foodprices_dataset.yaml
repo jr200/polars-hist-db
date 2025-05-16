@@ -17,8 +17,9 @@ table_configs:
     primary_keys:
       - id
     columns:
-      - id<um_id
-      - name<um_name
+      - { name: id, data_type: INT, nullable: false }
+      - { name: name, data_type: VARCHAR(16) }
+
 
   - name: product_info
     schema: test
@@ -31,8 +32,8 @@ table_configs:
     primary_keys:
       - id
     columns:
-      - id<product_id
-      - name<product_name
+      - { name: id, data_type: INT, nullable: false }
+      - { name: name, data_type: VARCHAR(64) }
 
   - name: food_prices
     schema: test
@@ -52,36 +53,11 @@ table_configs:
       - { name: product_id, references: { table: product_info, column: id } }
       - { name: um_id, references: { table: unit_info, column: id } }
     columns:
-        - product_id
-        - um_id
-        - price
-        - price_usd
+      - { name: product_id, data_type: INT, nullable: false }
+      - { name: um_id, data_type: INT, nullable: false }
+      - { name: price, data_type: 'DECIMAL(10,4)' }
+      - { name: price_usd, data_type: 'DECIMAL(10,4)' }
 
-column_definitions:
-  - { name: region, data_type: VARCHAR(32), header: Place, nullable: false }
-  - { name: product_id, data_type: INT, header: ProductId, nullable: false }
-  - { name: product_name, data_type: VARCHAR(64), header: ProductName }
-  - { name: um_id, data_type: INT, header: UmId, nullable: false }
-  - { name: um_name, data_type: VARCHAR(16), header: UmName }
-  - { 
-      name: price,
-      data_type: 'DECIMAL(10,4)',
-      header: Price
-    }
-  - {
-      name: price_usd,
-      data_type: 'DECIMAL(10,4)',
-      transforms: {
-        try_to_usd: [ 'Price', 'Year' ]
-      }
-    }
-  - { name: month, data_type: VARCHAR(2), header: Month }
-  - { name: year, data_type: INT, header: Year }
-  - { 
-      name: time,
-      data_type: DATETIME,
-      transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ] } 
-    }
 
 datasets:
   - name: turkey_food_prices
@@ -99,18 +75,20 @@ datasets:
     pipeline:
       - table: unit_info
         columns:
-          - id<um_id!
-          - name<um_name!
+          - { name: id, header: UmId }
+          - { name: name, header: UmName }
 
       - table: product_info
         columns:
-          - id<product_id!
-          - name<product_name!
+          - { name: id, header: ProductId }
+          - { name: name, header: ProductName }
 
       - table: food_prices
         type: primary
         columns:
-        - product_id!
-        - um_id!
-        - price!
-        - price_usd!
+          - { name: product_id, header: ProductId }
+          - { name: um_id, header: UmId }
+          - { name: price, header: Price }
+          - { data_type: VARCHAR(2), header: Month }
+          - { data_type: INT, header: Year }
+          - { name: price_usd, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ] } }

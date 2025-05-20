@@ -129,37 +129,41 @@ class DeltaTableOps:
 
         tgt_pk = target_tbo.get_primary_keys(target_tbl)
 
-        update_existing_keys = (
-            target_tbl.update()
-            .values(
-                {
-                    src_tgt_colname_map.get(
-                        sc_name, sc_name
-                    ): self._coalesce_if_nullable(
-                        src_tbl,
-                        target_tbl,
-                        sc_name,
-                        src_tgt_colname_map.get(sc_name, sc_name),
-                    )
-                    for sc_name in source_columns
-                    if src_tgt_colname_map.get(sc_name, sc_name) != tgt_id_col
-                }
+
+        update_set = {
+            src_tgt_colname_map.get(
+                sc_name, sc_name
+            ): self._coalesce_if_nullable(
+                src_tbl,
+                target_tbl,
+                sc_name,
+                src_tgt_colname_map.get(sc_name, sc_name),
             )
-            .where(
-                and_(
-                    *[
-                        tk == src_tbl.c[tgt_to_src_map.get(tk.name, tk.name)]
-                        for tk in tgt_pk
-                    ]
+            for sc_name in source_columns
+            if src_tgt_colname_map.get(sc_name, sc_name) != tgt_id_col
+        }
+
+        if len(update_set) == 0:
+            num_updates = 0
+        else:
+            update_existing_keys = (
+                target_tbl.update()
+                .values(update_set)
+                .where(
+                    and_(
+                        *[
+                            tk == src_tbl.c[tgt_to_src_map.get(tk.name, tk.name)]
+                            for tk in tgt_pk
+                        ]
+                    )
                 )
             )
-        )
 
-        result = DbOps(self.connection).execute_sqlalchemy(
-            "sql.base.upsert.update", update_existing_keys
-        )
+            result = DbOps(self.connection).execute_sqlalchemy(
+                "sql.base.upsert.update", update_existing_keys
+            )
 
-        num_updates = result.rowcount
+            num_updates = result.rowcount
 
         LOGGER.debug(
             "updated %d rows in %s.%s", num_updates, table_schema, target_table

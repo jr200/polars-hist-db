@@ -89,8 +89,8 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
 def from_test_result(
         x: str,
         table_name: str,
-        dataset: DatasetConfig,
         tables: TableConfigs,
+        dataset: Optional[DatasetConfig] = None,
         skip_time_partition: bool = True,
         schema_overrides: Optional[Dict[str, pl.DataType]] = None
     ) -> pl.DataFrame:
@@ -109,10 +109,14 @@ def from_test_result(
         return csv_output
 
     x_cleaned = _clean_csv_data(x)
-    column_definitions = [
-        c for c in dataset.pipeline.build_input_column_definitions(tables)
-        if c.table == table_name
-    ]
+
+    if dataset:
+        column_definitions = [
+            c for c in dataset.pipeline.build_input_column_definitions(tables)
+            if c.table == table_name
+        ]
+    else:
+        column_definitions = DatasetConfig.infer_input_columns_from_tables(tables)
 
     if skip_time_partition:
         column_definitions = [
@@ -322,7 +326,7 @@ def add_random_row(
 
     sa_schema = {
         c.name: SQLAlchemyType.from_sql(c.data_type)
-        for c in table_config.column_definitions.column_definitions
+        for c in table_config.columns
     }
     for col_name, c_type in sa_schema.items():
         if col_name in new_row:

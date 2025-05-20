@@ -17,7 +17,7 @@ def fixture_with_simple_table():
 
 def test_dataframe_reinsert(fixture_with_simple_table):
     engine, table_configs, table_schema = fixture_with_simple_table
-    table_config = table_configs.table_configs[0]
+    table_config = table_configs.items[0]
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")
@@ -26,7 +26,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         id,double_col,varchar_col
         1,123.456,aaaa
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_read, df_read_history = modify_and_read(
@@ -38,7 +39,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         id,double_col,varchar_col,__valid_from,__valid_to
         1,123.456,aaaa,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -56,7 +58,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         """
         id,double_col,varchar_col,__valid_from,__valid_to
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -64,7 +67,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         id,double_col,varchar_col,__valid_from,__valid_to
         1,123.456,aaaa,1985-01-01T00:00:01,1986-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -77,7 +81,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         id,double_col,varchar_col
         1,234.567,bbbb
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_read, df_read_history = modify_and_read(
@@ -89,7 +94,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         id,double_col,varchar_col,__valid_from,__valid_to
         1,234.567,bbbb,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -97,7 +103,8 @@ def test_dataframe_reinsert(fixture_with_simple_table):
         id,double_col,varchar_col,__valid_from,__valid_to
         1,123.456,aaaa,1985-01-01T00:00:01,1986-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -106,14 +113,14 @@ def test_dataframe_reinsert(fixture_with_simple_table):
 
 def test_dataframe_upsert(fixture_with_simple_table):
     engine, table_configs, table_schema = fixture_with_simple_table
-    table_config = table_configs.table_configs[0]
+    table_config = table_configs.items[0]
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")
     df_1 = pl.from_dict(
         {
             "id": [1, 2, 3, 4, 5, 6, 7, 8],
-            "col_double": [
+            "double_col": [
                 100.100,
                 -200.200,
                 None,
@@ -142,7 +149,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         7, 700.700,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
         8,-800.800,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -168,7 +176,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_3 = pl.from_dict(
         {
             "id": [1, 2, 3, 4, 5, 6, 7, 8],
-            "col_double": [
+            "double_col": [
                 100.100,
                 -200.200,
                 None,
@@ -197,7 +205,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         7, 700.700,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
         8,-800.800,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -205,7 +214,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         id,double_col,varchar_col,__valid_from,__valid_to
         4, 400.400,None,1985-01-01T00:00:01,1987-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -216,7 +226,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_4 = pl.from_dict(
         {
             "id": [1, 2, 3, 4, 6, 7, 8],
-            "col_double": [100.100, -200.200, None, None, 600.600, 700.700, -800.800],
+            "double_col": [100.100, -200.200, None, None, 600.600, 700.700, -800.800],
         }
     )
 
@@ -235,7 +245,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         7, 700.700,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
         8,-800.800,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -244,7 +255,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         4, 400.400,None,1985-01-01T00:00:01,1987-01-01T00:00:01
         5,-500.500,None,1985-01-01T00:00:01,1988-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -255,7 +267,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_5 = pl.from_dict(
         {
             "id": [1, 2, 3, 4, 7, 8],
-            "col_double": [100.100, -200.200, None, 444.444, 700.700, -800.800],
+            "double_col": [100.100, -200.200, None, 444.444, 700.700, -800.800],
         }
     )
 
@@ -273,7 +285,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         7, 700.700,,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
         8,-800.800,,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -284,7 +297,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         5,-500.500,None,1985-01-01T00:00:01,1988-01-01T00:00:01
         6, 600.600,None,1985-01-01T00:00:01,1989-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -295,7 +309,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_6 = pl.from_dict(
         {
             "id": [1, 2, 3, 4, 7, 8, 9],
-            "col_double": [
+            "double_col": [
                 100.100,
                 -200.200,
                 None,
@@ -322,7 +336,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         8,-800.800,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
         9,-999.999,None,1990-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -333,7 +348,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         5,-500.500,None,1985-01-01T00:00:01,1988-01-01T00:00:01
         6, 600.600,None,1985-01-01T00:00:01,1989-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -344,7 +360,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_7 = pl.from_dict(
         {
             "id": [2, 3, 4, 7, 8, 9, 10],
-            "col_double": [
+            "double_col": [
                 -200.200,
                 None,
                 444.444,
@@ -371,7 +387,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         9,-999.999,None,1990-01-01T00:00:01,2106-02-07T06:28:15.999999
        10, 111.111,None,1991-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -383,7 +400,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         5,-500.500,None,1985-01-01T00:00:01,1988-01-01T00:00:01
         6, 600.600,None,1985-01-01T00:00:01,1989-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -394,7 +412,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_8 = pl.from_dict(
         {
             "id": [1, 2, 3, 4, 7, 9, 10],
-            "col_double": [
+            "double_col": [
                 100.123,
                 -200.234,
                 None,
@@ -421,7 +439,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         9,-999.999,None,1990-01-01T00:00:01,2106-02-07T06:28:15.999999
        10, 111.111,None,1991-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     df_expected_history = from_test_result(
@@ -435,7 +454,8 @@ def test_dataframe_upsert(fixture_with_simple_table):
         6, 600.600,None,1985-01-01T00:00:01,1989-01-01T00:00:01
         8,-800.800,None,1985-01-01T00:00:01,1992-01-01T00:00:01
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert_frame_equal(df_expected, df_read)

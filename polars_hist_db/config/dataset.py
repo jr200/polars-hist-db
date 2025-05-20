@@ -182,6 +182,23 @@ class DatasetConfig:
 
             self.search_paths = pl.from_records(self.search_paths)
 
+    @classmethod
+    def infer_input_columns_from_tables(cls, table_configs: TableConfigs) -> List[DeltaColumnConfig]:
+        items: List[DeltaColumnConfig] = []
+        for table_config in table_configs.items:
+            for column in table_config.columns:
+                dc = DeltaColumnConfig(
+                    column_type="data",
+                    table=table_config.name,
+                    data_type=column.data_type,
+                    source=column.name,
+                    target=column.name,
+                    nullable=column.nullable,
+                    default_value=column.default_value,
+                )
+                items.append(dc)
+
+        return items
 
 @dataclass
 class DatasetsConfig:

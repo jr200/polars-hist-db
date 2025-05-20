@@ -129,7 +129,7 @@ class DataframeOps:
 
         if tbl_for_types is not None:
             sql_types = SQLType.from_table(tbl_for_types)
-            for col_cfg in table_config.column_definitions.column_definitions:
+            for col_cfg in table_config.columns:
                 if col_cfg.name in sql_types:
                     col_cfg.data_type = sql_types[col_cfg.name]
 
@@ -322,30 +322,27 @@ class DataframeOps:
                 f"unable to upsert dataframe, it has no columns in common with target table {table_name}"
             )
 
-        tbl = tbo.get_table_metadata()
-        primary_keys = [c.name for c in tbl.primary_key]
-
-        table_config = TableConfigOps(self.connection).from_table(
+        tmp_table_config = TableConfigOps(self.connection).from_table(
             table_schema, table_name
         )
 
-        table_config.name = delta_config.tmp_table_name(table_name)
+        tmp_table_config.name = delta_config.tmp_table_name(table_name)
 
         TableConfigOps(self.connection).create(
-            table_config, is_delta_table=True, is_temporary_table=True
+            tmp_table_config, is_delta_table=True, is_temporary_table=False
         )
 
         self.table_insert(
             df,
             table_schema,
-            table_config.name,
-            primary_keys,
+            tmp_table_config.name,
+            tmp_table_config.primary_keys,
             clear_table_first=True,
             prefill_nulls_with_default=delta_config.prefill_nulls_with_default,
         )
 
         DeltaTableOps(
-            table_schema, table_config.name, delta_config, self.connection
+            table_schema, tmp_table_config.name, delta_config, self.connection
         ).upsert(
             table_name,
             update_time,

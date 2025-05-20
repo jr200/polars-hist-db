@@ -3,8 +3,9 @@ table_configs:
     name: simple_table
     is_temporal: true
     columns:
-    - id
-    - [ col_double, col_varchar ]
+      - { name: id, data_type: INT }
+      - { name: double_col, data_type: DOUBLE }
+      - { name: varchar_col, data_type: VARCHAR(10) }
     primary_keys:
       - id
     delta_config:
@@ -12,8 +13,3 @@ table_configs:
       on_duplicate_key: take_last
       prefill_nulls_with_default: false
       row_finality: dropout
-
-column_definitions:
-  - { name: id, data_type: INT }
-  - { name: col_double, data_type: DOUBLE, header: double_col }
-  - { name: col_varchar, data_type: VARCHAR(10), header: varchar_col }

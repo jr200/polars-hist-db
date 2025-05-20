@@ -19,7 +19,7 @@ def fixutre_with_simple_table():
 
 def test_select_sql(fixutre_with_simple_table):
     engine, table_configs, table_schema = fixutre_with_simple_table
-    table_config = table_configs.table_configs[0]
+    table_config = table_configs.items[0]
 
     def _upload_df(df):
         df, _ = modify_and_read(engine, df, table_schema, table_config, None, "upload")
@@ -27,7 +27,7 @@ def test_select_sql(fixutre_with_simple_table):
         return df
 
     # upload then test initial df
-    df_1 = pl.from_dict({"id": [1], "col_double": [123.4567], "col_varchar": ["abc"]})
+    df_1 = pl.from_dict({"id": [1], "double_col": [123.4567], "varchar_col": ["abc"]})
 
     df_read = _upload_df(df_1)
     df_expected = from_test_result(
@@ -35,13 +35,14 @@ def test_select_sql(fixutre_with_simple_table):
         id, double_col, varchar_col
         1, 123.4567, abc
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert df_expected.equals(df_read)
 
     # update from dataframe
-    df_2 = pl.from_dict({"id": [1], "col_double": [234.5678], "col_varchar": ["def"]})
+    df_2 = pl.from_dict({"id": [1], "double_col": [234.5678], "varchar_col": ["def"]})
 
     df_read = _upload_df(df_2)
     df_expected = from_test_result(
@@ -49,7 +50,8 @@ def test_select_sql(fixutre_with_simple_table):
         id, double_col, varchar_col
         1, 234.5678, def
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert df_expected.equals(df_read)
@@ -64,13 +66,14 @@ def test_select_sql(fixutre_with_simple_table):
         id, double_col, varchar_col
         1, 234.5678, def
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert df_expected.equals(df_read)
 
     # incremental update nulls in database
-    df_3 = pl.from_dict({"id": [1], "col_double": [None], "col_varchar": [None]})
+    df_3 = pl.from_dict({"id": [1], "double_col": [None], "varchar_col": [None]})
 
     df_read = _upload_df(df_3)
     df_expected = from_test_result(
@@ -78,13 +81,14 @@ def test_select_sql(fixutre_with_simple_table):
         id, double_col, varchar_col
         1,,
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert df_expected.equals(df_read)
 
     df_4 = pl.from_dict(
-        {"id": [1], "col_double": [345.67890001], "col_varchar": ["ghi"]}
+        {"id": [1], "double_col": [345.67890001], "varchar_col": ["ghi"]}
     )
 
     df_read = _upload_df(df_4)
@@ -93,7 +97,8 @@ def test_select_sql(fixutre_with_simple_table):
         id, double_col, varchar_col
         1, 345.67890001, ghi
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     assert df_expected.equals(df_read)

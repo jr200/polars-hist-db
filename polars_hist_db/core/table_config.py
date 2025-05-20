@@ -70,9 +70,11 @@ class TableConfigOps:
         col_names = []
         fks = []
         pks = []
-        is_temporal = False
         for col in tbl.columns:
             assert isinstance(col, Column)
+            if col.name in TableOps.system_versioning_columns():
+                continue
+
             col_name = col.name
             col_names.append(col_name)
             if col.primary_key:
@@ -115,7 +117,7 @@ class TableConfigOps:
             columns=col_defs,
             forbid_drop_table=False,
             foreign_keys=fks,  # type: ignore[arg-type]
-            is_temporal=is_temporal,
+            is_temporal=False,
             primary_keys=pks,
         )
 
@@ -147,8 +149,9 @@ class TableConfigOps:
         if tbo.table_exists():
             return tbo.get_table_metadata()
 
-        tbl = self._create_nontemporal(table_name, table_config, column_selection)
+        self._create_nontemporal(table_name, table_config, column_selection)
         tbo.enable_system_versioning()
+        tbl = tbo.get_table_metadata()
         return tbl
 
     def _create_nontemporal(

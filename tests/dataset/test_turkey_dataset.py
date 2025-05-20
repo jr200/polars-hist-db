@@ -128,8 +128,8 @@ def test_load_file(fixture_with_config):
     102,Package
     """,
         "unit_info",
-        dataset,
-        base_config.tables
+        base_config.tables,
+        dataset
     )
 
     assert_frame_equal(unit_info_df, expected_unit_info_df)
@@ -191,8 +191,8 @@ def test_load_file(fixture_with_config):
         502,Cocoa (powder) - Retail
         """,
         "product_info",
-        dataset,
-        base_config.tables
+        base_config.tables,
+        dataset
     )
 
     assert_frame_equal(product_info_df, expected_product_info_df)
@@ -254,8 +254,8 @@ def test_load_file(fixture_with_config):
         502,5,51.6071,9.0858,2019-11-30T00:00:00.000000,2106-02-07T06:28:15.999999
         """,
         "food_prices",
-        dataset,
         base_config.tables,
+        dataset,
         schema_overrides={"price_usd": pl.Decimal(10, 4)}
     )
 
@@ -300,8 +300,8 @@ def test_load_file(fixture_with_config):
         502,5,36.9200,13.5536,2015-03-31T00:00:00.000000,2015-04-30T00:00:00.000000
     """,
         "food_prices",
-        dataset,
         base_config.tables,
+        dataset,
         schema_overrides={"price_usd": pl.Decimal(10, 4)}
     )
 
@@ -385,8 +385,8 @@ def test_load_file(fixture_with_config):
         502,5,36.9200,13.5536,2015-03-31T00:00:00.000000,2015-04-30T00:00:00.000000
     """,
         "food_prices",
-        dataset,
         base_config.tables,
+        dataset,
         schema_overrides={"price_usd": pl.Decimal(10, 4)}
     )
 

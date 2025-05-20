@@ -75,20 +75,22 @@ datasets:
     pipeline:
       - table: unit_info
         columns:
-          - { name: id, header: UmId }
-          - { name: name, header: UmName }
+          - { target: id, source: UmId }
+          - { target: name, source: UmName }
 
       - table: product_info
         columns:
-          - { name: id, header: ProductId }
-          - { name: name, header: ProductName }
+          - { target: id, source: ProductId }
+          - { target: name, source: ProductName }
 
       - table: food_prices
         type: primary
         columns:
-          - { name: product_id, header: ProductId }
-          - { name: um_id, header: UmId }
-          - { name: price, header: Price }
-          - { data_type: VARCHAR(2), header: Month }
-          - { data_type: INT, header: Year }
-          - { name: price_usd, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ] } }
+          - { target: product_id, source: ProductId }
+          - { target: um_id, source: UmId }
+          - { target: price, source: Price }
+          - { data_type: VARCHAR(2), source: Month }
+          - { data_type: INT, source: Year }
+          - { data_type: VARCHAR(64), source: Placex }
+          - { target: price_usd, data_type: "NUMERIC(10,4)", transforms: { try_to_usd: ['Price', 'Year'] } }
+          - { target: time, column_type: time_partition, data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ], apply_type_casts: [Utf8, Date] } }

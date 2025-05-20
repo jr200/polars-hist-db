@@ -201,7 +201,7 @@ class DataframeOps:
         uniqueness_col_set: Iterable[str],
         prefill_nulls_with_default: bool,
         clear_table_first: bool = False,
-    ):
+    ) -> int:
         tbo = TableOps(table_schema, table_name, self.connection)
         tbl = tbo.get_table_metadata()
         if clear_table_first:
@@ -218,7 +218,7 @@ class DataframeOps:
             )
 
         if df.is_empty():
-            return
+            return 0
 
         if prefill_nulls_with_default:
             for c in tbl.columns:
@@ -246,7 +246,8 @@ class DataframeOps:
             "inserting dataframe %s into %s.%s", df.shape, table_schema, table_name
         )
 
-        result = df.to_pandas().to_sql(
+        cols_to_upload = {c.name for c in tbl.columns}.intersection(df.columns)
+        result = df.select(cols_to_upload).to_pandas().to_sql(
             name=table_name,
             con=self.connection,
             schema=table_schema,
@@ -257,7 +258,7 @@ class DataframeOps:
 
         LOGGER.debug("insert dataframe affected %d/%d rows", result, len(df))
 
-        return df
+        return result
 
     def table_update(self, df: pl.DataFrame, table_schema: str, table_name: str):
         if df.is_empty():

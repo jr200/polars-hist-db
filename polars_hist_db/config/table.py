@@ -1,12 +1,10 @@
-import copy
 from dataclasses import dataclass, field
-from typing import Any, Iterable, List, Literal, Mapping, Optional
+from typing import Dict, Iterable, List, Literal, Mapping, Optional
 
 import polars as pl
 from sqlalchemy import Column, Identity
 import yaml
 
-from .parser import flatten_list, parse_col_spec
 from ..types import PolarsType, SQLType, SQLAlchemyType
 
 
@@ -40,107 +38,91 @@ class DeltaConfig:
         return f"__{table_name}_tmp"
 
 
+
 @dataclass
-class ColumnConfig:
+class TableColumnConfig:
+    table: str
     name: str
     data_type: str
-    transforms: Mapping[str, Any] = field(default_factory=dict)
-    aggregation: Optional[str] = None
-    deduce_foreign_key: bool = False
     default_value: Optional[str] = None
-    header: str = ""
     autoincrement: bool = False
     nullable: bool = True
-    unique_constraint: Iterable[str] = field(default_factory=tuple)
+    deduce_foreign_key: bool = False
+    unique_constraint: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        self.header = self.header or self.name
+        if self.unique_constraint is None:
+            self.unique_constraint = []
+
+    @classmethod
+    def from_dataframe(cls, df: pl.DataFrame) -> List["TableColumnConfig"]:
+        schema = TableColumnConfig.df_schema()
+        df = df.select([
+            c for c in schema.keys() if c in df.columns
+        ])
+
+        result = []
+        for row in df.iter_rows(named=True):
+            row_dict = {c: row[c] for c in schema.keys() if c in row}
+            cc = TableColumnConfig(**row_dict)
+            result.append(cc)
+
+        return result
+
+    @classmethod
+    def df_schema(cls) -> pl.Schema:
+        schema: Dict[str, pl.DataTypeClass] = {
+            "table": pl.Utf8,
+            "name": pl.Utf8,
+            "data_type": pl.Utf8,
+            "default_value": pl.Utf8,
+            "autoincrement": pl.Boolean,
+            "nullable": pl.Boolean,
+            "deduce_foreign_key": pl.Boolean,
+            "unique_constraint": pl.List(pl.Utf8)
+        }
+
+        return pl.Schema(schema)
+
 
     def df(self) -> pl.DataFrame:
         result = pl.DataFrame(
             [list(self.__dict__.values())],
             schema=list(self.__dict__.keys()),
-            schema_overrides={
-                "aggregation": pl.Utf8,
-                "default_value": pl.Utf8,
-                "header": pl.Utf8,
-                "transforms": pl.Struct,
-                "unique_constraint": pl.List(pl.Utf8),
-            },
+            schema_overrides=self.df_schema(),
             orient="row",
         )
 
         return result
 
+    def __repr__(self) -> str:
+        return f"TableColumnConfig({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
 
-def __repr__(self) -> str:
-    return f"ColumnConfig({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
-
-
-@dataclass
-class ColumnDefinitions:
-    column_definitions: List[ColumnConfig] = field(default_factory=list)
-
-    def __post_init__(self):
-        self.column_definitions = [
-            col if isinstance(col, ColumnConfig) else ColumnConfig(**col)
-            for col in self.column_definitions
-        ]
-
-    def __getitem__(self, name: str) -> ColumnConfig:
-        col_name, col_def_name, _ = parse_col_spec(name)
-        col_defs_copy = self.clone().column_definitions
-
-        col_def = next(
-            (c for c in col_defs_copy if c.name == col_def_name),
-            None,
-        )
-
-        if col_def is None:
-            col_def = next(
-                (c for c in col_defs_copy if c.name == col_name),
-                None,
-            )
-        else:
-            col_def.name = col_name
-
-        if col_def:
-            return col_def
-
-        raise ValueError(f"ColumnConfig {name} not found")
-
-    def clone(self) -> "ColumnDefinitions":
-        return ColumnDefinitions(copy.deepcopy(self.column_definitions))
 
 
 @dataclass
 class TableConfig:
     name: str
     schema: str
-    columns: List[str] = field(default_factory=list)
+    columns: List[TableColumnConfig]
     forbid_drop_table: bool = False
     foreign_keys: Iterable["ForeignKeyConfig"] = field(default_factory=tuple)
     is_temporal: bool = False
     primary_keys: Iterable[str] = field(default_factory=tuple)
     delta_config: DeltaConfig = field(default_factory=DeltaConfig)
-    column_definitions: ColumnDefinitions = field(default_factory=ColumnDefinitions)
 
     def __post_init__(self):
         if not isinstance(self.delta_config, DeltaConfig):
             self.delta_config = DeltaConfig(**self.delta_config)
 
-        parsed_cols = []
-        found_col_defs = []
-        column_definitions = self.column_definitions.clone()
-        for col_expr in flatten_list(self.columns):
-            _, col_def_name, _ = parse_col_spec(col_expr)
+        columns = []
+        for col in self.columns:
+            if not isinstance(col, TableColumnConfig):
+                col = TableColumnConfig(**col, table=self.name)
 
-            col_def = column_definitions[col_def_name]
-            found_col_defs.append(col_def)
-            parsed_cols.append(col_expr)
+            columns.append(col)
 
-        self.columns = parsed_cols
-        self.column_definitions = ColumnDefinitions(column_definitions=found_col_defs)
+        self.columns = columns
 
         self.foreign_keys = [
             fk if isinstance(fk, ForeignKeyConfig) else ForeignKeyConfig(**fk)
@@ -189,7 +171,9 @@ class TableConfig:
 
     def columns_df(self) -> pl.DataFrame:
         result = pl.concat(
-            [col.df() for col in self.column_definitions.column_definitions]
+            [col.df() for col in self.columns]
+        ).with_columns(
+            table=pl.lit(self.name)
         )
 
         return result
@@ -209,7 +193,7 @@ class TableConfig:
         default_categorical_length: int,
     ) -> "TableConfig":
         columns = [
-            ColumnConfig(name=col_name, data_type=SQLType.from_polars(col_type))
+            TableColumnConfig(name=col_name, data_type=SQLType.from_polars(col_type), table=table_name)
             for col_name, col_type in zip(df.columns, df.dtypes)
         ]
 
@@ -217,8 +201,7 @@ class TableConfig:
             name=table_name,
             schema=table_schema,
             primary_keys=primary_keys,
-            columns=df.columns,
-            column_definitions=ColumnDefinitions(column_definitions=columns),
+            columns=columns
         )
 
         return result
@@ -227,7 +210,7 @@ class TableConfig:
         schema = {
             col.name: PolarsType.from_sql(col.data_type)
             for col in sorted(
-                self.column_definitions.column_definitions, key=lambda k: k.name
+                self.columns, key=lambda k: k.name
             )
         }
 
@@ -236,8 +219,7 @@ class TableConfig:
     def build_sqlalchemy_columns(self, is_delta_table: bool) -> List[Column]:
         columns: List[Column] = []
 
-        for col_name in self.columns:
-            col_cfg = self.column_definitions[col_name]
+        for col_cfg in self.columns:
             default_value = (
                 str(col_cfg.default_value)
                 if col_cfg.default_value is not None
@@ -290,10 +272,7 @@ class TableConfigs:
     items: List[TableConfig]
 
     def __post_init__(self):
-        self.items = [
-            TableConfig(column_definitions=self.column_definitions, **tc_dict)
-            for tc_dict in self.items
-        ]
+        self.items = [TableConfig(**tc_dict) for tc_dict in self.items]
         for tc in self.items:
             tc._resolve_foreign_keys(*self.items)
 

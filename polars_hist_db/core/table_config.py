@@ -18,7 +18,7 @@ from sqlalchemy.schema import CreateTable
 from .db import DbOps
 from .table import TableOps
 
-from ..config import ColumnConfig, ColumnDefinitions, TableConfig, TableConfigs
+from ..config.table import TableConfig, TableConfigs, TableColumnConfig
 from ..types import SQLAlchemyType
 from ..utils.db_utils import strip_outer_quotes
 
@@ -31,7 +31,7 @@ class TableConfigOps:
         self.connection = connection
 
     def create_all(self, tcs: TableConfigs):
-        for tc in tcs.table_configs:
+        for tc in tcs.items:
             if tc.is_temporal:
                 self._create_temporal(tc.name, tc)
             else:
@@ -98,12 +98,10 @@ class TableConfigOps:
             else:
                 default_value = None
 
-            col_config = ColumnConfig(
-                name=col_name,
+            col_config = TableColumnConfig(
+                table_name,
+                col_name,
                 data_type=sa_type,
-                transforms=dict(),
-                aggregation=None,
-                deduce_foreign_key=False,
                 default_value=default_value,
                 nullable=bool(col.nullable),
                 autoincrement=col.identity is not None,
@@ -112,17 +110,17 @@ class TableConfigOps:
             col_defs.append(col_config)
 
         return TableConfig(
-            table_name,
-            table_schema,
-            col_names,
+            name=table_name,
+            schema=table_schema,
+            columns=col_defs,
             forbid_drop_table=False,
             foreign_keys=fks,  # type: ignore[arg-type]
             is_temporal=is_temporal,
-            column_definitions=ColumnDefinitions(column_definitions=col_defs),
+            primary_keys=pks,
         )
 
     def drop_all(self, table_configs: TableConfigs):
-        for tc in reversed(table_configs.table_configs):
+        for tc in reversed(table_configs.items):
             self.drop(tc)
 
     def drop(self, table_config: TableConfig):
@@ -174,8 +172,7 @@ class TableConfigOps:
             columns.extend(additional_columns)
 
         unique_constraint_items: Mapping[str, List[str]] = defaultdict(list)
-        for col in table_config.columns:
-            col_def = table_config.column_definitions[col]
+        for col_def in table_config.columns:
             for uc_name in col_def.unique_constraint:
                 uc_guid = f"{uc_name}_{table_name}"
                 unique_constraint_items[uc_guid].append(col_def.name)

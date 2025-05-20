@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import logging
 from pathlib import Path
 from time import sleep
@@ -44,11 +44,16 @@ def scrape_pipeline_as_transaction(
 ):
     pipeline = dataset.pipeline
     main_table_config: TableConfig = tables[pipeline.get_main_table_name()]
+    tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
+    header_keys = [tbl_to_header_map[k] for k in main_table_config.primary_keys]
+
     table_schema = main_table_config.schema
     aops = AuditOps(table_schema)
     assert main_table_config.delta_config is not None
 
-    df = load_typed_dsv(csv_file, tables.column_definitions.column_definitions)
+    column_definitions = dataset.pipeline.build_input_column_definitions(tables) 
+
+    df = load_typed_dsv(csv_file, column_definitions)
     df = DataframeOps.populate_nulls(df, main_table_config)
 
     LOGGER.debug("loaded %d rows", len(df))
@@ -63,7 +68,7 @@ def scrape_pipeline_as_transaction(
             df.with_columns(__interval=pl.col(time_col).dt.truncate(interval))
             .sort(time_col)
             .unique(
-                [*main_table_config.primary_keys, "__interval"],
+                [*header_keys, "__interval"],
                 keep=unique_strategy,
                 maintain_order=True,
             )
@@ -79,7 +84,7 @@ def scrape_pipeline_as_transaction(
             try:
                 with connection.begin():
                     for i, ((ts,), partition_df) in enumerate(partitions.items()):
-                        assert isinstance(ts, datetime)
+                        assert isinstance(ts, datetime) or isinstance(ts, date), "timestamp is not a date/datetime"
                         LOGGER.info(
                             "-- processing time_partition (%d/%d) %s",
                             i + 1,
@@ -91,12 +96,12 @@ def scrape_pipeline_as_transaction(
                             partition_df,
                             dataset.delta_table_schema,
                             dataset.name,
-                            uniqueness_col_set=main_table_config.primary_keys,
+                            uniqueness_col_set=header_keys,
                             prefill_nulls_with_default=True,
                             clear_table_first=True,
                         )
 
-                        for target_table in pipeline.items["table"]:
+                        for target_table in pipeline.get_table_names():
                             _scrape_pipeline_item(
                                 dataset,
                                 target_table,
@@ -121,7 +126,7 @@ def scrape_pipeline_as_transaction(
                 raise
 
             except Exception as e:
-                LOGGER.error("error in scrape_pipeline_as_transaction: %s", e)
+                LOGGER.error("error in scrape_pipeline_as_transaction", exc_info=e)
 
                 connection.rollback()
                 if num_retries == 0:

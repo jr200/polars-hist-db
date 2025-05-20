@@ -1,24 +1,27 @@
 from .config import Config
-from .dataset import DatasetConfig, DatasetsConfig
+from .dataset import DatasetConfig, DatasetsConfig, DeltaColumnConfig
 from .engine import DbEngineConfig
 from .table import (
-    ColumnConfig,
-    ColumnDefinitions,
+    TableColumnConfig,
     DeltaConfig,
     ForeignKeyConfig,
     TableConfig,
     TableConfigs,
 )
+from .fn_registry import FunctionRegistry, FnSignature
+
 
 __all__ = [
     "Config",
     "DatasetConfig",
     "DatasetsConfig",
     "DbEngineConfig",
-    "ColumnConfig",
-    "ColumnDefinitions",
+    "TableColumnConfig",
+    "DeltaColumnConfig",
     "DeltaConfig",
     "ForeignKeyConfig",
     "TableConfig",
     "TableConfigs",
+    "FunctionRegistry",
+    "FnSignature",
 ]

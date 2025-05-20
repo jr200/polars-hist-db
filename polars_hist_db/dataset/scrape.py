@@ -58,8 +58,8 @@ def scrape_pipeline_as_transaction(
 
     LOGGER.debug("loaded %d rows", len(df))
 
-    if main_table_config.delta_config.time_partition:
-        tp = main_table_config.delta_config.time_partition
+    if dataset.time_partition:
+        tp = dataset.time_partition
         time_col = tp.column
         interval = tp.truncate
         unique_strategy = tp.unique_strategy

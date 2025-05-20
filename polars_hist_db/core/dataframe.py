@@ -329,7 +329,7 @@ class DataframeOps:
         tmp_table_config.name = delta_config.tmp_table_name(table_name)
 
         TableConfigOps(self.connection).create(
-            tmp_table_config, is_delta_table=True, is_temporary_table=False
+            tmp_table_config, is_delta_table=True, is_temporary_table=True
         )
 
         self.table_insert(

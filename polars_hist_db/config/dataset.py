@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Literal, Optional, Sequence
 import os
 
 import polars as pl
@@ -158,6 +158,12 @@ class Pipeline:
 
 
 
+@dataclass
+class TimePartition:
+    column: str = ""
+    truncate: str = ""
+    unique_strategy: Literal["first", "last"] = "last"
+
 
 @dataclass
 class DatasetConfig:
@@ -167,6 +173,7 @@ class DatasetConfig:
     pipeline: Pipeline
     scrape_limit: Optional[int] = None
     base_dir: Optional[str] = None
+    time_partition: Optional[TimePartition] = None
 
     def __post_init__(self):
         if not isinstance(self.pipeline, Pipeline):
@@ -181,6 +188,11 @@ class DatasetConfig:
                         search_path["root_path"] = abs_path
 
             self.search_paths = pl.from_records(self.search_paths)
+
+        if self.time_partition is not None and not isinstance(
+            self.time_partition, TimePartition
+        ):
+            self.time_partition = TimePartition(**self.time_partition)
 
     @classmethod
     def infer_input_columns_from_tables(cls, table_configs: TableConfigs) -> List[DeltaColumnConfig]:

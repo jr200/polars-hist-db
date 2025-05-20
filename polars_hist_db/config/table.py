@@ -9,30 +9,16 @@ from ..types import PolarsType, SQLType, SQLAlchemyType
 
 
 @dataclass
-class TimePartition:
-    column: str = ""
-    truncate: str = ""
-    unique_strategy: Literal["first", "last"] = "last"
-
-
-@dataclass
 class DeltaConfig:
     drop_unchanged_rows: bool = False
     on_duplicate_key: Literal["error", "take_last", "take_first"] = "error"
     prefill_nulls_with_default: bool = False
-    time_partition: Optional[TimePartition] = None
 
     # tracks the finality of rows in the target (temporal) table
     # disabled: no tracking, rows are not deleted from the target table
     # dropout: rows are deleted from the target table if they are not present in the source table
     # manual: a separate column tracks the finality of rows in the target table
     row_finality: Literal["disabled", "dropout", "manual"] = "disabled"
-
-    def __post_init__(self):
-        if self.time_partition is not None and not isinstance(
-            self.time_partition, TimePartition
-        ):
-            self.time_partition = TimePartition(**self.time_partition)
 
     def tmp_table_name(self, table_name: str) -> str:
         return f"__{table_name}_tmp"

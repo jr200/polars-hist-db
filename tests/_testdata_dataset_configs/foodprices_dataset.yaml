@@ -42,10 +42,6 @@ table_configs:
       drop_unchanged_rows: true
       # pre_prune_idential_rows: true
       # truncate_table_first: true
-      time_partition:
-        column: time
-        truncate: 5d
-        unique_strategy: last
     primary_keys:
       - product_id
       - um_id
@@ -71,7 +67,10 @@ datasets:
           source_tz: Europe/London
           target_tz: UTC          
           method: mtime
-
+    time_partition:
+      column: time
+      truncate: 5d
+      unique_strategy: last
     pipeline:
       - table: unit_info
         columns:

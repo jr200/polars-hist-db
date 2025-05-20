@@ -67,8 +67,8 @@ class Pipeline:
 
     def build_input_column_definitions(self, all_tables: TableConfigs) -> List[DeltaColumnConfig]:
 
-        tmp_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition"]))
-        pipeline_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition"]).not_())
+        tmp_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]))
+        pipeline_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]).not_())
         all_dfs = self._merge_with_table_config(pipeline_cols, all_tables)
         all_dfs.append(tmp_cols)
 

@@ -121,7 +121,7 @@ def from_test_result(
     if skip_time_partition:
         column_definitions = [
             c for c in column_definitions 
-            if c.column_type != "time_partition"
+            if c.column_type != "time_partition_only"
         ]
 
     if not schema_overrides:

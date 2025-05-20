@@ -136,7 +136,10 @@ def load_typed_dsv(
     headers_no_config = (
         set(dsv_df.columns)
         .difference(expected_headers)
-        .difference([c.target for c in column_configs if c.column_type in ["computed", "time_partition"]])
+        .difference([
+            c.target for c in column_configs 
+            if c.column_type == "time_partition_only" or c.source is None
+        ])
         .difference(schema_overrides.keys())
     )
 

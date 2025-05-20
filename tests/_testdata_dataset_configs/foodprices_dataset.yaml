@@ -93,4 +93,4 @@ datasets:
           - { source: Year, data_type: INT }
           - { source: Placex, data_type: VARCHAR(64) }
           - { target: price_usd, data_type: "NUMERIC(10,4)", transforms: { try_to_usd: ['Price', 'Year'] } }
-          - { target: time, column_type: time_partition, data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ], apply_type_casts: [Utf8, Date] } }
+          - { target: time, column_type: time_partition_only, data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ], apply_type_casts: [Utf8, Date] } }

@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class DeltaColumnConfig:
-    column_type: Literal["data", "computed", "dsv_only", "time_partition"]
+    column_type: Literal["data", "computed", "dsv_only", "time_partition_only"]
     table: str
     data_type: str
     source: Optional[str] = None

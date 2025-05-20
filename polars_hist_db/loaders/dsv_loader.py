@@ -53,7 +53,8 @@ def _apply_header_transforms(df: pl.DataFrame, col_def: DeltaColumnConfig) -> pl
             if fn_args is None:
                 continue
 
-            df = fn_reg.call_function(fn_name, df, [col_def.target, *fn_args])
+            source_col = col_def.target if col_def.source is None else col_def.source
+            df = fn_reg.call_function(fn_name, df, source_col, col_def.target, fn_args)
 
     result_col_dtype = PolarsType.from_sql(col_def.data_type)
     df = df.with_columns(

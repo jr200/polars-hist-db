@@ -15,7 +15,7 @@ from tests.utils import (
 )
 
 
-def _custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -> pl.DataFrame:
+def _custom_try_to_usd(df: pl.DataFrame, _input_col: str, result_col: str, args: List[Any]) -> pl.DataFrame:
     usdtry_fx_rates = pl.from_dict(
         {
             "Year": [
@@ -57,16 +57,15 @@ def _custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -> pl.DataFrame:
         }
     )
 
-    col_result = args[0]
-    col_try = args[1]
-    col_year = args[2]
+    col_try = args[0]
+    col_year = args[1]
     df = (
         df.join(usdtry_fx_rates, left_on=col_year, right_on="Year", how="left")
         .with_columns(
             (pl.col(col_try) * 1.0 / pl.col("fx_usdtry"))
             .round(4, mode="half_away_from_zero")
             .cast(pl.Decimal(10, 4))
-            .alias(col_result)
+            .alias(result_col)
         )
         .drop("fx_usdtry")
     )

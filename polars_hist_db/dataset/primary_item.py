@@ -10,6 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def scrape_primary_item(
+    pipeline_id: int,
     dataset: DatasetConfig,
     tables: TableConfigs,
     upload_time: datetime,
@@ -20,11 +21,10 @@ def scrape_primary_item(
     delta_table_name = dataset.name
     main_table_config = tables[pipeline.get_main_table_name()]
     assert main_table_config.delta_config is not None
-    LOGGER.debug("(item %d) scraping item %s", -1, main_table_config.name)
+    LOGGER.debug("(item %d) scraping item %s", pipeline_id, main_table_config.name)
 
-    selected_columns = (
-        pipeline.extract_items(main_table_config.name).get_column("source").to_list()
-    )
+    upload_items = pipeline.extract_items(pipeline_id)
+    selected_columns = upload_items["source"].to_list()
 
     TableConfigOps(connection).create(main_table_config)
     tbo = TableOps(delta_table_schema, delta_table_name, connection)
@@ -35,7 +35,7 @@ def scrape_primary_item(
             cols_not_configured = set(common_columns).symmetric_difference(
                 selected_columns
             )
-            raise ValueError(f"column mismatch on {cols_not_configured}")
+            raise ValueError(f"column mismatch on {cols_not_configured} in {selected_columns}")
 
     ni, nu, nd = DeltaTableOps(
         delta_table_schema, delta_table_name, main_table_config.delta_config, connection
@@ -43,6 +43,7 @@ def scrape_primary_item(
         main_table_config.name,
         upload_time,
         common_columns,
+        dict(upload_items.select("source", "target").iter_rows())
     )
 
     LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu)

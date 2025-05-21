@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import logging
 from pathlib import Path
 from time import sleep
@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _scrape_pipeline_item(
+    pipeline_id: int,
     dataset: DatasetConfig,
     target_table: str,
     tables: TableConfigs,
@@ -26,9 +27,9 @@ def _scrape_pipeline_item(
 ) -> None:
     item_type = dataset.pipeline.item_type(target_table)
     if item_type == "primary":
-        scrape_primary_item(dataset, tables, upload_time, connection)
+        scrape_primary_item(pipeline_id, dataset, tables, upload_time, connection)
     elif item_type == "extract":
-        scrape_extract_item(dataset, target_table, tables, upload_time, connection)
+        scrape_extract_item(pipeline_id, dataset, target_table, tables, upload_time, connection)
     else:
         raise ValueError(f"unknown item type: {item_type}")
 
@@ -44,17 +45,24 @@ def scrape_pipeline_as_transaction(
 ):
     pipeline = dataset.pipeline
     main_table_config: TableConfig = tables[pipeline.get_main_table_name()]
+    tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
+    header_keys = [tbl_to_header_map[k] for k in main_table_config.primary_keys]
+
     table_schema = main_table_config.schema
     aops = AuditOps(table_schema)
     assert main_table_config.delta_config is not None
 
-    df = load_typed_dsv(csv_file, tables.column_definitions.column_definitions)
-    df = DataframeOps.populate_nulls(df, main_table_config)
+    column_definitions = dataset.pipeline.build_input_column_definitions(tables) 
+
+    df = load_typed_dsv(csv_file, column_definitions)
+
+    missing_values_map = {c.source: c.value_if_missing for c in column_definitions if c.value_if_missing and c.source}
+    df = DataframeOps.populate_nulls(df, missing_values_map)
 
     LOGGER.debug("loaded %d rows", len(df))
 
-    if main_table_config.delta_config.time_partition:
-        tp = main_table_config.delta_config.time_partition
+    if dataset.time_partition:
+        tp = dataset.time_partition
         time_col = tp.column
         interval = tp.truncate
         unique_strategy = tp.unique_strategy
@@ -63,7 +71,7 @@ def scrape_pipeline_as_transaction(
             df.with_columns(__interval=pl.col(time_col).dt.truncate(interval))
             .sort(time_col)
             .unique(
-                [*main_table_config.primary_keys, "__interval"],
+                [*header_keys, "__interval"],
                 keep=unique_strategy,
                 maintain_order=True,
             )
@@ -79,7 +87,7 @@ def scrape_pipeline_as_transaction(
             try:
                 with connection.begin():
                     for i, ((ts,), partition_df) in enumerate(partitions.items()):
-                        assert isinstance(ts, datetime)
+                        assert isinstance(ts, datetime) or isinstance(ts, date), "timestamp is not a date/datetime"
                         LOGGER.info(
                             "-- processing time_partition (%d/%d) %s",
                             i + 1,
@@ -91,13 +99,14 @@ def scrape_pipeline_as_transaction(
                             partition_df,
                             dataset.delta_table_schema,
                             dataset.name,
-                            uniqueness_col_set=main_table_config.primary_keys,
+                            uniqueness_col_set=header_keys,
                             prefill_nulls_with_default=True,
                             clear_table_first=True,
                         )
 
-                        for target_table in pipeline.items["table"]:
+                        for pipeline_id, target_table in pipeline.get_pipeline_items().items():
                             _scrape_pipeline_item(
+                                pipeline_id,
                                 dataset,
                                 target_table,
                                 tables,
@@ -121,7 +130,7 @@ def scrape_pipeline_as_transaction(
                 raise
 
             except Exception as e:
-                LOGGER.error("error in scrape_pipeline_as_transaction: %s", e)
+                LOGGER.error("error in scrape_pipeline_as_transaction", exc_info=e)
 
                 connection.rollback()
                 if num_retries == 0:

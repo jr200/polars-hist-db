@@ -2,19 +2,11 @@ table_configs:
   - schema: test
     name: cryptocurrencies
     columns:
-      - id
-      - symbol
-      - name
-      - current_price_usd
-      - market_cap_usd
-      - created_at
+      - { name: id, data_type: INT, autoincrement: true, nullable: false }
+      - { name: symbol, data_type: VARCHAR(10), nullable: false }
+      - { name: name, data_type: VARCHAR(100), nullable: false }
+      - { name: current_price_usd, data_type: "DECIMAL(18,8)", nullable: true }
+      - { name: market_cap_usd, data_type: "DECIMAL(18,2)", nullable: true }
+      - { name: created_at, data_type: TIMESTAMP, nullable: false }
     primary_keys:
       - id
-
-column_definitions:
-  - { name: id, data_type: INT, autoincrement: true, nullable: false }
-  - { name: symbol, data_type: VARCHAR(10), nullable: false }
-  - { name: name, data_type: VARCHAR(100), nullable: false }
-  - { name: current_price_usd, data_type: "DECIMAL(18,8)", nullable: true }
-  - { name: market_cap_usd, data_type: "DECIMAL(18,2)", nullable: true }
-  - { name: created_at, data_type: TIMESTAMP, nullable: false }

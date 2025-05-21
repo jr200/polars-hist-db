@@ -69,7 +69,7 @@ def _prepare_population_set(
     ]
 
     value_col_map = _get_value_columns(col_info)
-    src_value_cols = [src_tbl.c[col] for col in value_col_map["source"]]
+    src_value_cols = [src_tbl.c[col] for col in value_col_map.keys()]
 
     on_clause = [
         parent_tbl.c[t]
@@ -83,7 +83,8 @@ def _prepare_population_set(
         *src_primary_keys, *parent_implied_cols, *src_value_cols
     ).select_from(src_tbl.outerjoin(parent_tbl, and_(*on_clause)))
 
-    return DataframeOps(connection).from_selectable(population_set)
+    result = DataframeOps(connection).from_selectable(population_set)
+    return result
 
 
 def deduce_foreign_keys(
@@ -108,13 +109,22 @@ def deduce_foreign_keys(
         table_schema, src_table_name, parent_table_config, col_info, connection
     )
 
-    new_items_to_insert_in_parent = population_set_df.filter(
-        pl.col([src_parent_col_map[c] for c in src_implied_col_names]).is_null()
-    ).select(_get_value_columns(col_info).values())
+    new_items_columns = list(_get_value_columns(col_info).keys())
+    new_items_to_insert_in_parent = (
+        population_set_df
+        .filter(pl.col([src_parent_col_map[c] for c in src_implied_col_names]).is_null())
+        .select(new_items_columns)
+        .rename({k: v for k, v in src_parent_col_map.items() if k in new_items_columns})
+    )
 
     if not new_items_to_insert_in_parent.is_empty():
+        missing_values_map: Dict[str, str] = {
+            c.name: c.default_value
+            for c in parent_table_config.columns
+            if c.default_value is not None and c.name
+        }
         new_items_to_insert_in_parent = DataframeOps.populate_nulls(
-            new_items_to_insert_in_parent, parent_table_config
+            new_items_to_insert_in_parent, missing_values_map
         )
         LOGGER.debug(
             "Creating %d new entries in %s",
@@ -131,26 +141,28 @@ def deduce_foreign_keys(
             uniqueness_col_set=(),
         )
 
-        implied_df = _prepare_population_set(
-            table_schema, src_table_name, parent_table_config, col_info, connection
+    implied_df = _prepare_population_set(
+        table_schema, src_table_name, parent_table_config, col_info, connection
+    )
+    implied_df = implied_df.rename(
+        {v: k for k, v in src_parent_col_map.items() if v in implied_df.columns}
+    )
+
+    if not implied_df.is_empty():
+        implied_df = implied_df.select(
+            set(src_parent_col_map.keys()) | set(src_implied_col_names)
         )
-        implied_df = implied_df.rename(
-            {v: k for k, v in src_parent_col_map.items() if v in implied_df.columns}
+        num_nulls = implied_df.null_count().select(sum=pl.sum_horizontal(pl.all()))[
+            0, "sum"
+        ]
+
+        if num_nulls > 0:
+            raise ValueError("Attempted to update with NULL keys")
+
+        dfo = DataframeOps(connection)
+        dfo.table_update(
+            implied_df,
+            table_schema,
+            src_table_name,
+            primary_keys_override=new_items_columns,
         )
-
-        if not implied_df.is_empty():
-            implied_df = implied_df.select(
-                src_implied_col_names + list(src_parent_col_map.keys())
-            )
-            num_nulls = implied_df.null_count().select(sum=pl.sum_horizontal(pl.all()))[
-                0, "sum"
-            ]
-
-            if num_nulls > 0:
-                raise ValueError("Attempted to update with NULL keys")
-
-            dfo.table_update(
-                implied_df,
-                table_schema,
-                src_table_name,
-            )

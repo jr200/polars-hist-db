@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from types import MappingProxyType
-from typing import Iterable, List, Literal, Mapping, Optional, Union
+from typing import Dict, Iterable, List, Literal, Mapping, Optional, Union
 from uuid import uuid4
 
 import polars as pl
@@ -96,21 +96,12 @@ class DataframeOps:
         return df
 
     @staticmethod
-    def populate_nulls(df: pl.DataFrame, table_config: TableConfig) -> pl.DataFrame:
-        all_cols_info = table_config.columns_df()
-        default_values = all_cols_info.filter(
-            pl.col("default_value").is_not_null()
-        ).get_column("name")
-
+    def populate_nulls(df: pl.DataFrame, default_values: Dict[str, str]) -> pl.DataFrame:
         for col in df.columns:
-            if col in default_values:
-                col_info = all_cols_info.filter(pl.col("name") == col)
-                col_default = col_info[0, "default_value"]
-                col_sql_type = col_info[0, "data_type"]
-                col_polars_dtype = PolarsType.from_sql(col_sql_type)
-
-                df = PolarsType.apply_dtype_to_column(df, col, col_polars_dtype)
-                df = df.with_columns(pl.col(col).fill_null(col_default))
+            if col in default_values.keys():
+                col_polars_dtype = df[col].dtype
+                default_value = pl.lit(default_values[col]).cast(col_polars_dtype)
+                df = df.with_columns(pl.col(col).fill_null(default_value))
 
         return df
 
@@ -129,7 +120,7 @@ class DataframeOps:
 
         if tbl_for_types is not None:
             sql_types = SQLType.from_table(tbl_for_types)
-            for col_cfg in table_config.column_definitions.column_definitions:
+            for col_cfg in table_config.columns:
                 if col_cfg.name in sql_types:
                     col_cfg.data_type = sql_types[col_cfg.name]
 
@@ -201,7 +192,7 @@ class DataframeOps:
         uniqueness_col_set: Iterable[str],
         prefill_nulls_with_default: bool,
         clear_table_first: bool = False,
-    ):
+    ) -> int:
         tbo = TableOps(table_schema, table_name, self.connection)
         tbl = tbo.get_table_metadata()
         if clear_table_first:
@@ -218,7 +209,7 @@ class DataframeOps:
             )
 
         if df.is_empty():
-            return
+            return 0
 
         if prefill_nulls_with_default:
             for c in tbl.columns:
@@ -246,7 +237,8 @@ class DataframeOps:
             "inserting dataframe %s into %s.%s", df.shape, table_schema, table_name
         )
 
-        result = df.to_pandas().to_sql(
+        cols_to_upload = {c.name for c in tbl.columns}.intersection(df.columns)
+        result = df.select(cols_to_upload).to_pandas().to_sql(
             name=table_name,
             con=self.connection,
             schema=table_schema,
@@ -257,9 +249,15 @@ class DataframeOps:
 
         LOGGER.debug("insert dataframe affected %d/%d rows", result, len(df))
 
-        return df
+        return result
 
-    def table_update(self, df: pl.DataFrame, table_schema: str, table_name: str):
+    def table_update(
+            self,
+            df: pl.DataFrame,
+            table_schema: str,
+            table_name: str,
+            primary_keys_override: Optional[List[str]] = None
+        ):
         if df.is_empty():
             return
 
@@ -270,6 +268,8 @@ class DataframeOps:
         tbo = TableOps(table_schema, table_name, self.connection)
         tbl = tbo.get_table_metadata()
         primary_keys = [c.name for c in tbl.primary_key]
+        if primary_keys_override is not None:
+            primary_keys = primary_keys_override
 
         df = _remove_duplicate_rows(df, primary_keys)
         common_cols = set(df.columns).intersection([c.name for c in tbl.columns])
@@ -292,14 +292,14 @@ class DataframeOps:
             .to_dict(orient="records")
         )
 
-        _result = DbOps(self.connection).execute_sqlalchemy(
+        result = DbOps(self.connection).execute_sqlalchemy(
             f"sql.dataframe.update.{len(update_data)}",
             update_sql,
             update_data,
         )
 
-        LOGGER.debug(
-            "updated from dataframe %d rows in %s.%s", len(df), table_schema, table_name
+        LOGGER.info(
+            "updated from dataframe %d/%d rows in %s.%s", result.rowcount, len(df), table_schema, table_name
         )
 
     def table_upsert_temporal(
@@ -321,30 +321,27 @@ class DataframeOps:
                 f"unable to upsert dataframe, it has no columns in common with target table {table_name}"
             )
 
-        tbl = tbo.get_table_metadata()
-        primary_keys = [c.name for c in tbl.primary_key]
-
-        table_config = TableConfigOps(self.connection).from_table(
+        tmp_table_config = TableConfigOps(self.connection).from_table(
             table_schema, table_name
         )
 
-        table_config.name = delta_config.tmp_table_name(table_name)
+        tmp_table_config.name = delta_config.tmp_table_name(table_name)
 
         TableConfigOps(self.connection).create(
-            table_config, is_delta_table=True, is_temporary_table=True
+            tmp_table_config, is_delta_table=True, is_temporary_table=True
         )
 
         self.table_insert(
             df,
             table_schema,
-            table_config.name,
-            primary_keys,
+            tmp_table_config.name,
+            tmp_table_config.primary_keys,
             clear_table_first=True,
             prefill_nulls_with_default=delta_config.prefill_nulls_with_default,
         )
 
         DeltaTableOps(
-            table_schema, table_config.name, delta_config, self.connection
+            table_schema, tmp_table_config.name, delta_config, self.connection
         ).upsert(
             table_name,
             update_time,

@@ -7,7 +7,6 @@ from sqlalchemy import Engine
 from ..config import (
     Config,
     DatasetConfig,
-    ColumnDefinitions,
     TableConfigs,
 )
 from ..core import AuditOps, DeltaTableOps, TableConfigOps, TableOps
@@ -22,12 +21,11 @@ def run_workflows(config: Config, engine: Engine):
     for dataset in config.datasets.datasets:
         LOGGER.info("scraping dataset %s", dataset.name)
 
-        _run_workflow(dataset, config.tables.column_definitions, config.tables, engine)
+        _run_workflow(dataset, config.tables, engine)
 
 
 def _run_workflow(
     dataset: DatasetConfig,
-    column_definitions: ColumnDefinitions,
     tables: TableConfigs,
     engine: Engine,
 ):
@@ -55,13 +53,14 @@ def _run_workflow(
         TableConfigOps(connection).create_all(tables)
 
     if table_config.delta_config is not None:
+        col_defs = dataset.pipeline.build_delta_table_column_configs(tables, dataset.name)
         with engine.begin() as connection:
             delta_table_config = DeltaTableOps(
                 dataset.delta_table_schema,
                 dataset.name,
                 table_config.delta_config,
                 connection,
-            ).table_config(column_definitions)
+            ).table_config(col_defs)
 
             if not TableOps(
                 delta_table_config.schema, delta_table_config.name, connection
@@ -69,7 +68,7 @@ def _run_workflow(
                 TableConfigOps(connection).create(
                     delta_table_config,
                     is_delta_table=True,
-                    is_temporary_table=True,
+                    is_temporary_table=False,
                 )
 
     timings = Clock()

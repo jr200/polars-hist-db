@@ -3,13 +3,13 @@ table_configs:
     name: trading_pairs
     is_temporal: true
     columns:
-      - id
-      - base_currency_id
-      - quote_currency_id
-      - exchange_id
-      - last_price
-      - volume_24h
-      - updated_at
+      - { name: id, data_type: INT, autoincrement: true, nullable: false }
+      - { name: base_currency_id, data_type: INT, nullable: false }
+      - { name: quote_currency_id, data_type: INT, nullable: false }
+      - { name: exchange_id, data_type: INT, nullable: false }
+      - { name: last_price, data_type: "DECIMAL(18,8)", nullable: true }
+      - { name: volume_24h, data_type: "DECIMAL(18,8)", nullable: true }
+      - { name: updated_at, data_type: TIMESTAMP, nullable: false }
     primary_keys:
       - id
     foreign_keys:
@@ -30,12 +30,3 @@ table_configs:
       on_duplicate_key: take_last
       prefill_nulls_with_default: false
       row_finality: manual
-
-column_definitions:
-  - { name: id, data_type: INT, autoincrement: true, nullable: false }
-  - { name: base_currency_id, data_type: INT, nullable: false }
-  - { name: quote_currency_id, data_type: INT, nullable: false }
-  - { name: exchange_id, data_type: INT, nullable: false }
-  - { name: last_price, data_type: "DECIMAL(18,8)", nullable: true }
-  - { name: volume_24h, data_type: "DECIMAL(18,8)", nullable: true }
-  - { name: updated_at, data_type: TIMESTAMP, nullable: false }

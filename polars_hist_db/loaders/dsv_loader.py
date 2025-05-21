@@ -40,7 +40,9 @@ def _parse_header_row(
     raise ValueError(f"couldn't infer delimiter of dsv {str(input)}")
 
 
-def _apply_header_transforms(df: pl.DataFrame, col_def: ParserColumnConfig) -> pl.DataFrame:
+def _apply_header_transforms(
+    df: pl.DataFrame, col_def: ParserColumnConfig
+) -> pl.DataFrame:
     if not col_def.transforms:
         return df
 
@@ -57,12 +59,9 @@ def _apply_header_transforms(df: pl.DataFrame, col_def: ParserColumnConfig) -> p
             df = fn_reg.call_function(fn_name, df, source_col, col_def.target, fn_args)
 
     result_col_dtype = PolarsType.from_sql(col_def.data_type)
-    df = df.with_columns(
-        pl.col(col_def.target).cast(result_col_dtype)
-    )
+    df = df.with_columns(pl.col(col_def.target).cast(result_col_dtype))
 
     return df
-
 
 
 def _get_column_dtype(
@@ -79,7 +78,7 @@ def load_typed_dsv(
     file_or_bytes: Union[Path, bytes],
     column_configs: Sequence[ParserColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
-    delimiter: Optional[str] = None
+    delimiter: Optional[str] = None,
 ) -> pl.DataFrame:
     LOGGER.info("loading csv %s", str(file_or_bytes))
 
@@ -89,14 +88,17 @@ def load_typed_dsv(
         return (
             dtype.is_temporal() or dtype.is_decimal() or dtype in {pl.String, pl.Utf8}
         )
-    
-    header_configs = [cfg for cfg in column_configs
+
+    header_configs = [
+        cfg
+        for cfg in column_configs
         if cfg.source and cfg.column_type in ["data", "dsv_only"]
     ]
 
     header_schema: Mapping[str, pl.DataType] = {
         cfg.source: PolarsType.from_sql(cfg.data_type)
-        for cfg in header_configs if cfg.source
+        for cfg in header_configs
+        if cfg.source
     }
 
     forced_schema = {
@@ -126,21 +128,28 @@ def load_typed_dsv(
         PolarsType.apply_schema_to_dataframe, **header_schema, **schema_overrides
     )
 
-    agg_headers = {cfg.source for cfg in column_configs if cfg.aggregation is not None and cfg.source}
+    agg_headers = {
+        cfg.source
+        for cfg in column_configs
+        if cfg.aggregation is not None and cfg.source
+    }
     if agg_headers:
         dsv_df = dsv_df.group_by(pl.exclude(agg_headers), maintain_order=True).agg(
             pl.sum(c) for c in agg_headers.intersection(dsv_df.columns)
         )
 
-    expected_headers = [ c.source for c in header_configs if c.source ]
+    expected_headers = [c.source for c in header_configs if c.source]
 
     headers_no_config = (
         set(dsv_df.columns)
         .difference(expected_headers)
-        .difference([
-            c.target for c in column_configs 
-            if c.column_type == "time_partition_only" or c.source is None
-        ])
+        .difference(
+            [
+                c.target
+                for c in column_configs
+                if c.column_type == "time_partition_only" or c.source is None
+            ]
+        )
         .difference(schema_overrides.keys())
     )
 
@@ -149,33 +158,34 @@ def load_typed_dsv(
         LOGGER.warning(f"dsv-headers skipped/unknown [{headers_no_config_str}]")
         dsv_df = dsv_df.drop(headers_no_config)
 
-    defined_but_missing_headers = list(set(expected_headers).difference(
-        dsv_df.columns
-    ))
+    defined_but_missing_headers = list(set(expected_headers).difference(dsv_df.columns))
 
     if len(defined_but_missing_headers) > 0:
         assert isinstance(defined_but_missing_headers, list)
-        LOGGER.warning("added %s defined headers that were not in dsv: %s",
+        LOGGER.warning(
+            "added %s defined headers that were not in dsv: %s",
             len(defined_but_missing_headers),
-            ",".join(defined_but_missing_headers)
+            ",".join(defined_but_missing_headers),
         )
 
         missing_columns_df = pl.DataFrame()
-        missing_columns_df = missing_columns_df.with_columns([
-            pl.lit(None)
-            .cast(_get_column_dtype(h, header_configs))
-            .alias(h)
-            for h in defined_but_missing_headers
-        ]).clear()
+        missing_columns_df = missing_columns_df.with_columns(
+            [
+                pl.lit(None).cast(_get_column_dtype(h, header_configs)).alias(h)
+                for h in defined_but_missing_headers
+            ]
+        ).clear()
 
         LOGGER.debug(missing_columns_df)
 
     # # drop headers only used in temporary calc
-    df = dsv_df.drop([
-        col_cfg.source 
-        for col_cfg in column_configs 
-        if col_cfg.column_type == "dsv_only" and col_cfg.source in dsv_df.columns
-    ])
+    df = dsv_df.drop(
+        [
+            col_cfg.source
+            for col_cfg in column_configs
+            if col_cfg.column_type == "dsv_only" and col_cfg.source in dsv_df.columns
+        ]
+    )
 
     # df = df.with_columns(
     #     pl.col(col_cfg.source).cast(PolarsType.from_sql(col_cfg.data_type))

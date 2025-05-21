@@ -31,7 +31,12 @@ class AuditOps:
 
     def _table_config(self) -> TableConfig:
         columns = [
-            TableColumnConfig(name="audit_id", data_type="INT", autoincrement=True, table=self._table_name),
+            TableColumnConfig(
+                name="audit_id",
+                data_type="INT",
+                autoincrement=True,
+                table=self._table_name,
+            ),
             TableColumnConfig(
                 name="table_name",
                 data_type="VARCHAR(LENGTH=64)",
@@ -60,15 +65,19 @@ class AuditOps:
                 unique_constraint=["unique_audit_item"],
                 table=self._table_name,
             ),
-            TableColumnConfig(name="upload_ts", data_type="DATETIME", nullable=False, table=self._table_name),
+            TableColumnConfig(
+                name="upload_ts",
+                data_type="DATETIME",
+                nullable=False,
+                table=self._table_name,
+            ),
         ]
-    
 
         table_config = TableConfig(
             name=str(self._table_name),
             schema=self.schema,
             primary_keys=["audit_id"],
-            columns=columns
+            columns=columns,
         )
         return table_config
 

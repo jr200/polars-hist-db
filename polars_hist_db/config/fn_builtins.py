@@ -4,7 +4,9 @@ from typing import Any, List
 import polars as pl
 
 
-def null_if_gte(df: pl.DataFrame, input_col: str, result_col: str, args: List[Any]) -> pl.DataFrame:
+def null_if_gte(
+    df: pl.DataFrame, input_col: str, result_col: str, args: List[Any]
+) -> pl.DataFrame:
     threshold_value = args[0]
     df = df.with_columns(
         pl.when(input_col >= pl.lit(threshold_value))
@@ -16,7 +18,9 @@ def null_if_gte(df: pl.DataFrame, input_col: str, result_col: str, args: List[An
     return df
 
 
-def apply_type_casts(df: pl.DataFrame, input_col: str, result_col: str, args: List[Any]) -> pl.DataFrame:
+def apply_type_casts(
+    df: pl.DataFrame, input_col: str, result_col: str, args: List[Any]
+) -> pl.DataFrame:
     dtypes = args[0:]
 
     for polars_dtype_str in dtypes:
@@ -27,7 +31,9 @@ def apply_type_casts(df: pl.DataFrame, input_col: str, result_col: str, args: Li
     return df
 
 
-def combine_columns(df: pl.DataFrame, _input_col: str, result_col: str, args: List[Any]) -> pl.DataFrame:
+def combine_columns(
+    df: pl.DataFrame, _input_col: str, result_col: str, args: List[Any]
+) -> pl.DataFrame:
     values = args[0:]
 
     def _make_combine_expr(components: List[str]) -> pl.Expr:

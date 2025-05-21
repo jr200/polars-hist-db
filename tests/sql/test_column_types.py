@@ -34,7 +34,7 @@ def test_types_nullable(fixture_with_nullable):
         3,3000000000,1,true,false,C,1985-01-03,1985-01-03T14:00:00,345.67,345.678901,34.56,300,301,3000,765.43,67.89,30,Sample text 3,14:56:58,1985-01-03T14:56:58,3,Short text 3
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_read, df_read_history = modify_and_read(
@@ -49,7 +49,7 @@ def test_types_nullable(fixture_with_nullable):
         3,3000000000,1,true,false,C,1985-01-03,1985-01-03T14:00:00,345.67,345.678901,34.56,300,301,3000,765.43,67.89,30,Sample text 3,14:56:58,1985-01-03T14:56:58,3,Short text 3,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -75,7 +75,7 @@ def test_types_nullable(fixture_with_nullable):
         4,4000000000,0,true,true,D,1987-01-04,1987-01-04T15:00:00,456.78,456.789012,45.67,400,401,4000,654.32,78.90,40,Sample text 4,15:57:59,1987-01-04T15:57:59,4,Short text 4
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_read, df_read_history = modify_and_read(
@@ -91,7 +91,7 @@ def test_types_nullable(fixture_with_nullable):
         4,4000000000,0,true,true,D,1987-01-04,1987-01-04T15:00:00,456.78,456.789012,45.67,400,401,4000,654.32,78.90,40,Sample text 4,15:57:59,1987-01-04T15:57:59,4,Short text 4,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -108,7 +108,7 @@ def test_types_nullable(fixture_with_nullable):
         4,4000000000,0,true,true,D,1987-01-04,1987-01-04T15:00:00,456.78,456.789012,45.67,400,401,4000,654.32,78.90,40,Sample text 4,15:57:59,1987-01-04T15:57:59,4,Short text 4
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_read, df_read_history = modify_and_read(
@@ -124,7 +124,7 @@ def test_types_nullable(fixture_with_nullable):
         4,4000000000,0,true,true,D,1987-01-04,1987-01-04T15:00:00,456.78,456.789012,45.67,400,401,4000,654.32,78.90,40,Sample text 4,15:57:59,1987-01-04T15:57:59,4,Short text 4,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_expected_history = from_test_result(
@@ -133,7 +133,7 @@ def test_types_nullable(fixture_with_nullable):
         1,1000000000,1,true,false,A,1985-01-01,1985-01-01T12:00:00,123.45,123.456789,12.34,100,101,1000,987.65,45.67,10,Sample text 1,12:34:56,1985-01-01T12:34:56,1,Short text 1,1985-01-01T00:00:01,1988-01-01T00:00:01
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -151,7 +151,7 @@ def test_types_nullable(fixture_with_nullable):
         5,,,,,,,,,,,,,,,,,,,,,
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_read, df_read_history = modify_and_read(
@@ -168,7 +168,7 @@ def test_types_nullable(fixture_with_nullable):
         5,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,1989-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -186,7 +186,7 @@ def test_types_defaults(fixture_with_defaults):
         1,1000000000,1,true,false,A,1985-01-01,1985-01-01T12:00:00,123.45,123.456789,12.34,100,101,1000,987.65,45.67,10,Sample text 1,12:34:56,1985-01-01T12:34:56,1,Short text 1
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_read, df_read_history = modify_and_read(
@@ -199,7 +199,7 @@ def test_types_defaults(fixture_with_defaults):
         1,1000000000,1,true,false,A,1985-01-01,1985-01-01T12:00:00,123.45,123.456789,12.34,100,101,1000,987.65,45.67,10,Sample text 1,12:34:56,1985-01-01T12:34:56,1,Short text 1,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -214,7 +214,7 @@ def test_types_defaults(fixture_with_defaults):
         2,,,,,,,,,,,,,,,,,,,,,
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_read, df_read_history = modify_and_read(
@@ -228,7 +228,7 @@ def test_types_defaults(fixture_with_defaults):
         2,9223372036854775807,0,false,false,?,1985-10-26,1985-10-26T01:21:00.000000,2.71,1.6180339887,1.1,1,1,1,3.14159,0.0,1,?abcdef?,01:20:00.000000000,1985-10-26T01:20:00.000000,1,?abcdefghijklmn?,1986-01-01T00:00:01.000000,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)

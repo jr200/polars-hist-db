@@ -96,7 +96,9 @@ class DataframeOps:
         return df
 
     @staticmethod
-    def populate_nulls(df: pl.DataFrame, default_values: Dict[str, str]) -> pl.DataFrame:
+    def populate_nulls(
+        df: pl.DataFrame, default_values: Dict[str, str]
+    ) -> pl.DataFrame:
         for col in df.columns:
             if col in default_values.keys():
                 col_polars_dtype = df[col].dtype
@@ -238,26 +240,33 @@ class DataframeOps:
         )
 
         cols_to_upload = {c.name for c in tbl.columns}.intersection(df.columns)
-        result = df.select(cols_to_upload).to_pandas().to_sql(
-            name=table_name,
-            con=self.connection,
-            schema=table_schema,
-            if_exists="append",
-            index=False,
-            chunksize=1000,
+        num_rows_changed: int = (
+            df.select(cols_to_upload)
+            .to_pandas()
+            .to_sql(
+                name=table_name,
+                con=self.connection,
+                schema=table_schema,
+                if_exists="append",
+                index=False,
+                chunksize=1000,
+            )
         )
 
-        LOGGER.debug("insert dataframe affected %d/%d rows", result, len(df))
+        if num_rows_changed is None:
+            num_rows_changed = 0
 
-        return result
+        LOGGER.debug("insert dataframe affected %d/%d rows", num_rows_changed, len(df))
+
+        return num_rows_changed
 
     def table_update(
-            self,
-            df: pl.DataFrame,
-            table_schema: str,
-            table_name: str,
-            primary_keys_override: Optional[List[str]] = None
-        ):
+        self,
+        df: pl.DataFrame,
+        table_schema: str,
+        table_name: str,
+        primary_keys_override: Optional[List[str]] = None,
+    ):
         if df.is_empty():
             return
 
@@ -299,7 +308,11 @@ class DataframeOps:
         )
 
         LOGGER.info(
-            "updated from dataframe %d/%d rows in %s.%s", result.rowcount, len(df), table_schema, table_name
+            "updated from dataframe %d/%d rows in %s.%s",
+            result.rowcount,
+            len(df),
+            table_schema,
+            table_name,
         )
 
     def table_upsert_temporal(

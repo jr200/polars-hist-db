@@ -43,7 +43,7 @@ class FunctionRegistry:
         df: pl.DataFrame,
         input_col: str,
         result_col: str,
-        args: List[Any]
+        args: List[Any],
     ) -> pl.DataFrame:
         if name not in self._registry:
             raise ValueError(f"No function registered with the name '{name}'.")

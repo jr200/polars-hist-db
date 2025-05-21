@@ -35,7 +35,9 @@ def scrape_primary_item(
             cols_not_configured = set(common_columns).symmetric_difference(
                 selected_columns
             )
-            raise ValueError(f"column mismatch on {cols_not_configured} in {selected_columns}")
+            raise ValueError(
+                f"column mismatch on {cols_not_configured} in {selected_columns}"
+            )
 
     ni, nu, nd = DeltaTableOps(
         delta_table_schema, delta_table_name, main_table_config.delta_config, connection
@@ -43,7 +45,7 @@ def scrape_primary_item(
         main_table_config.name,
         upload_time,
         common_columns,
-        dict(upload_items.select("source", "target").iter_rows())
+        dict(upload_items.select("source", "target").iter_rows()),
     )
 
     LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu)

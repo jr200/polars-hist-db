@@ -9,6 +9,7 @@ from .fn_registry import FunctionRegistry
 
 LOGGER = logging.getLogger(__name__)
 
+
 @dataclass
 class ParserColumnConfig:
     column_type: Literal["data", "computed", "dsv_only", "time_partition_only"]
@@ -23,10 +24,7 @@ class ParserColumnConfig:
     nullable: bool = True
     required: bool = False
 
-    def __post_init__(self):
-        ...
-
-
+    def __post_init__(self): ...
 
     @classmethod
     def df_schema(cls) -> pl.Schema:
@@ -37,10 +35,9 @@ class ParserColumnConfig:
             "data_type": pl.Utf8,
             "column_type": pl.Utf8,
             "required": pl.Boolean,
-            "transforms": pl.Struct({
-                k: pl.List(pl.Utf8)
-                for k in FunctionRegistry().list_functions()
-            }),
+            "transforms": pl.Struct(
+                {k: pl.List(pl.Utf8) for k in FunctionRegistry().list_functions()}
+            ),
             "aggregation": pl.Utf8,
             "deduce_foreign_key": pl.Boolean,
             "value_if_missing": pl.Utf8,
@@ -48,7 +45,6 @@ class ParserColumnConfig:
         }
 
         return pl.Schema(schema)
-
 
     def df(self) -> pl.DataFrame:
         result = pl.DataFrame(
@@ -62,4 +58,3 @@ class ParserColumnConfig:
 
     def __repr__(self) -> str:
         return f"ParserColumnConfig({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
-

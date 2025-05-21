@@ -111,8 +111,9 @@ def deduce_foreign_keys(
 
     new_items_columns = list(_get_value_columns(col_info).keys())
     new_items_to_insert_in_parent = (
-        population_set_df
-        .filter(pl.col([src_parent_col_map[c] for c in src_implied_col_names]).is_null())
+        population_set_df.filter(
+            pl.col([src_parent_col_map[c] for c in src_implied_col_names]).is_null()
+        )
         .select(new_items_columns)
         .rename({k: v for k, v in src_parent_col_map.items() if k in new_items_columns})
     )

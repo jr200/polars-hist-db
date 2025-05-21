@@ -1,5 +1,6 @@
 from typing import List
 
+
 def flatten_list(lst) -> List[str]:
     if not isinstance(lst, list):
         return [lst]

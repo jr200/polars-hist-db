@@ -24,7 +24,6 @@ class DeltaConfig:
         return f"__{table_name}_tmp"
 
 
-
 @dataclass
 class TableColumnConfig:
     table: str
@@ -40,11 +39,11 @@ class TableColumnConfig:
             self.unique_constraint = []
 
     @classmethod
-    def from_dataframe(cls, df: pl.DataFrame, table_name_override: Optional[str] = None) -> List["TableColumnConfig"]:
+    def from_dataframe(
+        cls, df: pl.DataFrame, table_name_override: Optional[str] = None
+    ) -> List["TableColumnConfig"]:
         schema = TableColumnConfig.df_schema()
-        df = df.select([
-            c for c in schema.keys() if c in df.columns
-        ])
+        df = df.select([c for c in schema.keys() if c in df.columns])
 
         result = []
         for row in df.iter_rows(named=True):
@@ -65,11 +64,10 @@ class TableColumnConfig:
             "default_value": pl.Utf8,
             "autoincrement": pl.Boolean,
             "nullable": pl.Boolean,
-            "unique_constraint": pl.List(pl.Utf8)
+            "unique_constraint": pl.List(pl.Utf8),
         }
 
         return pl.Schema(schema)
-
 
     def df(self) -> pl.DataFrame:
         result = pl.DataFrame(
@@ -83,7 +81,6 @@ class TableColumnConfig:
 
     def __repr__(self) -> str:
         return f"TableColumnConfig({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
-
 
 
 @dataclass
@@ -156,9 +153,7 @@ class TableConfig:
         return self
 
     def columns_df(self) -> pl.DataFrame:
-        result = pl.concat(
-            [col.df() for col in self.columns]
-        ).with_columns(
+        result = pl.concat([col.df() for col in self.columns]).with_columns(
             table=pl.lit(self.name)
         )
 
@@ -179,7 +174,9 @@ class TableConfig:
         default_categorical_length: int,
     ) -> "TableConfig":
         columns = [
-            TableColumnConfig(name=col_name, data_type=SQLType.from_polars(col_type), table=table_name)
+            TableColumnConfig(
+                name=col_name, data_type=SQLType.from_polars(col_type), table=table_name
+            )
             for col_name, col_type in zip(df.columns, df.dtypes)
         ]
 
@@ -187,7 +184,7 @@ class TableConfig:
             name=table_name,
             schema=table_schema,
             primary_keys=primary_keys,
-            columns=columns
+            columns=columns,
         )
 
         return result
@@ -195,9 +192,7 @@ class TableConfig:
     def to_df(self) -> pl.DataFrame:
         schema = {
             col.name: PolarsType.from_sql(col.data_type)
-            for col in sorted(
-                self.columns, key=lambda k: k.name
-            )
+            for col in sorted(self.columns, key=lambda k: k.name)
         }
 
         return pl.DataFrame(schema=schema)
@@ -228,7 +223,10 @@ class TableConfig:
 
                 columns.append(col)
             except Exception as e:
-                raise ValueError(f"Error building column {col_cfg.table}.{col_cfg.name} : {col_cfg.data_type}", e)
+                raise ValueError(
+                    f"Error building column {col_cfg.table}.{col_cfg.name} : {col_cfg.data_type}",
+                    e,
+                )
 
         return columns
 

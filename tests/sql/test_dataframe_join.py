@@ -33,7 +33,7 @@ def test_time_hints(temp_table):
         1,1000000001,0,false,true,Z,1988-01-01,1988-01-01T12:00:00,123.46,123.456790,12.35,101,102,1001,987.66,45.68,11,Updated text 1,12:34:57,1988-01-01T12:34:57,2,Updated short 1
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     set_random_seed(1)

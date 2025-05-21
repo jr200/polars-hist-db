@@ -190,6 +190,7 @@ class DatasetConfig:
     scrape_limit: Optional[int] = None
     base_dir: Optional[str] = None
     time_partition: Optional[TimePartition] = None
+    null_values: Optional[Sequence[str]] = None
 
     def __post_init__(self):
         if not isinstance(self.pipeline, Pipeline):

@@ -46,20 +46,20 @@ def _apply_header_transforms(
     if not col_def.transforms:
         return df
 
-    if col_def.target is None:
-        raise ValueError(f"missing target column for {col_def}")
+    input_col = col_def.target if col_def.source is None else col_def.source
+    if input_col is None:
+        raise ValueError(f"missing source-output column for {col_def}")
 
-    if col_def.target not in df.columns:
-        fn_reg = FunctionRegistry()
-        for fn_name, fn_args in col_def.transforms.items():
-            if fn_args is None:
-                continue
+    fn_reg = FunctionRegistry()
+    for fn_name, fn_args in col_def.transforms.items():
+        if fn_args is None:
+            continue
 
-            source_col = col_def.target if col_def.source is None else col_def.source
-            df = fn_reg.call_function(fn_name, df, source_col, col_def.target, fn_args)
+        # source_col = col_def.target if col_def.source is None else col_def.source
+        df = fn_reg.call_function(fn_name, df, input_col, fn_args)
 
     result_col_dtype = PolarsType.from_sql(col_def.data_type)
-    df = df.with_columns(pl.col(col_def.target).cast(result_col_dtype))
+    df = df.with_columns(pl.col(input_col).cast(result_col_dtype))
 
     return df
 
@@ -79,6 +79,7 @@ def load_typed_dsv(
     column_configs: Sequence[ParserColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
     delimiter: Optional[str] = None,
+    null_values: Optional[Sequence[str]] = None
 ) -> pl.DataFrame:
     LOGGER.info("loading csv %s", str(file_or_bytes))
 
@@ -107,13 +108,25 @@ def load_typed_dsv(
         if _is_forced_dtype(dtype) and header in headers
     }
 
+    if null_values is None:
+        null_values = ["", "None"]
+
+    valid_col_configs = set()
+    valid_col_configs |= {c.source for c in column_configs if c.source} 
+    valid_col_configs |= {c.target for c in column_configs if c.target}
+    source_cols: Sequence[str] = list({
+        h for h in headers 
+        if h in valid_col_configs or h.startswith("__")
+    })
+
     dsv_df = (
         pl.read_csv(
             file_or_bytes,
+            columns=source_cols,
             separator=sep,
             has_header=True,
             schema_overrides=forced_schema,
-            null_values=["", "None"],
+            null_values=null_values,
         )
         .drop("", strict=False)
         .unique(maintain_order=True)
@@ -122,6 +135,11 @@ def load_typed_dsv(
     dsv_df.columns = [c.strip() for c in dsv_df.columns]
 
     for col_cfg in column_configs:
+        # skip columns already computed
+        if col_cfg.source is None and col_cfg.target in dsv_df.columns and col_cfg.column_type == "computed":
+            LOGGER.debug("Skipping already-transformed column %s", col_cfg.target)
+            continue
+
         dsv_df = dsv_df.pipe(_apply_header_transforms, col_cfg)
 
     dsv_df = dsv_df.pipe(

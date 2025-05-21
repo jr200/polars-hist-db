@@ -56,7 +56,7 @@ def scrape_pipeline_as_transaction(
 
     column_definitions = dataset.pipeline.build_input_column_definitions(tables)
 
-    df = load_typed_dsv(csv_file, column_definitions)
+    df = load_typed_dsv(csv_file, column_definitions, null_values=dataset.null_values)
 
     missing_values_map = {
         c.source: c.value_if_missing

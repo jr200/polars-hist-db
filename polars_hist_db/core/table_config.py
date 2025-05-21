@@ -175,10 +175,11 @@ class TableConfigOps:
             columns.extend(additional_columns)
 
         unique_constraint_items: Mapping[str, List[str]] = defaultdict(list)
-        for col_def in table_config.columns:
-            for uc_name in col_def.unique_constraint:
-                uc_guid = f"{uc_name}_{table_name}"
-                unique_constraint_items[uc_guid].append(col_def.name)
+        if not is_delta_table:
+            for col_def in table_config.columns:
+                for uc_name in col_def.unique_constraint:
+                    uc_guid = f"{uc_name}_{table_name}"
+                    unique_constraint_items[uc_guid].append(col_def.name)
 
         unique_constraints = [
             UniqueConstraint(*uc_cols, name=uc_guid)

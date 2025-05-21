@@ -21,7 +21,7 @@ def scrape_primary_item(
     delta_table_name = dataset.name
     main_table_config = tables[pipeline.get_main_table_name()]
     assert main_table_config.delta_config is not None
-    LOGGER.debug("(item %d) scraping item %s", -1, main_table_config.name)
+    LOGGER.debug("(item %d) scraping item %s", pipeline_id, main_table_config.name)
 
     upload_items = pipeline.extract_items(pipeline_id)
     selected_columns = upload_items["source"].to_list()

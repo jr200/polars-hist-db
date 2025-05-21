@@ -70,7 +70,7 @@ class Pipeline:
 
         tmp_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]))
         pipeline_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]).not_())
-        all_dfs = self._merge_with_table_config(pipeline_cols, all_tables)
+        all_dfs = self._merge_with_table_config(pipeline_cols, ["table", "source", "target"], all_tables)
         all_dfs.append(tmp_cols)
 
         
@@ -86,7 +86,12 @@ class Pipeline:
         return result
 
 
-    def _merge_with_table_config(self, pipeline_cols: pl.DataFrame, all_tables: TableConfigs) -> List[pl.DataFrame]:
+    def _merge_with_table_config(
+            self,
+            pipeline_cols: pl.DataFrame,
+            unique_key: List[str],
+            all_tables: TableConfigs
+        ) -> List[pl.DataFrame]:
 
         all_dfs = []
         for tbl_cfg in all_tables.items:
@@ -94,7 +99,7 @@ class Pipeline:
             pipeline_tbl = pipeline_cols.filter(table=tbl_cfg.name)
             merged_tbl = (
                 pipeline_tbl
-                .unique(subset=["table", "target"], maintain_order=True)
+                .unique(subset=unique_key, maintain_order=True)
                 .drop([c for c in pipeline_tbl.columns if c in tbl_cols.columns])
                 .join(tbl_cols, left_on=["target"], right_on=["name"], how="left")
             )
@@ -109,7 +114,7 @@ class Pipeline:
     def build_delta_table_column_configs(self, all_tables: TableConfigs, table_name: str) -> List[TableColumnConfig]:
 
         pipeline_cols = self.items.filter(pl.col("column_type").is_in(["data", "computed"]))
-        all_dfs = self._merge_with_table_config(pipeline_cols, all_tables)
+        all_dfs = self._merge_with_table_config(pipeline_cols, ["table", "source", "target"], all_tables)
 
         candidate_cols = (
             pl.concat(all_dfs)

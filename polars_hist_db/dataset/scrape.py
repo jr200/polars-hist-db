@@ -55,7 +55,9 @@ def scrape_pipeline_as_transaction(
     column_definitions = dataset.pipeline.build_input_column_definitions(tables) 
 
     df = load_typed_dsv(csv_file, column_definitions)
-    df = DataframeOps.populate_nulls(df, main_table_config)
+
+    missing_values_map = {c.source: c.value_if_missing for c in column_definitions if c.value_if_missing and c.source}
+    df = DataframeOps.populate_nulls(df, missing_values_map)
 
     LOGGER.debug("loaded %d rows", len(df))
 

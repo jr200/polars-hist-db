@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from types import MappingProxyType
-from typing import Iterable, List, Literal, Mapping, Optional, Union
+from typing import Dict, Iterable, List, Literal, Mapping, Optional, Union
 from uuid import uuid4
 
 import polars as pl
@@ -96,21 +96,12 @@ class DataframeOps:
         return df
 
     @staticmethod
-    def populate_nulls(df: pl.DataFrame, table_config: TableConfig) -> pl.DataFrame:
-        all_cols_info = table_config.columns_df()
-        default_values = all_cols_info.filter(
-            pl.col("default_value").is_not_null()
-        ).get_column("name")
-
+    def populate_nulls(df: pl.DataFrame, default_values: Dict[str, str]) -> pl.DataFrame:
         for col in df.columns:
-            if col in default_values:
-                col_info = all_cols_info.filter(pl.col("name") == col)
-                col_default = col_info[0, "default_value"]
-                col_sql_type = col_info[0, "data_type"]
-                col_polars_dtype = PolarsType.from_sql(col_sql_type)
-
-                df = PolarsType.apply_dtype_to_column(df, col, col_polars_dtype)
-                df = df.with_columns(pl.col(col).fill_null(col_default))
+            if col in default_values.keys():
+                col_polars_dtype = df[col].dtype
+                default_value = pl.lit(default_values[col]).cast(col_polars_dtype)
+                df = df.with_columns(pl.col(col).fill_null(default_value))
 
         return df
 
@@ -307,7 +298,7 @@ class DataframeOps:
             update_data,
         )
 
-        LOGGER.debug(
+        LOGGER.info(
             "updated from dataframe %d/%d rows in %s.%s", result.rowcount, len(df), table_schema, table_name
         )
 

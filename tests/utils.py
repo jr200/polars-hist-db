@@ -97,7 +97,7 @@ def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[DeltaC
                 source=column.name,
                 target=column.name,
                 nullable=column.nullable,
-                default_value=column.default_value,
+                value_if_missing=column.default_value,
             )
             items.append(dc)
 

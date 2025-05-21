@@ -32,7 +32,7 @@ def scrape_extract_item(
     if target_table_config.is_temporal:
         raise NotImplementedError("temporal tables are not supported yet")
 
-    LOGGER.debug("(item %d) extracting item %s", -1, target_table_config.name)
+    LOGGER.debug("(item %d) extracting item %s", pipeline_id, target_table_config.name)
 
     TableConfigOps(connection).create(target_table_config)
 
@@ -88,6 +88,6 @@ def scrape_extract_item(
         src_tgt_colname_map=col_map_dict,
     )
 
-    LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu + nd)
+    LOGGER.debug("(item %d) upserted %d rows", pipeline_id, ni + nu + nd)
 
     # TODO: trigger table mod notification

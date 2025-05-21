@@ -15,6 +15,7 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
+from polars_hist_db.config.delta_config import DeltaColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.config import Config, TableConfig, TableConfigs, DatasetConfig
 from polars_hist_db.core import (
@@ -85,6 +86,22 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
             dirName = f"{dirName}/dir{depth}"
     return tempDir
 
+def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[DeltaColumnConfig]:
+    items: List[DeltaColumnConfig] = []
+    for table_config in table_configs.items:
+        for column in table_config.columns:
+            dc = DeltaColumnConfig(
+                column_type="data",
+                table=table_config.name,
+                data_type=column.data_type,
+                source=column.name,
+                target=column.name,
+                nullable=column.nullable,
+                default_value=column.default_value,
+            )
+            items.append(dc)
+
+    return items
 
 def from_test_result(
         x: str,
@@ -116,7 +133,7 @@ def from_test_result(
             if c.table == table_name
         ]
     else:
-        column_definitions = DatasetConfig.infer_input_columns_from_tables(tables)
+        column_definitions = _infer_input_columns_from_tables(tables)
 
     if skip_time_partition:
         column_definitions = [

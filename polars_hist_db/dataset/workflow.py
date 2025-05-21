@@ -68,7 +68,7 @@ def _run_workflow(
                 TableConfigOps(connection).create(
                     delta_table_config,
                     is_delta_table=True,
-                    is_temporary_table=True,
+                    is_temporary_table=False,
                 )
 
     timings = Clock()

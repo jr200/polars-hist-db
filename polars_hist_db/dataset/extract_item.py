@@ -57,10 +57,6 @@ def scrape_extract_item(
         err = f"skipping extract. required columns {required_cols} not found in table {delta_table_name}."
         raise NonRetryableException(err)
 
-    found_source_cols = [
-        str(c.name) for c in tbo.get_column_intersection(col_info["source"].to_list())
-    ]
-
     deduce_foreign_keys(
         main_table_config.schema,
         delta_table_name,
@@ -68,6 +64,10 @@ def scrape_extract_item(
         col_info,
         connection,
     )
+
+    found_source_cols = [
+        str(c.name) for c in tbo.get_column_intersection(col_info["source"].to_list())
+    ]
 
     col_map_dict: Mapping[str, str] = {
         src: tgt

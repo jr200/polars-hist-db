@@ -94,6 +94,7 @@ class Pipeline:
             pipeline_tbl = pipeline_cols.filter(table=tbl_cfg.name)
             merged_tbl = (
                 pipeline_tbl
+                .unique(subset=["table", "target"], maintain_order=True)
                 .drop([c for c in pipeline_tbl.columns if c in tbl_cols.columns])
                 .join(tbl_cols, left_on=["target"], right_on=["name"], how="left")
             )
@@ -200,23 +201,6 @@ class DatasetConfig:
         ):
             self.time_partition = TimePartition(**self.time_partition)
 
-    @classmethod
-    def infer_input_columns_from_tables(cls, table_configs: TableConfigs) -> List[DeltaColumnConfig]:
-        items: List[DeltaColumnConfig] = []
-        for table_config in table_configs.items:
-            for column in table_config.columns:
-                dc = DeltaColumnConfig(
-                    column_type="data",
-                    table=table_config.name,
-                    data_type=column.data_type,
-                    source=column.name,
-                    target=column.name,
-                    nullable=column.nullable,
-                    default_value=column.default_value,
-                )
-                items.append(dc)
-
-        return items
 
 @dataclass
 class DatasetsConfig:

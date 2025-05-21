@@ -41,7 +41,7 @@ class TableColumnConfig:
             self.unique_constraint = []
 
     @classmethod
-    def from_dataframe(cls, df: pl.DataFrame) -> List["TableColumnConfig"]:
+    def from_dataframe(cls, df: pl.DataFrame, table_name_override: Optional[str] = None) -> List["TableColumnConfig"]:
         schema = TableColumnConfig.df_schema()
         df = df.select([
             c for c in schema.keys() if c in df.columns
@@ -50,6 +50,8 @@ class TableColumnConfig:
         result = []
         for row in df.iter_rows(named=True):
             row_dict = {c: row[c] for c in schema.keys() if c in row}
+            if table_name_override is not None:
+                row_dict["table"] = table_name_override
             cc = TableColumnConfig(**row_dict)
             result.append(cc)
 
@@ -206,27 +208,30 @@ class TableConfig:
         columns: List[Column] = []
 
         for col_cfg in self.columns:
-            default_value = (
-                str(col_cfg.default_value)
-                if col_cfg.default_value is not None
-                else None
-            )
-            autoincrement_spec = (
-                [Identity(start=1, increment=1)] if col_cfg.autoincrement else []
-            )
+            try:
+                default_value = (
+                    str(col_cfg.default_value)
+                    if col_cfg.default_value is not None
+                    else None
+                )
+                autoincrement_spec = (
+                    [Identity(start=1, increment=1)] if col_cfg.autoincrement else []
+                )
 
-            col: Column = Column(
-                col_cfg.name,
-                SQLAlchemyType.from_sql(col_cfg.data_type),
-                *autoincrement_spec,
-                autoincrement=col_cfg.autoincrement,
-                primary_key=col_cfg.name in self.primary_keys,
-                nullable=col_cfg.nullable
-                or (is_delta_table and col_cfg.deduce_foreign_key),
-                server_default=default_value,
-            )
+                col: Column = Column(
+                    col_cfg.name,
+                    SQLAlchemyType.from_sql(col_cfg.data_type),
+                    *autoincrement_spec,
+                    autoincrement=col_cfg.autoincrement,
+                    primary_key=col_cfg.name in self.primary_keys,
+                    nullable=col_cfg.nullable
+                    or (is_delta_table and col_cfg.deduce_foreign_key),
+                    server_default=default_value,
+                )
 
-            columns.append(col)
+                columns.append(col)
+            except Exception as e:
+                raise ValueError(f"Error building column {col_cfg.table}.{col_cfg.name} : {col_cfg.data_type}", e)
 
         return columns
 

@@ -260,7 +260,13 @@ class DataframeOps:
 
         return result
 
-    def table_update(self, df: pl.DataFrame, table_schema: str, table_name: str):
+    def table_update(
+            self,
+            df: pl.DataFrame,
+            table_schema: str,
+            table_name: str,
+            primary_keys_override: Optional[List[str]] = None
+        ):
         if df.is_empty():
             return
 
@@ -271,6 +277,8 @@ class DataframeOps:
         tbo = TableOps(table_schema, table_name, self.connection)
         tbl = tbo.get_table_metadata()
         primary_keys = [c.name for c in tbl.primary_key]
+        if primary_keys_override is not None:
+            primary_keys = primary_keys_override
 
         df = _remove_duplicate_rows(df, primary_keys)
         common_cols = set(df.columns).intersection([c.name for c in tbl.columns])
@@ -293,14 +301,14 @@ class DataframeOps:
             .to_dict(orient="records")
         )
 
-        _result = DbOps(self.connection).execute_sqlalchemy(
+        result = DbOps(self.connection).execute_sqlalchemy(
             f"sql.dataframe.update.{len(update_data)}",
             update_sql,
             update_data,
         )
 
         LOGGER.debug(
-            "updated from dataframe %d rows in %s.%s", len(df), table_schema, table_name
+            "updated from dataframe %d/%d rows in %s.%s", result.rowcount, len(df), table_schema, table_name
         )
 
     def table_upsert_temporal(

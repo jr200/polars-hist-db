@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _scrape_pipeline_item(
+    pipeline_id: int,
     dataset: DatasetConfig,
     target_table: str,
     tables: TableConfigs,
@@ -26,9 +27,9 @@ def _scrape_pipeline_item(
 ) -> None:
     item_type = dataset.pipeline.item_type(target_table)
     if item_type == "primary":
-        scrape_primary_item(dataset, tables, upload_time, connection)
+        scrape_primary_item(pipeline_id, dataset, tables, upload_time, connection)
     elif item_type == "extract":
-        scrape_extract_item(dataset, target_table, tables, upload_time, connection)
+        scrape_extract_item(pipeline_id, dataset, target_table, tables, upload_time, connection)
     else:
         raise ValueError(f"unknown item type: {item_type}")
 
@@ -101,8 +102,9 @@ def scrape_pipeline_as_transaction(
                             clear_table_first=True,
                         )
 
-                        for target_table in pipeline.get_table_names():
+                        for pipeline_id, target_table in pipeline.get_pipeline_items().items():
                             _scrape_pipeline_item(
+                                pipeline_id,
                                 dataset,
                                 target_table,
                                 tables,

@@ -10,6 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def scrape_primary_item(
+    pipeline_id: int,
     dataset: DatasetConfig,
     tables: TableConfigs,
     upload_time: datetime,
@@ -22,7 +23,7 @@ def scrape_primary_item(
     assert main_table_config.delta_config is not None
     LOGGER.debug("(item %d) scraping item %s", -1, main_table_config.name)
 
-    upload_items = pipeline.extract_items(main_table_config.name)
+    upload_items = pipeline.extract_items(pipeline_id)
     selected_columns = upload_items["source"].to_list()
 
     TableConfigOps(connection).create(main_table_config)

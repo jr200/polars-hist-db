@@ -53,7 +53,7 @@ def _run_workflow(
         TableConfigOps(connection).create_all(tables)
 
     if table_config.delta_config is not None:
-        col_defs = dataset.pipeline.build_delta_table_column_configs(tables)
+        col_defs = dataset.pipeline.build_delta_table_column_configs(tables, dataset.name)
         with engine.begin() as connection:
             delta_table_config = DeltaTableOps(
                 dataset.delta_table_schema,

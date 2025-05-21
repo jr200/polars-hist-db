@@ -20,6 +20,7 @@ class Pipeline:
         items = (
             pl
             .from_records(self.items)
+            .with_row_index(name="id")
             .explode("columns")
             .unnest("columns")
         )
@@ -104,7 +105,7 @@ class Pipeline:
         return all_dfs
 
 
-    def build_delta_table_column_configs(self, all_tables: TableConfigs) -> List[TableColumnConfig]:
+    def build_delta_table_column_configs(self, all_tables: TableConfigs, table_name: str) -> List[TableColumnConfig]:
 
         pipeline_cols = self.items.filter(pl.col("column_type").is_in(["data", "computed"]))
         all_dfs = self._merge_with_table_config(pipeline_cols, all_tables)
@@ -112,12 +113,12 @@ class Pipeline:
         candidate_cols = (
             pl.concat(all_dfs)
             .sort("type")
-            .unique(subset=["source"], keep="last", maintain_order=True)
             .with_columns(name=pl.coalesce("source", "target"))
+            .unique(subset=["name"], keep="last", maintain_order=True)
             .drop("target", "source")
         )
 
-        columns = TableColumnConfig.from_dataframe(candidate_cols)
+        columns = TableColumnConfig.from_dataframe(candidate_cols, table_name_override=table_name)
 
         return columns
 
@@ -135,13 +136,14 @@ class Pipeline:
         result: str = df[0, "type"]
         return result
 
-    def extract_items(self, table: str) -> pl.DataFrame:
+    def extract_items(self, pipeline_id: int) -> pl.DataFrame:
         df = (
             self.items
-            .filter(table=table)
-            .drop("table")
+            .filter(id=pipeline_id)
+            # .drop("table")
             .filter(pl.col("column_type").is_in(["data", "computed"]))
             .with_columns(source=pl.coalesce("source", "target"))
+            .select("table", "source", "target", "required")
         )
 
         return df
@@ -156,6 +158,10 @@ class Pipeline:
     def get_table_names(self) -> List[str]:
         return self.items["table"].unique(maintain_order=True).to_list()
 
+    def get_pipeline_items(self) -> Dict[int, str]:
+        pipeline_items = self.items.select("id", "table").unique(maintain_order=True)
+        result: Dict[int, str] = dict(pipeline_items.iter_rows())
+        return result
 
 
 @dataclass

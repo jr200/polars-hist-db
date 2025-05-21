@@ -69,7 +69,7 @@ def _prepare_population_set(
     ]
 
     value_col_map = _get_value_columns(col_info)
-    src_value_cols = [src_tbl.c[col] for col in value_col_map["source"]]
+    src_value_cols = [src_tbl.c[col] for col in value_col_map.keys()]
 
     on_clause = [
         parent_tbl.c[t]
@@ -108,9 +108,13 @@ def deduce_foreign_keys(
         table_schema, src_table_name, parent_table_config, col_info, connection
     )
 
-    new_items_to_insert_in_parent = population_set_df.filter(
-        pl.col([src_parent_col_map[c] for c in src_implied_col_names]).is_null()
-    ).select(_get_value_columns(col_info).values())
+    new_items_columns = list(_get_value_columns(col_info).keys())
+    new_items_to_insert_in_parent = (
+        population_set_df
+        .filter(pl.col([src_parent_col_map[c] for c in src_implied_col_names]).is_null())
+        .select(new_items_columns)
+        .rename({k: v for k, v in src_parent_col_map.items() if k in new_items_columns})
+    )
 
     if not new_items_to_insert_in_parent.is_empty():
         new_items_to_insert_in_parent = DataframeOps.populate_nulls(
@@ -140,7 +144,7 @@ def deduce_foreign_keys(
 
         if not implied_df.is_empty():
             implied_df = implied_df.select(
-                src_implied_col_names + list(src_parent_col_map.keys())
+                set(src_parent_col_map.keys()) | set(src_implied_col_names)
             )
             num_nulls = implied_df.null_count().select(sum=pl.sum_horizontal(pl.all()))[
                 0, "sum"
@@ -153,4 +157,5 @@ def deduce_foreign_keys(
                 implied_df,
                 table_schema,
                 src_table_name,
+                primary_keys_override=new_items_columns,
             )

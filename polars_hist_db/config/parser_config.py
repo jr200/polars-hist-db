@@ -10,7 +10,7 @@ from .fn_registry import FunctionRegistry
 LOGGER = logging.getLogger(__name__)
 
 @dataclass
-class DeltaColumnConfig:
+class ParserColumnConfig:
     column_type: Literal["data", "computed", "dsv_only", "time_partition_only"]
     table: str
     data_type: str
@@ -59,5 +59,5 @@ class DeltaColumnConfig:
         return result
 
     def __repr__(self) -> str:
-        return f"DeltaColumnConfig({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
+        return f"ParserColumnConfig({', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())})"
 

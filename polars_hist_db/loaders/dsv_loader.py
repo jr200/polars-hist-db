@@ -5,7 +5,7 @@ from typing import Optional, Mapping, Sequence, Tuple, Union
 
 import polars as pl
 
-from ..config.delta_config import DeltaColumnConfig
+from ..config.parser_config import ParserColumnConfig
 from ..config.fn_registry import FunctionRegistry
 from ..types import PolarsType
 
@@ -40,7 +40,7 @@ def _parse_header_row(
     raise ValueError(f"couldn't infer delimiter of dsv {str(input)}")
 
 
-def _apply_header_transforms(df: pl.DataFrame, col_def: DeltaColumnConfig) -> pl.DataFrame:
+def _apply_header_transforms(df: pl.DataFrame, col_def: ParserColumnConfig) -> pl.DataFrame:
     if not col_def.transforms:
         return df
 
@@ -66,7 +66,7 @@ def _apply_header_transforms(df: pl.DataFrame, col_def: DeltaColumnConfig) -> pl
 
 
 def _get_column_dtype(
-    column_name: str, column_configs: Sequence[DeltaColumnConfig]
+    column_name: str, column_configs: Sequence[ParserColumnConfig]
 ) -> pl.DataType:
     for cfg in column_configs:
         if cfg.source == column_name:
@@ -77,7 +77,7 @@ def _get_column_dtype(
 
 def load_typed_dsv(
     file_or_bytes: Union[Path, bytes],
-    column_configs: Sequence[DeltaColumnConfig],
+    column_configs: Sequence[ParserColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
     delimiter: Optional[str] = None
 ) -> pl.DataFrame:

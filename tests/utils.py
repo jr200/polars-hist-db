@@ -15,7 +15,7 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
-from polars_hist_db.config.delta_config import DeltaColumnConfig
+from polars_hist_db.config.parser_config import ParserColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.config import Config, TableConfig, TableConfigs, DatasetConfig
 from polars_hist_db.core import (
@@ -86,11 +86,11 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
             dirName = f"{dirName}/dir{depth}"
     return tempDir
 
-def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[DeltaColumnConfig]:
-    items: List[DeltaColumnConfig] = []
+def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[ParserColumnConfig]:
+    items: List[ParserColumnConfig] = []
     for table_config in table_configs.items:
         for column in table_config.columns:
-            dc = DeltaColumnConfig(
+            dc = ParserColumnConfig(
                 column_type="data",
                 table=table_config.name,
                 data_type=column.data_type,

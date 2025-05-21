@@ -5,7 +5,7 @@ import os
 import polars as pl
 import logging
 
-from .delta_config import DeltaColumnConfig
+from .parser_config import ParserColumnConfig
 from .table import TableColumnConfig, TableConfigs
 
 LOGGER = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class Pipeline:
     items: pl.DataFrame
 
     def __post_init__(self):
-        item_schema = DeltaColumnConfig.df_schema()
+        item_schema = ParserColumnConfig.df_schema()
         items = (
             pl
             .from_records(self.items)
@@ -66,7 +66,7 @@ class Pipeline:
         self.items = items
 
 
-    def build_input_column_definitions(self, all_tables: TableConfigs) -> List[DeltaColumnConfig]:
+    def build_input_column_definitions(self, all_tables: TableConfigs) -> List[ParserColumnConfig]:
 
         tmp_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]))
         pipeline_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]).not_())
@@ -74,13 +74,13 @@ class Pipeline:
         all_dfs.append(tmp_cols)
 
         
-        schema_keys = DeltaColumnConfig.df_schema().keys()
+        schema_keys = ParserColumnConfig.df_schema().keys()
         result = []
         for df in all_dfs:
             df = df.with_columns(name=pl.coalesce("target", "source"))
             for row in df.iter_rows(named=True):
                 row_dict = {c: row[c] for c in schema_keys if c in row}
-                cc = DeltaColumnConfig(**row_dict)
+                cc = ParserColumnConfig(**row_dict)
                 result.append(cc)
 
         return result

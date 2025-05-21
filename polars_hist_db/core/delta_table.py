@@ -21,7 +21,7 @@ from sqlalchemy.sql.functions import coalesce
 from .db import DbOps
 from .table import TableOps
 
-from ..config import DeltaConfig, TableConfig, ColumnDefinitions
+from ..config import DeltaConfig, TableConfig, TableColumnConfig
 from ..utils.db_utils import is_text_col
 
 
@@ -41,12 +41,11 @@ class DeltaTableOps:
         self.delta_config = delta_config
         self.connection = connection
 
-    def table_config(self, column_definitions: ColumnDefinitions) -> TableConfig:
+    def table_config(self, column_definitions: List[TableColumnConfig]) -> TableConfig:
         return TableConfig(
             self.table_name,
             self.table_schema,
-            [c.name for c in column_definitions.column_definitions],
-            column_definitions=column_definitions,
+            column_definitions
         )
 
     def upsert(
@@ -74,11 +73,12 @@ class DeltaTableOps:
             source_columns = [c.name for c in source_tbl.columns]
 
         if self.delta_config.drop_unchanged_rows:
+            ref_columns = [src_tgt_colname_map.get(c, c) for c in source_columns]
             num_deletions += self._drop_unchanged_rows(
                 self.table_schema,
                 target_table=self.table_name,
                 ref_table=target_table,
-                ref_cmp_columns=source_columns,
+                ref_cmp_columns=ref_columns,
                 ref_tgt_colname_map=tgt_to_src_map,
             )
 
@@ -129,37 +129,41 @@ class DeltaTableOps:
 
         tgt_pk = target_tbo.get_primary_keys(target_tbl)
 
-        update_existing_keys = (
-            target_tbl.update()
-            .values(
-                {
-                    src_tgt_colname_map.get(
-                        sc_name, sc_name
-                    ): self._coalesce_if_nullable(
-                        src_tbl,
-                        target_tbl,
-                        sc_name,
-                        src_tgt_colname_map.get(sc_name, sc_name),
-                    )
-                    for sc_name in source_columns
-                    if src_tgt_colname_map.get(sc_name, sc_name) != tgt_id_col
-                }
+
+        update_set = {
+            src_tgt_colname_map.get(
+                sc_name, sc_name
+            ): self._coalesce_if_nullable(
+                src_tbl,
+                target_tbl,
+                sc_name,
+                src_tgt_colname_map.get(sc_name, sc_name),
             )
-            .where(
-                and_(
-                    *[
-                        tk == src_tbl.c[tgt_to_src_map.get(tk.name, tk.name)]
-                        for tk in tgt_pk
-                    ]
+            for sc_name in source_columns
+            if src_tgt_colname_map.get(sc_name, sc_name) != tgt_id_col
+        }
+
+        if len(update_set) == 0:
+            num_updates = 0
+        else:
+            update_existing_keys = (
+                target_tbl.update()
+                .values(update_set)
+                .where(
+                    and_(
+                        *[
+                            tk == src_tbl.c[tgt_to_src_map.get(tk.name, tk.name)]
+                            for tk in tgt_pk
+                        ]
+                    )
                 )
             )
-        )
 
-        result = DbOps(self.connection).execute_sqlalchemy(
-            "sql.base.upsert.update", update_existing_keys
-        )
+            result = DbOps(self.connection).execute_sqlalchemy(
+                "sql.base.upsert.update", update_existing_keys
+            )
 
-        num_updates = result.rowcount
+            num_updates = result.rowcount
 
         LOGGER.debug(
             "updated %d rows in %s.%s", num_updates, table_schema, target_table
@@ -323,9 +327,9 @@ class DeltaTableOps:
         )
 
         tgt_primary_keys = [
-            c.name
+            ref_tgt_colname_map.get(c.name, c.name)
             for c in ref_tbl.primary_key.columns
-            if ref_tgt_colname_map.get(c.name, c.name) in ref_cmp_columns
+            if c.name in ref_cmp_columns
         ]
 
         if not tgt_primary_keys:

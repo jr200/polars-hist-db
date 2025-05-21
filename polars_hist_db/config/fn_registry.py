@@ -6,7 +6,7 @@ from .fn_builtins import apply_type_casts, combine_columns, null_if_gte
 
 LOGGER = logging.getLogger(__name__)
 
-FnSignature = Callable[[pl.DataFrame, List[Any]], pl.DataFrame]
+FnSignature = Callable[[pl.DataFrame, str, str, List[Any]], pl.DataFrame]
 RegistryStore = Dict[str, FnSignature]
 
 
@@ -38,14 +38,19 @@ class FunctionRegistry:
         self._registry[name] = fn
 
     def call_function(
-        self, name: str, df: pl.DataFrame, args: List[Any]
+        self,
+        name: str,
+        df: pl.DataFrame,
+        input_col: str,
+        result_col: str,
+        args: List[Any]
     ) -> pl.DataFrame:
         if name not in self._registry:
             raise ValueError(f"No function registered with the name '{name}'.")
 
         LOGGER.info("applying fn %s to dataframe %s", name, df.shape)
         fn = self._registry[name]
-        result_df = fn(df, args)
+        result_df = fn(df, input_col, result_col, args)
 
         if result_df is None:
             raise ValueError(f"function {name} returned None")

@@ -66,12 +66,11 @@ def test_column_selection(fixture_with_column_selection):
     engine, configs, table_schema = fixture_with_column_selection
     table_config = configs["exchanges"]
 
-    all_column_defs = table_config.column_definitions.column_definitions
-    column_selection = table_config.columns
+    all_column_defs = table_config.columns
 
     with engine.begin() as connection:
         tbo = TableOps(table_schema, table_config.name, connection)
         tbl = tbo.get_table_metadata()
         read_cols = tbl.columns
 
-    assert len(all_column_defs) == len(column_selection) == len(read_cols) == 5
+    assert len(all_column_defs) == len(read_cols) == 5

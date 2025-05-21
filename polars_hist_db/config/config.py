@@ -5,14 +5,13 @@ import yaml
 
 from .dataset import DatasetsConfig
 from .engine import DbEngineConfig
-from .table import ColumnDefinitions, TableConfigs
+from .table import TableConfigs
 
 
 class Config:
     def __init__(
         self,
         cfg_dict: Mapping[str, Any],
-        column_definitions_path: Iterable[str],
         table_configs_path: Iterable[str],
         datasets_path: Iterable[str],
         db_config_path: Iterable[str],
@@ -23,15 +22,8 @@ class Config:
                 **Config.get_nested_key(cfg_dict, db_config_path)
             )
 
-        if column_definitions_path and table_configs_path:
-            column_defintions = ColumnDefinitions(
-                column_definitions=Config.get_nested_key(
-                    cfg_dict, column_definitions_path
-                )
-            )
             self.tables = TableConfigs(
-                table_configs=Config.get_nested_key(cfg_dict, table_configs_path),
-                column_definitions=column_defintions,
+                items=Config.get_nested_key(cfg_dict, table_configs_path)
             )
 
         if datasets_path:
@@ -73,7 +65,6 @@ class Config:
     def from_yaml(
         cls,
         filename: str,
-        column_definitions_path: str = "column_definitions",
         table_configs_path: str = "table_configs",
         datasets_path: str = "datasets",
         db_config_path: str = "db",
@@ -82,7 +73,6 @@ class Config:
         config = Config(
             yaml_dict,
             db_config_path=db_config_path.split("."),
-            column_definitions_path=column_definitions_path.split("."),
             table_configs_path=table_configs_path.split("."),
             datasets_path=datasets_path.split("."),
             config_filename=filename,

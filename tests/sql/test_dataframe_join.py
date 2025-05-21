@@ -22,7 +22,7 @@ def temp_table():
 
 def test_time_hints(temp_table):
     engine, table_configs, table_schema = temp_table
-    table_config = table_configs.table_configs[0]
+    table_config = table_configs.items[0]
     table_config.delta_config.drop_unchanged_rows = True
 
     # upload then test initial df
@@ -32,7 +32,8 @@ def test_time_hints(temp_table):
         id,bigint_col,bit_col,bool_col,boolean_col,char_col,date_col,datetime_col,decimal_col,double_col,float_col,int_col,integer_col,mediumint_col,numeric_col,real_col,smallint_col,text_col,time_col,timestamp_col,tinyint_col,varchar_col
         1,1000000001,0,false,true,Z,1988-01-01,1988-01-01T12:00:00,123.46,123.456790,12.35,101,102,1001,987.66,45.68,11,Updated text 1,12:34:57,1988-01-01T12:34:57,2,Updated short 1
     """,
-        table_config,
+        table_config.name,
+        table_configs
     )
 
     set_random_seed(1)
@@ -57,7 +58,7 @@ def test_time_hints(temp_table):
             DataframeOps(connection)
             .table_query(  # noqa: F821
                 table_schema,
-                table_configs.table_configs[0].name,
+                table_configs.items[0].name,
                 query_df,
                 column_selection=None,
             )
@@ -74,7 +75,7 @@ def test_time_hints(temp_table):
             DataframeOps(connection)
             .table_query(
                 table_schema,
-                table_configs.table_configs[0].name,
+                table_configs.items[0].name,
                 query_df,
                 column_selection=None,
                 time_hint=TimeHint(mode="asof", asof_utc=asof_utc),
@@ -92,7 +93,7 @@ def test_time_hints(temp_table):
             DataframeOps(connection)
             .table_query(
                 table_schema,
-                table_configs.table_configs[0].name,
+                table_configs.items[0].name,
                 query_df,
                 column_selection=None,
                 time_hint=TimeHint(
@@ -112,7 +113,7 @@ def test_time_hints(temp_table):
             DataframeOps(connection)
             .table_query(
                 table_schema,
-                table_configs.table_configs[0].name,
+                table_configs.items[0].name,
                 query_df,
                 column_selection=None,
                 time_hint=TimeHint(

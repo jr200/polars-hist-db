@@ -1,5 +1,5 @@
 from polars_hist_db.config import (
-    ColumnConfig,
+    TableColumnConfig,
     DeltaConfig,
     ForeignKeyConfig,
     TableConfig,
@@ -13,8 +13,8 @@ def assert_table_config_object(table_config: TableConfig):
     if table_config.delta_config:
         assert isinstance(table_config.delta_config, DeltaConfig)
 
-    for column in table_config.column_definitions.column_definitions:
-        assert isinstance(column, ColumnConfig)
+    for column in table_config.columns:
+        assert isinstance(column, TableColumnConfig)
 
     for primary_key in table_config.primary_keys:
         assert isinstance(primary_key, str)
@@ -32,14 +32,14 @@ def test_cryptocurrency_config_deserialization():
 
     assert config.name == "cryptocurrencies"
     assert len(config.columns) == 6
-    assert len(config.column_definitions.column_definitions) == 6
-    assert config.column_definitions.column_definitions[0].name == "id"
-    assert config.column_definitions.column_definitions[0].data_type == "INT"
-    assert config.column_definitions.column_definitions[0].autoincrement
-    assert not config.column_definitions.column_definitions[0].nullable
+    assert config.columns[0].table == config.name
+    assert config.columns[0].name == "id"
+    assert config.columns[0].data_type == "INT"
+    assert config.columns[0].autoincrement
+    assert not config.columns[0].nullable
     assert config.primary_keys == ["id"]
-    assert config.column_definitions.column_definitions[3].name == "current_price_usd"
-    assert config.column_definitions.column_definitions[3].data_type == "DECIMAL(18,8)"
+    assert config.columns[3].name == "current_price_usd"
+    assert config.columns[3].data_type == "DECIMAL(18,8)"
 
 
 def test_exchange_config_deserialization():
@@ -49,10 +49,9 @@ def test_exchange_config_deserialization():
 
     assert config.name == "exchanges"
     assert len(config.columns) == 5
-    assert len(config.column_definitions.column_definitions) == 5
-    assert config.column_definitions.column_definitions[1].name == "website_name"
-    assert config.column_definitions.column_definitions[1].data_type == "VARCHAR(100)"
-    assert not config.column_definitions.column_definitions[1].nullable
+    assert config.columns[1].name == "name"
+    assert config.columns[1].data_type == "VARCHAR(100)"
+    assert not config.columns[1].nullable
 
 
 def test_trading_pairs_config_deserialization():

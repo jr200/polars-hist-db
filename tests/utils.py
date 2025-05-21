@@ -15,8 +15,9 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
+from polars_hist_db.config.parser_config import ParserColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
-from polars_hist_db.config import Config, TableConfig, TableConfigs
+from polars_hist_db.config import Config, TableConfig, TableConfigs, DatasetConfig
 from polars_hist_db.core import (
     AuditOps,
     DataframeOps,
@@ -26,8 +27,7 @@ from polars_hist_db.core import (
     TableOps,
     make_engine,
 )
-from polars_hist_db.config.parser import parse_col_exprs
-from polars_hist_db.types import SQLAlchemyType, PolarsType
+from polars_hist_db.types import SQLAlchemyType
 
 # some test defaults for debugging
 pl.Config(
@@ -86,8 +86,31 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
             dirName = f"{dirName}/dir{depth}"
     return tempDir
 
+def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[ParserColumnConfig]:
+    items: List[ParserColumnConfig] = []
+    for table_config in table_configs.items:
+        for column in table_config.columns:
+            dc = ParserColumnConfig(
+                column_type="data",
+                table=table_config.name,
+                data_type=column.data_type,
+                source=column.name,
+                target=column.name,
+                nullable=column.nullable,
+                value_if_missing=column.default_value,
+            )
+            items.append(dc)
 
-def from_test_result(x: str, table_config: TableConfig) -> pl.DataFrame:
+    return items
+
+def from_test_result(
+        x: str,
+        table_name: str,
+        tables: TableConfigs,
+        dataset: Optional[DatasetConfig] = None,
+        skip_time_partition: bool = True,
+        schema_overrides: Optional[Dict[str, pl.DataType]] = None
+    ) -> pl.DataFrame:
     def _clean_csv_data(data: str) -> str:
         input_io = StringIO(data.strip())
         output_io = StringIO()
@@ -103,21 +126,44 @@ def from_test_result(x: str, table_config: TableConfig) -> pl.DataFrame:
         return csv_output
 
     x_cleaned = _clean_csv_data(x)
+
+    if dataset:
+        column_definitions = [
+            c for c in dataset.pipeline.build_input_column_definitions(tables)
+            if c.table == table_name
+        ]
+    else:
+        column_definitions = _infer_input_columns_from_tables(tables)
+
+    if skip_time_partition:
+        column_definitions = [
+            c for c in column_definitions 
+            if c.column_type != "time_partition_only"
+        ]
+
+    if not schema_overrides:
+        schema_overrides = dict()
+
+    schema_overrides.update({
+        **{c: pl.Datetime("us") for c in TableOps.system_versioning_columns()},
+        "__is_override": pl.Boolean(),
+    })
+
     df = load_typed_dsv(
         bytes(textwrap.dedent(x_cleaned), "UTF8"),
-        table_config.column_definitions.column_definitions,
-        schema_overrides={
-            **{c: pl.Datetime("us") for c in TableOps.system_versioning_columns()},
-            "__is_override": pl.Boolean(),
-        },
+        column_definitions,
+        schema_overrides=schema_overrides,
         delimiter=",",
     )
 
-    df = df.with_columns(
-        pl.col(k).cast(t) for k, t in table_config.dtypes().items() if k in df.columns
-    ).pipe(PolarsType.cast_str_to_cat)
+    # df = df.with_columns(
+    #     pl.col(k).cast(t) for k, t in table_config.dtypes().items() if k in df.columns
+    # ).pipe(PolarsType.cast_str_to_cat)
 
-    renamings = {v: k for k, v, _ in parse_col_exprs(table_config.columns)}
+    renamings = {
+        c.source: c.target for c in column_definitions
+        if c.source and c.target and c.source in df.columns
+    }
     df = df.rename(renamings)
 
     return df
@@ -131,7 +177,7 @@ def setup_fixture_tableconfigs(*test_files: str):
     with engine.begin() as connection:
         TableConfigOps(connection).drop_all(table_configs)
 
-        for tc in table_configs.table_configs:
+        for tc in table_configs.items:
             DbOps(connection).db_create(tc.schema)
             TableConfigOps(connection).create(tc)
             if tc.schema != table_schema:
@@ -156,7 +202,7 @@ def setup_fixture_dataset(test_file: str):
         TableConfigOps(connection).drop_all(table_configs)
         audit_table.drop(connection)
 
-        for tc in table_configs.table_configs:
+        for tc in table_configs.items:
             DbOps(connection).db_create(tc.schema)
             TableConfigOps(connection).create(tc)
             if tc.schema != table_schema:
@@ -297,7 +343,7 @@ def add_random_row(
 
     sa_schema = {
         c.name: SQLAlchemyType.from_sql(c.data_type)
-        for c in table_config.column_definitions.column_definitions
+        for c in table_config.columns
     }
     for col_name, c_type in sa_schema.items():
         if col_name in new_row:

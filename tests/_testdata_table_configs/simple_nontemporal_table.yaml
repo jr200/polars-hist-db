@@ -2,7 +2,10 @@ table_configs:
   - schema: test
     name: simple_nontemporal_table
     is_temporal: false
-    columns: [ id, col_double, col_varchar ]
+    columns:
+      - { name: id, data_type: INT }
+      - { name: double_col, data_type: DOUBLE }
+      - { name: varchar_col, data_type: VARCHAR(10) }
     primary_keys:
       - id
     delta_config:
@@ -10,8 +13,3 @@ table_configs:
       on_duplicate_key: take_last
       prefill_nulls_with_default: false
       row_finality: disabled
-
-column_definitions:
-  - { name: id, data_type: INT }
-  - { name: col_double, data_type: DOUBLE, header: double_col }
-  - { name: col_varchar, data_type: VARCHAR(10), header: varchar_col }

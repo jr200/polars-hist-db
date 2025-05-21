@@ -7,7 +7,7 @@ from typing import Literal
 import polars as pl
 from sqlalchemy import and_, Connection, delete, select, Table
 
-from ..config import ColumnConfig, TableConfig, ColumnDefinitions
+from ..config.table import TableColumnConfig, TableConfig
 from .dataframe import DataframeOps
 from .db import DbOps
 from .table import TableOps
@@ -30,43 +30,45 @@ class AuditOps:
         TableConfigOps(connection).drop(self._table_config())
 
     def _table_config(self) -> TableConfig:
-        column_definitions = ColumnDefinitions(
-            column_definitions=[
-                ColumnConfig(name="audit_id", data_type="INT", autoincrement=True),
-                ColumnConfig(
-                    name="table_name",
-                    data_type="VARCHAR(LENGTH=64)",
-                    nullable=False,
-                    unique_constraint=["unique_audit_item"],
-                ),
-                ColumnConfig(
-                    name="data_source_type",
-                    data_type="VARCHAR(LENGTH=32)",
-                    nullable=False,
-                    unique_constraint=["unique_audit_item"],
-                ),
-                ColumnConfig(
-                    name="data_source",
-                    data_type="VARCHAR(LENGTH=1023)",
-                    nullable=False,
-                    unique_constraint=["unique_audit_item"],
-                ),
-                ColumnConfig(
-                    name="data_source_ts",
-                    data_type="DATETIME",
-                    nullable=False,
-                    unique_constraint=["unique_audit_item"],
-                ),
-                ColumnConfig(name="upload_ts", data_type="DATETIME", nullable=False),
-            ]
-        )
+        columns = [
+            TableColumnConfig(name="audit_id", data_type="INT", autoincrement=True, table=self._table_name),
+            TableColumnConfig(
+                name="table_name",
+                data_type="VARCHAR(LENGTH=64)",
+                nullable=False,
+                unique_constraint=["unique_audit_item"],
+                table=self._table_name,
+            ),
+            TableColumnConfig(
+                name="data_source_type",
+                data_type="VARCHAR(LENGTH=32)",
+                nullable=False,
+                unique_constraint=["unique_audit_item"],
+                table=self._table_name,
+            ),
+            TableColumnConfig(
+                name="data_source",
+                data_type="VARCHAR(LENGTH=1023)",
+                nullable=False,
+                unique_constraint=["unique_audit_item"],
+                table=self._table_name,
+            ),
+            TableColumnConfig(
+                name="data_source_ts",
+                data_type="DATETIME",
+                nullable=False,
+                unique_constraint=["unique_audit_item"],
+                table=self._table_name,
+            ),
+            TableColumnConfig(name="upload_ts", data_type="DATETIME", nullable=False, table=self._table_name),
+        ]
+    
 
         table_config = TableConfig(
             name=str(self._table_name),
             schema=self.schema,
             primary_keys=["audit_id"],
-            column_definitions=column_definitions,
-            columns=[col_def.name for col_def in column_definitions.column_definitions],
+            columns=columns
         )
         return table_config
 

@@ -16,6 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def scrape_extract_item(
+    pipeline_id: int,
     dataset: DatasetConfig,
     target_table: str,
     tables: TableConfigs,
@@ -31,16 +32,11 @@ def scrape_extract_item(
     if target_table_config.is_temporal:
         raise NotImplementedError("temporal tables are not supported yet")
 
-    LOGGER.debug("(item %d) extracting item %s", -1, target_table_config.name)
+    LOGGER.debug("(item %d) extracting item %s", pipeline_id, target_table_config.name)
 
     TableConfigOps(connection).create(target_table_config)
 
-    extract_spec = pipeline.extract_items(target_table)
-    main_table_cols_df = main_table_config.columns_df()
-    col_info = extract_spec.join(
-        main_table_cols_df, how="left", left_on="source", right_on="name"
-    ).select("source", "target", "deduce_foreign_key", "required")
-
+    col_info = pipeline.extract_items(pipeline_id)
     required_cols = col_info.filter("required")["source"].to_list()
 
     # these case can pass through
@@ -49,16 +45,12 @@ def scrape_extract_item(
     # - have default value
     # - have values implied from other columns
 
-    tbo = TableOps(main_table_config.schema, delta_table_name, connection)
+    tbo = TableOps(target_table_config.schema, delta_table_name, connection)
     found_required_cols = tbo.get_column_intersection(required_cols)
 
     if len(required_cols) != len(found_required_cols):
         err = f"skipping extract. required columns {required_cols} not found in table {delta_table_name}."
         raise NonRetryableException(err)
-
-    found_source_cols = [
-        str(c.name) for c in tbo.get_column_intersection(col_info["source"].to_list())
-    ]
 
     deduce_foreign_keys(
         main_table_config.schema,
@@ -68,6 +60,10 @@ def scrape_extract_item(
         connection,
     )
 
+    found_source_cols = [
+        str(c.name) for c in tbo.get_column_intersection(col_info["source"].to_list())
+    ]
+
     col_map_dict: Mapping[str, str] = {
         src: tgt
         for src, tgt in col_info.filter(pl.col("source").is_in(found_source_cols))
@@ -76,7 +72,7 @@ def scrape_extract_item(
     }
 
     ni, nu, nd = DeltaTableOps(
-        target_table_config.schema,
+        main_table_config.schema,
         delta_table_name,
         target_table_config.delta_config,
         connection,
@@ -87,6 +83,6 @@ def scrape_extract_item(
         src_tgt_colname_map=col_map_dict,
     )
 
-    LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu + nd)
+    LOGGER.debug("(item %d) upserted %d rows", pipeline_id, ni + nu + nd)
 
     # TODO: trigger table mod notification

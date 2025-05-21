@@ -36,6 +36,7 @@ class Pipeline:
                 pl.col("type").fill_null("extract"),
                 pl.col("required").fill_null(False),
                 pl.col("nullable").fill_null(True),
+                pl.col("deduce_foreign_key").fill_null(False),
                 pl.when(pl.col("column_type").is_null())
                 .then(
                     pl
@@ -149,7 +150,7 @@ class Pipeline:
             # .drop("table")
             .filter(pl.col("column_type").is_in(["data", "computed"]))
             .with_columns(source=pl.coalesce("source", "target"))
-            .select("table", "source", "target", "required")
+            .select("table", "source", "target", "required", "deduce_foreign_key")
         )
 
         return df

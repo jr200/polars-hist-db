@@ -33,7 +33,6 @@ class TableColumnConfig:
     default_value: Optional[str] = None
     autoincrement: bool = False
     nullable: bool = True
-    deduce_foreign_key: bool = False
     unique_constraint: List[str] = field(default_factory=list)
 
     def __post_init__(self):
@@ -66,7 +65,6 @@ class TableColumnConfig:
             "default_value": pl.Utf8,
             "autoincrement": pl.Boolean,
             "nullable": pl.Boolean,
-            "deduce_foreign_key": pl.Boolean,
             "unique_constraint": pl.List(pl.Utf8)
         }
 
@@ -224,8 +222,7 @@ class TableConfig:
                     *autoincrement_spec,
                     autoincrement=col_cfg.autoincrement,
                     primary_key=col_cfg.name in self.primary_keys,
-                    nullable=col_cfg.nullable
-                    or (is_delta_table and col_cfg.deduce_foreign_key),
+                    nullable=col_cfg.nullable or is_delta_table,
                     server_default=default_value,
                 )
 

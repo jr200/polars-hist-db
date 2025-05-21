@@ -36,12 +36,7 @@ def scrape_extract_item(
 
     TableConfigOps(connection).create(target_table_config)
 
-    extract_spec = pipeline.extract_items(pipeline_id)
-    target_table_cols_df = target_table_config.columns_df()
-    col_info = extract_spec.join(
-        target_table_cols_df, how="left", left_on="target", right_on="name"
-    ).select("source", "target", "deduce_foreign_key", "required")
-
+    col_info = pipeline.extract_items(pipeline_id)
     required_cols = col_info.filter("required")["source"].to_list()
 
     # these case can pass through

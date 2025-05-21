@@ -18,6 +18,7 @@ class ParserColumnConfig:
     target: Optional[str] = None
     transforms: Dict[str, Any] = field(default_factory=dict)
     aggregation: Optional[str] = None
+    deduce_foreign_key: bool = False
     value_if_missing: Optional[str] = None
     nullable: bool = True
     required: bool = False
@@ -41,6 +42,7 @@ class ParserColumnConfig:
                 for k in FunctionRegistry().list_functions()
             }),
             "aggregation": pl.Utf8,
+            "deduce_foreign_key": pl.Boolean,
             "value_if_missing": pl.Utf8,
             "nullable": pl.Boolean,
         }

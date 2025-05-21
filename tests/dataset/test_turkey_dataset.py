@@ -16,7 +16,7 @@ from tests.utils import (
 
 
 def _custom_try_to_usd(
-    df: pl.DataFrame, _input_col: str, result_col: str, args: List[Any]
+    df: pl.DataFrame, result_col: str, args: List[Any]
 ) -> pl.DataFrame:
     usdtry_fx_rates = pl.from_dict(
         {

@@ -29,7 +29,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
             "double_col": [100.100, -200.200, None],
             "varchar_col": [None, None, None],
         },
-        schema_overrides={"varchar_col": pl.Utf8}
+        schema_overrides={"varchar_col": pl.Utf8},
     )
 
     df_read, df_read_history = modify_and_read(
@@ -44,7 +44,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3,        ,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -72,7 +72,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 330.330,None,1986-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_expected_history = from_test_result(
@@ -83,7 +83,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3,        ,None,1985-01-01T00:00:01,1986-01-01T00:00:01
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -111,7 +111,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 333.333,None,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_expected_history = from_test_result(
@@ -125,7 +125,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 330.330,None,1986-01-01T00:00:01,1987-01-01T00:00:01
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -153,7 +153,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 300.003,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_expected_history = from_test_result(
@@ -170,7 +170,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 333.333,None,1987-01-01T00:00:01,1988-01-01T00:00:01
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -205,7 +205,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 300.003,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_expected_history = from_test_result(
@@ -223,7 +223,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 333.333,None,1987-01-01T00:00:01,1988-01-01T00:00:01
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -251,7 +251,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 300.003,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     df_expected_history = from_test_result(
@@ -270,7 +270,7 @@ def test_dataframe_upsert(fixture_with_simple_table):
         3, 333.333,None,1987-01-01T00:00:01,1988-01-01T00:00:01
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert_frame_equal(df_expected, df_read)

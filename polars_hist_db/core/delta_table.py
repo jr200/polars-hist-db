@@ -42,11 +42,7 @@ class DeltaTableOps:
         self.connection = connection
 
     def table_config(self, column_definitions: List[TableColumnConfig]) -> TableConfig:
-        return TableConfig(
-            self.table_name,
-            self.table_schema,
-            column_definitions
-        )
+        return TableConfig(self.table_name, self.table_schema, column_definitions)
 
     def upsert(
         self,
@@ -129,11 +125,8 @@ class DeltaTableOps:
 
         tgt_pk = target_tbo.get_primary_keys(target_tbl)
 
-
         update_set = {
-            src_tgt_colname_map.get(
-                sc_name, sc_name
-            ): self._coalesce_if_nullable(
+            src_tgt_colname_map.get(sc_name, sc_name): self._coalesce_if_nullable(
                 src_tbl,
                 target_tbl,
                 sc_name,

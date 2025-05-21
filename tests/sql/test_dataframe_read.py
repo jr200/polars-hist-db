@@ -36,7 +36,7 @@ def test_select_sql(fixutre_with_simple_table):
         1, 123.4567, abc
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert df_expected.equals(df_read)
@@ -51,7 +51,7 @@ def test_select_sql(fixutre_with_simple_table):
         1, 234.5678, def
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert df_expected.equals(df_read)
@@ -67,7 +67,7 @@ def test_select_sql(fixutre_with_simple_table):
         1, 234.5678, def
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert df_expected.equals(df_read)
@@ -82,7 +82,7 @@ def test_select_sql(fixutre_with_simple_table):
         1,,
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert df_expected.equals(df_read)
@@ -98,7 +98,7 @@ def test_select_sql(fixutre_with_simple_table):
         1, 345.67890001, ghi
     """,
         table_config.name,
-        table_configs
+        table_configs,
     )
 
     assert df_expected.equals(df_read)

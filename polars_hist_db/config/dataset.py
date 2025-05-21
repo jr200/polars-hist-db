@@ -18,63 +18,64 @@ class Pipeline:
     def __post_init__(self):
         item_schema = ParserColumnConfig.df_schema()
         items = (
-            pl
-            .from_records(self.items)
+            pl.from_records(self.items)
             .with_row_index(name="id")
             .explode("columns")
             .unnest("columns")
         )
 
-        items = (
-            items
-            .with_columns(
-                pl.lit(None).cast(t).alias(c)
-                for c, t in item_schema.items()
-                if c not in items.columns
+        items = items.with_columns(
+            pl.lit(None).cast(t).alias(c)
+            for c, t in item_schema.items()
+            if c not in items.columns
+        ).with_columns(
+            pl.col("type").fill_null("extract"),
+            pl.col("required").fill_null(False),
+            pl.col("nullable").fill_null(True),
+            pl.col("deduce_foreign_key").fill_null(False),
+            pl.when(pl.col("column_type").is_null())
+            .then(
+                pl.when(pl.col("target").is_null())
+                .then(pl.lit("dsv_only"))
+                .when(pl.col("source").is_null())
+                .then(pl.lit("computed"))
+                .otherwise(pl.lit("data"))
             )
-            .with_columns(
-                pl.col("type").fill_null("extract"),
-                pl.col("required").fill_null(False),
-                pl.col("nullable").fill_null(True),
-                pl.col("deduce_foreign_key").fill_null(False),
-                pl.when(pl.col("column_type").is_null())
-                .then(
-                    pl
-                    .when(pl.col("target").is_null())
-                    .then(pl.lit("dsv_only"))
-                    .when(pl.col("source").is_null())
-                    .then(pl.lit("computed"))
-                    .otherwise(pl.lit("data"))
-                )
-                .otherwise(pl.col("column_type"))
-                .alias("column_type")
-            )
+            .otherwise(pl.col("column_type"))
+            .alias("column_type"),
         )
 
         if len(items.filter(type="primary").select("table").unique()) != 1:
             raise ValueError("invalid pipeline, required exactly one primary table")
 
-        requires_dtype = (
-            items
-            .filter(pl.col("target").is_null() & pl.col("data_type").is_null())
-            .unique(subset=["table", "source"])
-        )
+        requires_dtype = items.filter(
+            pl.col("target").is_null() & pl.col("data_type").is_null()
+        ).unique(subset=["table", "source"])
 
         if not requires_dtype.is_empty():
-            LOGGER.error("invalid pipeline, required dtype for columns: %s", requires_dtype)
-            raise ValueError("invalid pipeline, required dtype for temporary columns without 'name'")
+            LOGGER.error(
+                "invalid pipeline, required dtype for columns: %s", requires_dtype
+            )
+            raise ValueError(
+                "invalid pipeline, required dtype for temporary columns without 'name'"
+            )
 
         self.items = items
 
-
-    def build_input_column_definitions(self, all_tables: TableConfigs) -> List[ParserColumnConfig]:
-
-        tmp_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]))
-        pipeline_cols = self.items.filter(pl.col("column_type").is_in(["dsv_only", "time_partition_only"]).not_())
-        all_dfs = self._merge_with_table_config(pipeline_cols, ["table", "source", "target"], all_tables)
+    def build_input_column_definitions(
+        self, all_tables: TableConfigs
+    ) -> List[ParserColumnConfig]:
+        tmp_cols = self.items.filter(
+            pl.col("column_type").is_in(["dsv_only", "time_partition_only"])
+        )
+        pipeline_cols = self.items.filter(
+            pl.col("column_type").is_in(["dsv_only", "time_partition_only"]).not_()
+        )
+        all_dfs = self._merge_with_table_config(
+            pipeline_cols, ["table", "source", "target"], all_tables
+        )
         all_dfs.append(tmp_cols)
 
-        
         schema_keys = ParserColumnConfig.df_schema().keys()
         result = []
         for df in all_dfs:
@@ -86,36 +87,37 @@ class Pipeline:
 
         return result
 
-
     def _merge_with_table_config(
-            self,
-            pipeline_cols: pl.DataFrame,
-            unique_key: List[str],
-            all_tables: TableConfigs
-        ) -> List[pl.DataFrame]:
-
+        self,
+        pipeline_cols: pl.DataFrame,
+        unique_key: List[str],
+        all_tables: TableConfigs,
+    ) -> List[pl.DataFrame]:
         all_dfs = []
         for tbl_cfg in all_tables.items:
             tbl_cols = tbl_cfg.columns_df()
             pipeline_tbl = pipeline_cols.filter(table=tbl_cfg.name)
             merged_tbl = (
-                pipeline_tbl
-                .unique(subset=unique_key, maintain_order=True)
+                pipeline_tbl.unique(subset=unique_key, maintain_order=True)
                 .drop([c for c in pipeline_tbl.columns if c in tbl_cols.columns])
                 .join(tbl_cols, left_on=["target"], right_on=["name"], how="left")
             )
-            
+
             all_dfs.append(merged_tbl)
 
         all_dfs = [df for df in all_dfs if not df.is_empty()]
 
         return all_dfs
 
-
-    def build_delta_table_column_configs(self, all_tables: TableConfigs, table_name: str) -> List[TableColumnConfig]:
-
-        pipeline_cols = self.items.filter(pl.col("column_type").is_in(["data", "computed"]))
-        all_dfs = self._merge_with_table_config(pipeline_cols, ["table", "source", "target"], all_tables)
+    def build_delta_table_column_configs(
+        self, all_tables: TableConfigs, table_name: str
+    ) -> List[TableColumnConfig]:
+        pipeline_cols = self.items.filter(
+            pl.col("column_type").is_in(["data", "computed"])
+        )
+        all_dfs = self._merge_with_table_config(
+            pipeline_cols, ["table", "source", "target"], all_tables
+        )
 
         candidate_cols = (
             pl.concat(all_dfs)
@@ -125,15 +127,17 @@ class Pipeline:
             .drop("target", "source")
         )
 
-        columns = TableColumnConfig.from_dataframe(candidate_cols, table_name_override=table_name)
+        columns = TableColumnConfig.from_dataframe(
+            candidate_cols, table_name_override=table_name
+        )
 
         return columns
 
-
     def get_header_map(self, table: str) -> Dict[str, str]:
-        will_copy = self.items.filter(table=table).select("source", "target").drop_nulls()
+        will_copy = (
+            self.items.filter(table=table).select("source", "target").drop_nulls()
+        )
         return {row["target"]: row["source"] for row in will_copy.iter_rows(named=True)}
-
 
     def item_type(self, table: str) -> str:
         df = self.items.filter(table=table).select("type").unique()
@@ -145,8 +149,7 @@ class Pipeline:
 
     def extract_items(self, pipeline_id: int) -> pl.DataFrame:
         df = (
-            self.items
-            .filter(id=pipeline_id)
+            self.items.filter(id=pipeline_id)
             # .drop("table")
             .filter(pl.col("column_type").is_in(["data", "computed"]))
             .with_columns(source=pl.coalesce("source", "target"))
@@ -161,7 +164,7 @@ class Pipeline:
 
         table_name: str = self.items.filter(type="primary")[0, "table"]
         return table_name
-    
+
     def get_table_names(self) -> List[str]:
         return self.items["table"].unique(maintain_order=True).to_list()
 

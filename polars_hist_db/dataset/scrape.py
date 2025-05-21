@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 import logging
 from pathlib import Path
 from time import sleep
@@ -29,7 +29,9 @@ def _scrape_pipeline_item(
     if item_type == "primary":
         scrape_primary_item(pipeline_id, dataset, tables, upload_time, connection)
     elif item_type == "extract":
-        scrape_extract_item(pipeline_id, dataset, target_table, tables, upload_time, connection)
+        scrape_extract_item(
+            pipeline_id, dataset, target_table, tables, upload_time, connection
+        )
     else:
         raise ValueError(f"unknown item type: {item_type}")
 
@@ -52,11 +54,15 @@ def scrape_pipeline_as_transaction(
     aops = AuditOps(table_schema)
     assert main_table_config.delta_config is not None
 
-    column_definitions = dataset.pipeline.build_input_column_definitions(tables) 
+    column_definitions = dataset.pipeline.build_input_column_definitions(tables)
 
     df = load_typed_dsv(csv_file, column_definitions)
 
-    missing_values_map = {c.source: c.value_if_missing for c in column_definitions if c.value_if_missing and c.source}
+    missing_values_map = {
+        c.source: c.value_if_missing
+        for c in column_definitions
+        if c.value_if_missing and c.source
+    }
     df = DataframeOps.populate_nulls(df, missing_values_map)
 
     LOGGER.debug("loaded %d rows", len(df))
@@ -87,7 +93,7 @@ def scrape_pipeline_as_transaction(
             try:
                 with connection.begin():
                     for i, ((ts,), partition_df) in enumerate(partitions.items()):
-                        assert isinstance(ts, datetime) or isinstance(ts, date), "timestamp is not a date/datetime"
+                        assert isinstance(ts, datetime), "timestamp is not a datetime"
                         LOGGER.info(
                             "-- processing time_partition (%d/%d) %s",
                             i + 1,
@@ -104,7 +110,10 @@ def scrape_pipeline_as_transaction(
                             clear_table_first=True,
                         )
 
-                        for pipeline_id, target_table in pipeline.get_pipeline_items().items():
+                        for (
+                            pipeline_id,
+                            target_table,
+                        ) in pipeline.get_pipeline_items().items():
                             _scrape_pipeline_item(
                                 pipeline_id,
                                 dataset,

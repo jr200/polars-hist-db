@@ -86,7 +86,10 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
             dirName = f"{dirName}/dir{depth}"
     return tempDir
 
-def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[ParserColumnConfig]:
+
+def _infer_input_columns_from_tables(
+    table_configs: TableConfigs,
+) -> List[ParserColumnConfig]:
     items: List[ParserColumnConfig] = []
     for table_config in table_configs.items:
         for column in table_config.columns:
@@ -103,14 +106,15 @@ def _infer_input_columns_from_tables(table_configs: TableConfigs) -> List[Parser
 
     return items
 
+
 def from_test_result(
-        x: str,
-        table_name: str,
-        tables: TableConfigs,
-        dataset: Optional[DatasetConfig] = None,
-        skip_time_partition: bool = True,
-        schema_overrides: Optional[Dict[str, pl.DataType]] = None
-    ) -> pl.DataFrame:
+    x: str,
+    table_name: str,
+    tables: TableConfigs,
+    dataset: Optional[DatasetConfig] = None,
+    skip_time_partition: bool = True,
+    schema_overrides: Optional[Dict[str, pl.DataType]] = None,
+) -> pl.DataFrame:
     def _clean_csv_data(data: str) -> str:
         input_io = StringIO(data.strip())
         output_io = StringIO()
@@ -129,7 +133,8 @@ def from_test_result(
 
     if dataset:
         column_definitions = [
-            c for c in dataset.pipeline.build_input_column_definitions(tables)
+            c
+            for c in dataset.pipeline.build_input_column_definitions(tables)
             if c.table == table_name
         ]
     else:
@@ -137,17 +142,18 @@ def from_test_result(
 
     if skip_time_partition:
         column_definitions = [
-            c for c in column_definitions 
-            if c.column_type != "time_partition_only"
+            c for c in column_definitions if c.column_type != "time_partition_only"
         ]
 
     if not schema_overrides:
         schema_overrides = dict()
 
-    schema_overrides.update({
-        **{c: pl.Datetime("us") for c in TableOps.system_versioning_columns()},
-        "__is_override": pl.Boolean(),
-    })
+    schema_overrides.update(
+        {
+            **{c: pl.Datetime("us") for c in TableOps.system_versioning_columns()},
+            "__is_override": pl.Boolean(),
+        }
+    )
 
     df = load_typed_dsv(
         bytes(textwrap.dedent(x_cleaned), "UTF8"),
@@ -161,7 +167,8 @@ def from_test_result(
     # ).pipe(PolarsType.cast_str_to_cat)
 
     renamings = {
-        c.source: c.target for c in column_definitions
+        c.source: c.target
+        for c in column_definitions
         if c.source and c.target and c.source in df.columns
     }
     df = df.rename(renamings)
@@ -342,8 +349,7 @@ def add_random_row(
         )
 
     sa_schema = {
-        c.name: SQLAlchemyType.from_sql(c.data_type)
-        for c in table_config.columns
+        c.name: SQLAlchemyType.from_sql(c.data_type) for c in table_config.columns
     }
     for col_name, c_type in sa_schema.items():
         if col_name in new_row:

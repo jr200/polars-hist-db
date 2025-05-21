@@ -15,7 +15,9 @@ from tests.utils import (
 )
 
 
-def _custom_try_to_usd(df: pl.DataFrame, _input_col: str, result_col: str, args: List[Any]) -> pl.DataFrame:
+def _custom_try_to_usd(
+    df: pl.DataFrame, _input_col: str, result_col: str, args: List[Any]
+) -> pl.DataFrame:
     usdtry_fx_rates = pl.from_dict(
         {
             "Year": [
@@ -51,10 +53,7 @@ def _custom_try_to_usd(df: pl.DataFrame, _input_col: str, result_col: str, args:
                 23.085,
             ],
         },
-        schema={
-            "Year": pl.Int64,
-            "fx_usdtry": pl.Decimal(10, 4)
-        }
+        schema={"Year": pl.Int64, "fx_usdtry": pl.Decimal(10, 4)},
     )
 
     col_try = args[0]
@@ -128,7 +127,7 @@ def test_load_file(fixture_with_config):
     """,
         "unit_info",
         base_config.tables,
-        dataset
+        dataset,
     )
 
     assert_frame_equal(unit_info_df, expected_unit_info_df)
@@ -191,7 +190,7 @@ def test_load_file(fixture_with_config):
         """,
         "product_info",
         base_config.tables,
-        dataset
+        dataset,
     )
 
     assert_frame_equal(product_info_df, expected_product_info_df)
@@ -255,7 +254,7 @@ def test_load_file(fixture_with_config):
         "food_prices",
         base_config.tables,
         dataset,
-        schema_overrides={"price_usd": pl.Decimal(10, 4)}
+        schema_overrides={"price_usd": pl.Decimal(10, 4)},
     )
 
     assert_frame_equal(food_prices_latest_df, expected_food_prices_latest_df)
@@ -301,7 +300,7 @@ def test_load_file(fixture_with_config):
         "food_prices",
         base_config.tables,
         dataset,
-        schema_overrides={"price_usd": pl.Decimal(10, 4)}
+        schema_overrides={"price_usd": pl.Decimal(10, 4)},
     )
 
     # (
@@ -386,7 +385,7 @@ def test_load_file(fixture_with_config):
         "food_prices",
         base_config.tables,
         dataset,
-        schema_overrides={"price_usd": pl.Decimal(10, 4)}
+        schema_overrides={"price_usd": pl.Decimal(10, 4)},
     )
 
     assert_frame_equal(food_prices_t1_t2_df, expected_food_prices_t1_t2_df)

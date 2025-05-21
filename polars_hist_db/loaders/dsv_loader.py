@@ -79,7 +79,7 @@ def load_typed_dsv(
     column_configs: Sequence[ParserColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
     delimiter: Optional[str] = None,
-    null_values: Optional[Sequence[str]] = None
+    null_values: Optional[Sequence[str]] = None,
 ) -> pl.DataFrame:
     LOGGER.info("loading csv %s", str(file_or_bytes))
 
@@ -112,12 +112,11 @@ def load_typed_dsv(
         null_values = ["", "None"]
 
     valid_col_configs = set()
-    valid_col_configs |= {c.source for c in column_configs if c.source} 
+    valid_col_configs |= {c.source for c in column_configs if c.source}
     valid_col_configs |= {c.target for c in column_configs if c.target}
-    source_cols: Sequence[str] = list({
-        h for h in headers 
-        if h in valid_col_configs or h.startswith("__")
-    })
+    source_cols: Sequence[str] = list(
+        {h for h in headers if h in valid_col_configs or h.startswith("__")}
+    )
 
     dsv_df = (
         pl.read_csv(
@@ -136,7 +135,11 @@ def load_typed_dsv(
 
     for col_cfg in column_configs:
         # skip columns already computed
-        if col_cfg.source is None and col_cfg.target in dsv_df.columns and col_cfg.column_type == "computed":
+        if (
+            col_cfg.source is None
+            and col_cfg.target in dsv_df.columns
+            and col_cfg.column_type == "computed"
+        ):
             LOGGER.debug("Skipping already-transformed column %s", col_cfg.target)
             continue
 

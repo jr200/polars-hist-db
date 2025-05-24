@@ -15,7 +15,7 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
-from polars_hist_db.config.parser_config import ParserColumnConfig
+from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.config import Config, TableConfig, TableConfigs, DatasetConfig
 from polars_hist_db.core import (
@@ -27,7 +27,7 @@ from polars_hist_db.core import (
     TableOps,
     make_engine,
 )
-from polars_hist_db.types import SQLAlchemyType
+from polars_hist_db.types import PolarsType, SQLAlchemyType
 
 # some test defaults for debugging
 pl.Config(
@@ -89,14 +89,15 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
 
 def _infer_input_columns_from_tables(
     table_configs: TableConfigs,
-) -> List[ParserColumnConfig]:
-    items: List[ParserColumnConfig] = []
+) -> List[IngestionColumnConfig]:
+    items: List[IngestionColumnConfig] = []
     for table_config in table_configs.items:
         for column in table_config.columns:
-            dc = ParserColumnConfig(
+            dc = IngestionColumnConfig(
                 column_type="data",
                 table=table_config.name,
-                data_type=column.data_type,
+                ingestion_data_type=column.data_type,
+                target_data_type=column.data_type,
                 source=column.name,
                 target=column.name,
                 nullable=column.nullable,
@@ -134,7 +135,7 @@ def from_test_result(
     if dataset:
         column_definitions = [
             c
-            for c in dataset.pipeline.build_input_column_definitions(tables)
+            for c in dataset.pipeline.build_ingestion_column_definitions(tables)
             if c.table == table_name
         ]
     else:
@@ -171,7 +172,19 @@ def from_test_result(
         for c in column_definitions
         if c.source and c.target and c.source in df.columns
     }
-    df = df.rename(renamings)
+    df = (
+        df.rename(renamings)
+        .with_columns(
+            [
+                pl.col(col_def.target).cast(
+                    PolarsType.from_sql(col_def.target_data_type)
+                )
+                for col_def in column_definitions
+                if col_def.target
+            ]
+        )
+        .pipe(PolarsType.cast_str_to_cat)
+    )
 
     return df
 

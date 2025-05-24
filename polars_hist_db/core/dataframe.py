@@ -17,6 +17,7 @@ from sqlalchemy import (
     Selectable,
     Subquery,
     Table,
+    TextClause,
 )
 
 
@@ -65,7 +66,7 @@ class DataframeOps:
 
     def from_selectable(
         self,
-        query: Selectable,
+        query: Selectable | TextClause,
         schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
     ) -> pl.DataFrame:
         inferred_dtypes = PolarsType.get_dataframe_schema_from_selectable(query)

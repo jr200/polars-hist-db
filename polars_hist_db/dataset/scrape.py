@@ -54,7 +54,7 @@ def scrape_pipeline_as_transaction(
     aops = AuditOps(table_schema)
     assert main_table_config.delta_config is not None
 
-    column_definitions = dataset.pipeline.build_input_column_definitions(tables)
+    column_definitions = dataset.pipeline.build_ingestion_column_definitions(tables)
 
     df = load_typed_dsv(csv_file, column_definitions, null_values=dataset.null_values)
 
@@ -74,7 +74,9 @@ def scrape_pipeline_as_transaction(
         unique_strategy = tp.unique_strategy
 
         partitions = (
-            df.with_columns(__interval=pl.col(time_col).dt.truncate(interval))
+            df.with_columns(
+                __interval=pl.col(time_col).dt.truncate(interval).cast(pl.Datetime)
+            )
             .sort(time_col)
             .unique(
                 [*header_keys, "__interval"],
@@ -93,7 +95,9 @@ def scrape_pipeline_as_transaction(
             try:
                 with connection.begin():
                     for i, ((ts,), partition_df) in enumerate(partitions.items()):
-                        assert isinstance(ts, datetime), "timestamp is not a datetime"
+                        assert isinstance(ts, datetime), (
+                            f"timestamp is not a datetime [{type(ts)}]"
+                        )
                         LOGGER.info(
                             "-- processing time_partition (%d/%d) %s",
                             i + 1,

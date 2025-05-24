@@ -7,8 +7,8 @@ from decimal import Decimal
 
 from polars_hist_db.config.fn_registry import FunctionRegistry
 from polars_hist_db.dataset import run_workflows
-from polars_hist_db.core.dataframe import TimeHint
-from polars_hist_db.core.dataframe import DataframeOps
+from polars_hist_db.core.dataframe import DataframeOps, TimeHint
+from polars_hist_db.utils import compare_dataframes
 from tests.utils import (
     from_test_result,
     setup_fixture_dataset,
@@ -257,7 +257,13 @@ def test_load_file(fixture_with_config):
         schema_overrides={"price_usd": pl.Decimal(10, 4)},
     )
 
-    assert_frame_equal(food_prices_latest_df, expected_food_prices_latest_df)
+    diff_df, missing_cols = compare_dataframes(
+        food_prices_latest_df,
+        expected_food_prices_latest_df,
+        on=["product_id", "um_id"],
+    )
+    assert diff_df.is_empty()
+    assert len(missing_cols) == 0
 
     expected_food_prices_asof_df = from_test_result(
         """
@@ -310,7 +316,11 @@ def test_load_file(fixture_with_config):
     #     .sort("diff")
     # )
 
-    assert_frame_equal(food_prices_asof_df, expected_food_prices_asof_df)
+    diff_df, missing_cols = compare_dataframes(
+        food_prices_asof_df, expected_food_prices_asof_df, on=["product_id", "um_id"]
+    )
+    assert diff_df.is_empty()
+    assert len(missing_cols) == 0
 
     expected_food_prices_t1_t2_df = from_test_result(
         """
@@ -388,7 +398,13 @@ def test_load_file(fixture_with_config):
         schema_overrides={"price_usd": pl.Decimal(10, 4)},
     )
 
-    assert_frame_equal(food_prices_t1_t2_df, expected_food_prices_t1_t2_df)
+    diff_df, missing_cols = compare_dataframes(
+        food_prices_t1_t2_df,
+        expected_food_prices_t1_t2_df,
+        on=["product_id", "um_id", "__valid_to"],
+    )
+    assert diff_df.is_empty()
+    assert len(missing_cols) == 0
 
     assert len(food_prices_all_df) == 2847
     assert food_prices_all_df["price"].sum() == Decimal("42340.0550")

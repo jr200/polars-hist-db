@@ -5,7 +5,7 @@ import os
 import polars as pl
 import logging
 
-from .parser_config import ParserColumnConfig
+from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
 
 LOGGER = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class Pipeline:
     items: pl.DataFrame
 
     def __post_init__(self):
-        item_schema = ParserColumnConfig.df_schema()
+        item_schema = IngestionColumnConfig.df_schema()
         items = (
             pl.from_records(self.items)
             .with_row_index(name="id")
@@ -48,41 +48,31 @@ class Pipeline:
         if len(items.filter(type="primary").select("table").unique()) != 1:
             raise ValueError("invalid pipeline, required exactly one primary table")
 
-        requires_dtype = items.filter(
-            pl.col("target").is_null() & pl.col("data_type").is_null()
-        ).unique(subset=["table", "source"])
-
-        if not requires_dtype.is_empty():
-            LOGGER.error(
-                "invalid pipeline, required dtype for columns: %s", requires_dtype
-            )
-            raise ValueError(
-                "invalid pipeline, required dtype for temporary columns without 'name'"
-            )
-
         self.items = items
 
-    def build_input_column_definitions(
+    def build_ingestion_column_definitions(
         self, all_tables: TableConfigs
-    ) -> List[ParserColumnConfig]:
+    ) -> List[IngestionColumnConfig]:
         tmp_cols = self.items.filter(
             pl.col("column_type").is_in(["dsv_only", "time_partition_only"])
         )
         pipeline_cols = self.items.filter(
             pl.col("column_type").is_in(["dsv_only", "time_partition_only"]).not_()
         )
+        merged_cols = pl.concat([pipeline_cols, tmp_cols])
         all_dfs = self._merge_with_table_config(
-            pipeline_cols, ["table", "source", "target"], all_tables
+            merged_cols, ["table", "source", "target"], all_tables
         )
-        all_dfs.append(tmp_cols)
 
-        schema_keys = ParserColumnConfig.df_schema().keys()
+        schema_keys = IngestionColumnConfig.df_schema().keys()
         result = []
         for df in all_dfs:
-            df = df.with_columns(name=pl.coalesce("target", "source"))
+            df = df.with_columns(
+                name=pl.coalesce("target", "source"),
+            )
             for row in df.iter_rows(named=True):
                 row_dict = {c: row[c] for c in schema_keys if c in row}
-                cc = ParserColumnConfig(**row_dict)
+                cc = IngestionColumnConfig(**row_dict)
                 result.append(cc)
 
         return result
@@ -95,13 +85,38 @@ class Pipeline:
     ) -> List[pl.DataFrame]:
         all_dfs = []
         for tbl_cfg in all_tables.items:
-            tbl_cols = tbl_cfg.columns_df()
+            tbl_cols = tbl_cfg.columns_df().rename({"data_type": "tbl_data_type"})
             pipeline_tbl = pipeline_cols.filter(table=tbl_cfg.name)
             merged_tbl = (
                 pipeline_tbl.unique(subset=unique_key, maintain_order=True)
                 .drop([c for c in pipeline_tbl.columns if c in tbl_cols.columns])
                 .join(tbl_cols, left_on=["target"], right_on=["name"], how="left")
+                .with_columns(
+                    pl.coalesce(
+                        "target_data_type", "tbl_data_type", "ingestion_data_type"
+                    ).alias("target_data_type")
+                )
+                .with_columns(
+                    pl.coalesce(
+                        "ingestion_data_type", "tbl_data_type", "target_data_type"
+                    ).alias("ingestion_data_type")
+                )
             )
+
+            missing_types = merged_tbl.select(
+                "id",
+                "table",
+                "source",
+                "target",
+                "ingestion_data_type",
+                "target_data_type",
+                "tbl_data_type",
+                is_missing=pl.col("ingestion_data_type").is_null()
+                | pl.col("target_data_type").is_null(),
+            ).filter(pl.col("is_missing"))
+            if not missing_types.is_empty():
+                LOGGER.error(f"Missing types for dataframe {missing_types}")
+                raise ValueError(f"Missing types in {tbl_cfg.schema}.{tbl_cfg.name}")
 
             all_dfs.append(merged_tbl)
 
@@ -122,7 +137,10 @@ class Pipeline:
         candidate_cols = (
             pl.concat(all_dfs)
             .sort("type")
-            .with_columns(name=pl.coalesce("source", "target"))
+            .with_columns(
+                name=pl.coalesce("source", "target"),
+                data_type=pl.col("target_data_type"),
+            )
             .unique(subset=["name"], keep="last", maintain_order=True)
             .drop("target", "source")
         )

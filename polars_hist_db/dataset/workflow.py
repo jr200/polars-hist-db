@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 import time
+from typing import Optional
 
 from sqlalchemy import Engine
 
@@ -17,11 +18,11 @@ from .scrape import scrape_pipeline_as_transaction
 LOGGER = logging.getLogger(__name__)
 
 
-def run_workflows(config: Config, engine: Engine):
+def run_workflows(config: Config, engine: Engine, dataset_name: Optional[str] = None):
     for dataset in config.datasets.datasets:
-        LOGGER.info("scraping dataset %s", dataset.name)
-
-        _run_workflow(dataset, config.tables, engine)
+        if dataset_name is None or dataset.name == dataset_name:
+            LOGGER.info("scraping dataset %s", dataset.name)
+            _run_workflow(dataset, config.tables, engine)
 
 
 def _run_workflow(

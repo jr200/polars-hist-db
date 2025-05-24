@@ -11,10 +11,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class ParserColumnConfig:
+class IngestionColumnConfig:
     column_type: Literal["data", "computed", "dsv_only", "time_partition_only"]
     table: str
-    data_type: str
+    ingestion_data_type: str
+    target_data_type: str
     source: Optional[str] = None
     target: Optional[str] = None
     transforms: Dict[str, Any] = field(default_factory=dict)
@@ -32,7 +33,8 @@ class ParserColumnConfig:
             "table": pl.Utf8,
             "source": pl.Utf8,
             "target": pl.Utf8,
-            "data_type": pl.Utf8,
+            "target_data_type": pl.Utf8,
+            "ingestion_data_type": pl.Utf8,
             "column_type": pl.Utf8,
             "required": pl.Boolean,
             "transforms": pl.Struct(

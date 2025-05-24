@@ -5,7 +5,7 @@ from typing import Optional, Mapping, Sequence, Tuple, Union
 
 import polars as pl
 
-from ..config.parser_config import ParserColumnConfig
+from ..config.parser_config import IngestionColumnConfig
 from ..config.fn_registry import FunctionRegistry
 from ..types import PolarsType
 
@@ -41,7 +41,7 @@ def _parse_header_row(
 
 
 def _apply_header_transforms(
-    df: pl.DataFrame, col_def: ParserColumnConfig
+    df: pl.DataFrame, col_def: IngestionColumnConfig
 ) -> pl.DataFrame:
     if not col_def.transforms:
         return df
@@ -58,25 +58,25 @@ def _apply_header_transforms(
         # source_col = col_def.target if col_def.source is None else col_def.source
         df = fn_reg.call_function(fn_name, df, input_col, fn_args)
 
-    result_col_dtype = PolarsType.from_sql(col_def.data_type)
+    result_col_dtype = PolarsType.from_sql(col_def.target_data_type)
     df = df.with_columns(pl.col(input_col).cast(result_col_dtype))
 
     return df
 
 
 def _get_column_dtype(
-    column_name: str, column_configs: Sequence[ParserColumnConfig]
+    column_name: str, column_configs: Sequence[IngestionColumnConfig]
 ) -> pl.DataType:
     for cfg in column_configs:
         if cfg.source == column_name:
-            return PolarsType.from_sql(cfg.data_type)
+            return PolarsType.from_sql(cfg.target_data_type)
 
     raise ValueError("bad configuration. missing column definition for {column_name}")
 
 
 def load_typed_dsv(
     file_or_bytes: Union[Path, bytes],
-    column_configs: Sequence[ParserColumnConfig],
+    column_configs: Sequence[IngestionColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
     delimiter: Optional[str] = None,
     null_values: Optional[Sequence[str]] = None,
@@ -96,15 +96,15 @@ def load_typed_dsv(
         if cfg.source and cfg.column_type in ["data", "dsv_only"]
     ]
 
-    header_schema: Mapping[str, pl.DataType] = {
-        cfg.source: PolarsType.from_sql(cfg.data_type)
+    headers_ingestion_schema: Mapping[str, pl.DataType] = {
+        cfg.source: PolarsType.from_sql(cfg.ingestion_data_type)
         for cfg in header_configs
         if cfg.source
     }
 
     forced_schema = {
         header: dtype
-        for header, dtype in {**header_schema, **schema_overrides}.items()
+        for header, dtype in {**headers_ingestion_schema, **schema_overrides}.items()
         if _is_forced_dtype(dtype) and header in headers
     }
 
@@ -145,8 +145,16 @@ def load_typed_dsv(
 
         dsv_df = dsv_df.pipe(_apply_header_transforms, col_cfg)
 
+    headers_target_schema: Mapping[str, pl.DataType] = {
+        cfg.source: PolarsType.from_sql(cfg.target_data_type)
+        for cfg in header_configs
+        if cfg.source
+    }
+
     dsv_df = dsv_df.pipe(
-        PolarsType.apply_schema_to_dataframe, **header_schema, **schema_overrides
+        PolarsType.apply_schema_to_dataframe,
+        **headers_target_schema,
+        **schema_overrides,
     )
 
     agg_headers = {

@@ -2,7 +2,13 @@ import logging
 from typing import Any, Callable, List, Dict
 import polars as pl
 
-from .fn_builtins import apply_type_casts, combine_columns, map_to_true, null_if_gte
+from .fn_builtins import (
+    apply_type_casts,
+    combine_columns,
+    map_to_true,
+    null_if_gte,
+    parse_date,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +30,7 @@ class FunctionRegistry:
             self.register_function("apply_type_casts", apply_type_casts)
             self.register_function("combine_columns", combine_columns)
             self.register_function("map_to_true", map_to_true)
+            self.register_function("parse_date", parse_date)
 
         return self._registry
 

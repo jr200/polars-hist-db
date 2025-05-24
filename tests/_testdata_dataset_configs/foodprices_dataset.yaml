@@ -51,8 +51,8 @@ table_configs:
     columns:
       - { name: product_id, data_type: INT, nullable: false }
       - { name: um_id, data_type: INT, nullable: false }
-      - { name: price, data_type: 'DECIMAL(10,4)' }
-      - { name: price_usd, data_type: 'DECIMAL(10,4)' }
+      - { name: price, data_type: 'NUMERIC(10,4)' }
+      - { name: price_usd, data_type: 'NUMERIC(10,4)' }
 
 
 datasets:
@@ -88,8 +88,8 @@ datasets:
           - { source: ProductId, target: product_id }
           - { source: UmId, target: um_id }
           - { source: Price, target: price }
-          - { source: Month, data_type: VARCHAR(2) }
-          - { source: Year, data_type: INT }
-          - { source: Placex, data_type: VARCHAR(64) }
-          - { target: price_usd, data_type: "NUMERIC(10,4)", transforms: { try_to_usd: ['Price', 'Year'] } }
-          - { target: time, column_type: time_partition_only, data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ], apply_type_casts: [Utf8, Date] } }
+          - { source: Month, ingestion_data_type: VARCHAR(2) }
+          - { source: Year, ingestion_data_type: INT }
+          - { source: Placex, ingestion_data_type: VARCHAR(64) }
+          - { target: price_usd, transforms: { try_to_usd: ['Price', 'Year'] } }
+          - { target: time, column_type: time_partition_only, target_data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ], apply_type_casts: [Utf8, Date] } }

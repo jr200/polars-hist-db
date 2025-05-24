@@ -1,5 +1,5 @@
 from .config import Config
-from .dataset import DatasetConfig, DatasetsConfig, ParserColumnConfig
+from .dataset import DatasetConfig, DatasetsConfig, IngestionColumnConfig
 from .engine import DbEngineConfig
 from .table import (
     TableColumnConfig,
@@ -17,7 +17,7 @@ __all__ = [
     "DatasetsConfig",
     "DbEngineConfig",
     "TableColumnConfig",
-    "ParserColumnConfig",
+    "IngestionColumnConfig",
     "DeltaConfig",
     "ForeignKeyConfig",
     "TableConfig",

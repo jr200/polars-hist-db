@@ -1,8 +1,5 @@
 from .clock import Clock
 from .exceptions import NonRetryableException
+from .compare import compare_dataframes
 
-import polars as pl
-
-pl.enable_string_cache()
-
-__all__ = ["Clock", "NonRetryableException"]
+__all__ = ["Clock", "NonRetryableException", "compare_dataframes"]

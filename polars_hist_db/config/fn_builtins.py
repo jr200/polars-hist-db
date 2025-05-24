@@ -16,6 +16,15 @@ def null_if_gte(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFr
     return df
 
 
+def parse_date(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFrame:
+    date_format = args[0]
+    df = df.with_columns(
+        pl.col(result_col).str.strptime(pl.Datetime, date_format).alias(result_col)
+    )
+
+    return df
+
+
 def apply_type_casts(
     df: pl.DataFrame, result_col: str, args: List[Any]
 ) -> pl.DataFrame:

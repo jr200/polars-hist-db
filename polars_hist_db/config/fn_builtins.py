@@ -19,10 +19,12 @@ def null_if_gte(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFr
 def parse_date(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFrame:
     date_formats = args
     df = df.with_columns(
-        pl.coalesce(*[
-            pl.col(result_col).str.strptime(pl.Datetime, fmt, strict=False)
-            for fmt in date_formats
-        ]).alias(result_col)
+        pl.coalesce(
+            *[
+                pl.col(result_col).str.strptime(pl.Datetime, fmt, strict=False)
+                for fmt in date_formats
+            ]
+        ).alias(result_col)
     )
 
     return df

@@ -5,9 +5,9 @@ from typing import Optional, Mapping, Sequence, Tuple, Union
 
 import polars as pl
 
-from ..config.parser_config import IngestionColumnConfig
-from ..config.fn_registry import FunctionRegistry
-from ..types import PolarsType
+from ...config.parser_config import IngestionColumnConfig
+from ...config.fn_registry import FunctionRegistry
+from ...types import PolarsType
 
 LOGGER = logging.getLogger(__name__)
 

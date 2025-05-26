@@ -13,6 +13,11 @@ Main features are:
 
 ## Development Setup
 
+1. Install NATS server
+```bash
+brew install nats-server
+```
+
 1. Create a virtual environment:
 ```bash
 python3 -m venv .venv

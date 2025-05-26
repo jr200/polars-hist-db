@@ -38,23 +38,24 @@ pl.Config(
 
 
 def _tests_dir():
-    tests_dir = Path(__file__).parent.absolute()
+    tests_dir = Path(__file__).parent.parent.parent.absolute()
+    tests_dir = os.path.join(tests_dir, "tests")
     return tests_dir
 
 
 def get_table_config(filename: str):
-    data_dir = _tests_dir() / "_testdata_table_configs"
-    return data_dir / filename
+    data_dir = os.path.join(_tests_dir(), "_testdata_table_configs")
+    return os.path.join(data_dir, filename)
 
 
 def get_dataset_config(filename: str):
-    data_dir = _tests_dir() / "_testdata_dataset_configs"
-    return data_dir / filename
+    data_dir = os.path.join(_tests_dir(), "_testdata_dataset_configs")
+    return os.path.join(data_dir, filename)
 
 
 def get_dataset_data(filename: str):
-    data_dir = _tests_dir() / "_testdata_dataset_data"
-    return data_dir / filename
+    data_dir = os.path.join(_tests_dir(), "_testdata_dataset_data")
+    return os.path.join(data_dir, filename)
 
 
 def mariadb_engine_test(**kwargs) -> Engine:

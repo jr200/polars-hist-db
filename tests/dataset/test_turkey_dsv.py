@@ -9,7 +9,7 @@ from polars_hist_db.config.fn_registry import FunctionRegistry
 from polars_hist_db.dataset import run_workflows
 from polars_hist_db.core.dataframe import DataframeOps, TimeHint
 from polars_hist_db.utils import compare_dataframes
-from tests.utils import (
+from ..utils.dsv_helper import (
     from_test_result,
     setup_fixture_dataset,
 )
@@ -84,7 +84,7 @@ def fixture_with_config():
 async def test_load_file(fixture_with_config):
     engine, base_config = fixture_with_config
 
-    await run_workflows(base_config, engine)
+    await run_workflows(base_config, engine, "turkey_food_prices_dsv")
 
     with engine.begin() as connection:
         unit_info_df = DataframeOps(connection).from_table("test", "unit_info")

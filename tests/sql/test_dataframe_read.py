@@ -5,7 +5,7 @@ from sqlalchemy import select
 from polars_hist_db.core.dataframe import DataframeOps
 
 from polars_hist_db.core.table import TableOps
-from tests.utils import (
+from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
     setup_fixture_tableconfigs,

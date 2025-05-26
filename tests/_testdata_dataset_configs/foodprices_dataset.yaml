@@ -56,6 +56,15 @@ table_configs:
 
 
 datasets:
+  # - name: turkey_food_prices_stream
+  #   delta_table_schema: test
+  #   scrape_limit: ~
+  #   input_config:
+  #     type: nats-jetstream
+  #     stream_config:
+  #       stream_name: turkey_food_prices
+
+    
   - name: turkey_food_prices_dsv
     delta_table_schema: test
     scrape_limit: ~
@@ -73,6 +82,8 @@ datasets:
       column: time
       truncate: 5d
       unique_strategy: last
+
+
     pipeline:
       - table: unit_info
         columns:

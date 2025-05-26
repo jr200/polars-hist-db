@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import pytest
 
 from polars_hist_db.core import DbOps
-from tests.utils import setup_fixture_tableconfigs
+from ..utils.dsv_helper import setup_fixture_tableconfigs
 
 
 @pytest.fixture

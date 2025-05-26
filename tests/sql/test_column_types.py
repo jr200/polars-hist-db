@@ -2,7 +2,7 @@ from datetime import datetime
 import pytest
 from polars.testing import assert_frame_equal
 
-from tests.utils import (
+from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
     setup_fixture_tableconfigs,

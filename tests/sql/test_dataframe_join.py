@@ -5,7 +5,7 @@ from polars.testing import assert_frame_equal
 
 from polars_hist_db.core.dataframe import TimeHint, DataframeOps
 
-from tests.utils import (
+from ..utils.dsv_helper import (
     add_random_row,
     from_test_result,
     modify_and_read,

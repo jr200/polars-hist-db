@@ -27,12 +27,8 @@ class Config:
             )
 
         if datasets_path:
-            config_dir = (
-                None if config_filename is None else os.path.dirname(config_filename)
-            )
             self.datasets = DatasetsConfig(
-                datasets=Config.get_nested_key(cfg_dict, datasets_path),
-                base_dir=config_dir,
+                datasets=Config.get_nested_key(cfg_dict, datasets_path)
             )
 
     @staticmethod

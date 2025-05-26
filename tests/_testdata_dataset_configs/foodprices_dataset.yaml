@@ -56,17 +56,19 @@ table_configs:
 
 
 datasets:
-  - name: turkey_food_prices
+  - name: turkey_food_prices_dsv
     delta_table_schema: test
     scrape_limit: ~
-    search_paths:
-      - root_path: ../_testdata_dataset_data
-        file_include: ['turkey_food_prices.csv']
-        is_enabled: true
-        timestamp:
-          source_tz: Europe/London
-          target_tz: UTC          
-          method: mtime
+    input_config:
+      type: dsv
+      search_paths:
+        - root_path: tests/_testdata_dataset_data
+          file_include: ['turkey_food_prices.csv']
+          is_enabled: true
+          timestamp:
+            source_tz: Europe/London
+            target_tz: UTC
+            method: mtime
     time_partition:
       column: time
       truncate: 5d

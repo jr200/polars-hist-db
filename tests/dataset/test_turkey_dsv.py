@@ -80,10 +80,11 @@ def fixture_with_config():
     yield from setup_fixture_dataset("foodprices_dataset.yaml")
 
 
-def test_load_file(fixture_with_config):
+@pytest.mark.asyncio
+async def test_load_file(fixture_with_config):
     engine, base_config = fixture_with_config
 
-    run_workflows(base_config, engine)
+    await run_workflows(base_config, engine)
 
     with engine.begin() as connection:
         unit_info_df = DataframeOps(connection).from_table("test", "unit_info")
@@ -110,7 +111,7 @@ def test_load_file(fixture_with_config):
             ),
         )
 
-    dataset = base_config.datasets["turkey_food_prices"]
+    dataset = base_config.datasets["turkey_food_prices_dsv"]
 
     expected_unit_info_df = from_test_result(
         """

@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional, Sequence
-import os
 
 import polars as pl
 import logging
 
 from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
+from .input_source import InputConfig, DSVInputConfig, StreamInputConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -203,10 +203,9 @@ class TimePartition:
 class DatasetConfig:
     name: str
     delta_table_schema: str
-    search_paths: pl.DataFrame
+    input_config: InputConfig
     pipeline: Pipeline
     scrape_limit: Optional[int] = None
-    base_dir: Optional[str] = None
     time_partition: Optional[TimePartition] = None
     null_values: Optional[Sequence[str]] = None
 
@@ -214,15 +213,14 @@ class DatasetConfig:
         if not isinstance(self.pipeline, Pipeline):
             self.pipeline = Pipeline(items=self.pipeline)
 
-        if not isinstance(self.search_paths, pl.DataFrame):
-            for search_path in self.search_paths:
-                if "root_path" in search_path:
-                    path = search_path["root_path"]
-                    if not os.path.isabs(path):
-                        abs_path = os.path.normpath(os.path.join(self.base_dir, path))
-                        search_path["root_path"] = abs_path
-
-            self.search_paths = pl.from_records(self.search_paths)
+        if not isinstance(self.input_config, InputConfig):
+            input_type = self.input_config.get("type", "dsv")
+            if input_type == "dsv":
+                self.input_config = DSVInputConfig(**self.input_config)
+            elif input_type == "stream":
+                self.input_config = StreamInputConfig(**self.input_config)
+            else:
+                raise ValueError(f"Unsupported input type: {input_type}")
 
         if self.time_partition is not None and not isinstance(
             self.time_partition, TimePartition
@@ -233,13 +231,9 @@ class DatasetConfig:
 @dataclass
 class DatasetsConfig:
     datasets: Sequence[DatasetConfig]
-    base_dir: Optional[str]
 
     def __post_init__(self):
-        self.datasets = [
-            DatasetConfig(**ds_dict, base_dir=self.base_dir)
-            for ds_dict in self.datasets
-        ]
+        self.datasets = [DatasetConfig(**ds_dict) for ds_dict in self.datasets]
 
     def __getitem__(self, name: str) -> Optional[DatasetConfig]:
         try:

@@ -23,6 +23,7 @@ scandir-rs = "2.8.0"
 
 [tool.poetry.extras]
 sqlachemy = ["polars"]
+nats = ["nats-py"]
 
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.7.1"

@@ -4,7 +4,7 @@ db:
   port: 3306
   username: root
   password: admin
-  
+
 table_configs:
   - name: unit_info
     schema: test
@@ -56,13 +56,45 @@ table_configs:
 
 
 datasets:
-  # - name: turkey_food_prices_stream
-  #   delta_table_schema: test
-  #   scrape_limit: ~
-  #   input_config:
-  #     type: nats-jetstream
-  #     stream_config:
-  #       stream_name: turkey_food_prices
+  - name: turkey_food_prices_stream
+    delta_table_schema: test
+    scrape_limit: ~
+    input_config:
+      type: jetstream
+      nats:
+        host: 127.0.0.1
+        port: 4112
+        options: None
+      stream_config:
+        durable_consumer_name: test_consumer
+        name: turkey_food_stream
+        subjects:
+          - test.unit_info
+          - product_info
+          - food_prices
+
+    pipeline:
+      - table: unit_info
+        columns:
+          - { source: UmId, target: id }
+          - { source: UmName, target: name }
+
+      - table: product_info
+        columns:
+          - { source: ProductId, target: id }
+          - { source: ProductName, target: name }
+
+      - table: food_prices
+        type: primary
+        columns:
+          - { source: ProductId, target: product_id }
+          - { source: UmId, target: um_id }
+          - { source: Price, target: price }
+          - { source: Month, ingestion_data_type: VARCHAR(2) }
+          - { source: Year, ingestion_data_type: INT }
+          - { source: Placex, ingestion_data_type: VARCHAR(64) }
+          - { target: price_usd, transforms: { try_to_usd: ['Price', 'Year'] } }
+          - { target: time, column_type: time_partition_only, target_data_type: DATETIME, transforms: { combine_columns: ['${Year}', '-', '${Month}', '-01' ], apply_type_casts: [Utf8, Date] } }
 
     
   - name: turkey_food_prices_dsv

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Callable, Dict, Optional, Tuple
+from typing import AsyncGenerator, Callable, Dict, Tuple
 from datetime import datetime
 
 import polars as pl
@@ -16,7 +16,7 @@ class InputSource(ABC):
         dataset: DatasetConfig,
         tables: TableConfigs,
         engine: Engine,
-        scrape_limit: Optional[int] = None,
+        scrape_limit: int = -1,
     ) -> AsyncGenerator[
         Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]], None
     ]:

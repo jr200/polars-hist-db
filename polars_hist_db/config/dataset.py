@@ -6,7 +6,7 @@ import logging
 
 from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
-from .input_source import InputConfig, DSVInputConfig, StreamInputConfig
+from .input_source import InputConfig, DSVInputConfig, JetStreamInputConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -217,8 +217,8 @@ class DatasetConfig:
             input_type = self.input_config.get("type", "dsv")
             if input_type == "dsv":
                 self.input_config = DSVInputConfig(**self.input_config)
-            elif input_type == "stream":
-                self.input_config = StreamInputConfig(**self.input_config)
+            elif input_type == "jetstream":
+                self.input_config = JetStreamInputConfig(**self.input_config)
             else:
                 raise ValueError(f"Unsupported input type: {input_type}")
 

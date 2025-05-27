@@ -1,6 +1,7 @@
-from ..config.input_source import DSVInputConfig, InputConfig
+from ..config.input_source import DSVInputConfig, InputConfig, JetStreamInputConfig
 from .input_source import InputSource
 from .dsv_input_source import DsvInputSource
+from .jetstream_input_source import JetStreamInputSource
 
 
 class InputSourceFactory:
@@ -11,7 +12,8 @@ class InputSourceFactory:
         if config.type == "dsv":
             assert isinstance(config, DSVInputConfig)
             return DsvInputSource(config)
-        elif config.type == "stream":
-            raise NotImplementedError("Stream input source not implemented yet")
+        elif config.type == "jetstream":
+            assert isinstance(config, JetStreamInputConfig)
+            return JetStreamInputSource(config)
         else:
             raise ValueError(f"Unsupported input type: {config.type}")

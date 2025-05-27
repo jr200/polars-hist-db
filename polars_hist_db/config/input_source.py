@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 import os
 import logging
 
@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class InputConfig(ABC):
-    type: Literal["dsv", "stream"]
+    type: Literal["dsv", "jetstream"]
 
 
 @dataclass
@@ -31,4 +31,24 @@ class DSVInputConfig(InputConfig):
 
 
 @dataclass
-class StreamInputConfig(InputConfig): ...
+class NatsConfig:
+    host: str
+    port: int
+    options: Optional[Dict[str, Any]]
+
+
+@dataclass
+class StreamConfig:
+    durable_consumer_name: str
+    name: str
+    subjects: List[str]
+
+
+@dataclass
+class JetStreamInputConfig(InputConfig):
+    nats: NatsConfig
+    stream_config: StreamConfig
+
+    def __post_init__(self):
+        if isinstance(self.nats, dict):
+            self.nats = NatsConfig(**self.nats)

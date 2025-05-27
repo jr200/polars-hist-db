@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import time
-from typing import AsyncGenerator, Callable, Dict, Optional, Tuple
+from typing import AsyncGenerator, Callable, Dict, Tuple
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -83,7 +83,7 @@ class DsvInputSource(InputSource):
         dataset: DatasetConfig,
         tables: TableConfigs,
         engine: Engine,
-        scrape_limit: Optional[int] = None,
+        scrape_limit: int = -1,
     ) -> AsyncGenerator[
         Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]], None
     ]:
@@ -95,17 +95,17 @@ class DsvInputSource(InputSource):
             table_config = tables[table_name]
             table_schema = table_config.schema
 
-            aops = AuditOps(table_schema)
-
             assert isinstance(self.config.search_paths, pl.DataFrame)
             csv_files_df = find_files(self.config.search_paths)
+
+            aops = AuditOps(table_schema)
 
             with engine.begin() as connection:
                 csv_files_df = aops.filter_unprocessed_items(
                     csv_files_df, "path", table_name, connection
                 ).sort("created_at")
 
-                if scrape_limit is not None:
+                if scrape_limit > 0:
                     csv_files_df = csv_files_df.head(scrape_limit)
 
                 aops.prevalidate_new_items(table_name, csv_files_df, connection)
@@ -128,8 +128,8 @@ class DsvInputSource(InputSource):
 
                 def commit_fn(connection: Connection) -> bool:
                     result: bool = aops.add_entry(
-                        "file",
-                        Path(csv_file),
+                        "dsv",
+                        Path(csv_file).absolute().as_posix(),
                         table_name,
                         connection,
                         file_time,

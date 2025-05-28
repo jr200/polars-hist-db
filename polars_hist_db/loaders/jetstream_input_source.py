@@ -23,8 +23,6 @@ LOGGER = logging.getLogger(__name__)
 class JetStreamInputSource(InputSource):
     def __init__(self, config: JetStreamInputConfig):
         self.config = config
-        self.stream_name = self.config.stream_config.name
-        self.durable_consumer_name = self.config.stream_config.durable_consumer_name
 
     async def get_nats_client(self) -> nats.NATS:
         nats_url = f"nats://{self.config.nats.host}:{self.config.nats.port}"
@@ -67,18 +65,20 @@ class JetStreamInputSource(InputSource):
             aops = AuditOps(table_schema)
 
             with engine.begin() as connection:
-                latest_entry = aops.get_latest_entry(table_name, "jetstream", connection)
+                latest_entry = aops.get_latest_entry(
+                    table_name, "jetstream", connection
+                )
                 if latest_entry.is_empty():
                     latest_ts: datetime = datetime.fromtimestamp(0)
                 else:
-                    latest_ts: datetime = latest_entry.item(0, "data_source_ts")
+                    latest_ts = latest_entry.item(0, "data_source_ts")
 
             nc = await self.get_nats_client()
             js = nc.jetstream()
 
             osub = await js.subscribe(
-                self.stream_name,
-                durable=self.durable_consumer_name,
+                self.config.js_args.name,
+                durable=self.config.js_args.durable_consumer_name,
                 ordered_consumer=True,
             )
 
@@ -95,7 +95,7 @@ class JetStreamInputSource(InputSource):
                     def commit_fn(connection: Connection) -> bool:
                         result: bool = aops.add_entry(
                             "jetstream",
-                            self.stream_name,
+                            self.config.js_args.name,
                             table_name,
                             connection,
                             ts,

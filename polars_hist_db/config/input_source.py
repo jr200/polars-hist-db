@@ -38,7 +38,7 @@ class NatsConfig:
 
 
 @dataclass
-class StreamConfig:
+class JetStreamArgs:
     durable_consumer_name: str
     name: str
     subjects: List[str]
@@ -47,8 +47,9 @@ class StreamConfig:
 @dataclass
 class JetStreamInputConfig(InputConfig):
     nats: NatsConfig
-    stream_config: StreamConfig
+    js_args: JetStreamArgs
 
     def __post_init__(self):
         if isinstance(self.nats, dict):
             self.nats = NatsConfig(**self.nats)
+            self.js_args = JetStreamArgs(**self.js_args)

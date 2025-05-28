@@ -231,10 +231,14 @@ class AuditOps:
         tbl = self.create(connection)
         latest_log_sql = (
             select(tbl)
-            .where(and_(*[
-                tbl.c["data_source_type"] == data_source_type,
-                tbl.c["table_name"] == target_table_name,
-            ]))
+            .where(
+                and_(
+                    *[
+                        tbl.c["data_source_type"] == data_source_type,
+                        tbl.c["table_name"] == target_table_name,
+                    ]
+                )
+            )
             .order_by(tbl.c["data_source_ts"])
             .limit(1)
         )

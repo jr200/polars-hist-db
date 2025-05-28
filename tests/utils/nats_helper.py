@@ -29,6 +29,7 @@ async def publish_dataframe_messages(
     Returns:
         List of acknowledgment objects from the publish operations
     """
+
     acks = []
     for row in df.iter_rows(named=True):
         # Convert row to JSON and publish

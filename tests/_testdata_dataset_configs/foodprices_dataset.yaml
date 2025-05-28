@@ -56,7 +56,7 @@ table_configs:
 
 
 datasets:
-  - name: turkey_food_prices_stream
+  - name: turkey_food_prices_jetstream
     delta_table_schema: test
     scrape_limit: ~
     input_config:
@@ -64,10 +64,10 @@ datasets:
       nats:
         host: 127.0.0.1
         port: 4112
-        options: None
-      stream_config:
-        durable_consumer_name: test_consumer
+        options: ~
+      js_args:
         name: turkey_food_stream
+        durable_consumer_name: test_consumer
         subjects:
           - test.unit_info
           - product_info

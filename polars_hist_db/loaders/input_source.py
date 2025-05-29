@@ -25,3 +25,8 @@ class InputSource(ABC):
     ]:
         """Async generator that yields the next dataframe to process"""
         raise NotImplementedError("InputSource is an abstract class")
+
+    @abstractmethod
+    async def cleanup(self) -> None:
+        """Clean up any resources used by the input source"""
+        raise NotImplementedError("InputSource is an abstract class")

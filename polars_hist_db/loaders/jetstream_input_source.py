@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 import logging
 from pathlib import Path
-from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Mapping, Tuple
+from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Mapping, Tuple, Optional
 
 import nats
 from nats.aio.msg import Msg
@@ -21,12 +21,14 @@ LOGGER = logging.getLogger(__name__)
 class JetStreamInputSource(InputSource):
     def __init__(self, config: JetStreamInputConfig):
         self.config = config
+        self._nats_client: Optional[nats.NATS] = None
 
     async def _get_nats_client(self) -> nats.NATS:
-        nats_url = f"nats://{self.config.nats.host}:{self.config.nats.port}"
-        options = self.config.nats.options or {}
-        nats_client = await nats.connect(nats_url, **options)
-        return nats_client
+        if self._nats_client is None:
+            nats_url = f"nats://{self.config.nats.host}:{self.config.nats.port}"
+            options = self.config.nats.options or {}
+            self._nats_client = await nats.connect(nats_url, **options)
+        return self._nats_client
 
     @staticmethod
     def _validate_auth(auth_config: Mapping[str, Any]):
@@ -48,6 +50,11 @@ class JetStreamInputSource(InputSource):
         data = json.loads(msg.data.decode())
         return pl.from_dict(data)
 
+    async def cleanup(self) -> None:
+        if self._nats_client is not None:
+            await self._nats_client.close()
+            self._nats_client = None
+
     async def next_df(
         self,
         dataset: DatasetConfig,
@@ -68,7 +75,6 @@ class JetStreamInputSource(InputSource):
             ],
             None,
         ]:
-            nc = None
             try:
                 nc = await self._get_nats_client()
                 js = nc.jetstream()
@@ -97,8 +103,8 @@ class JetStreamInputSource(InputSource):
 
                     except TimeoutError:
                         break
-            finally:
-                if nc is not None:
-                    await nc.close()
+            except Exception:
+                await self.cleanup()
+                raise
 
         return _generator()

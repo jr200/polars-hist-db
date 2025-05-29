@@ -24,6 +24,9 @@ class DsvInputSource(InputSource):
     def __init__(self, config: DSVInputConfig):
         self.config = config
 
+    async def cleanup(self) -> None:
+        pass
+
     def _scrape_file(
         self,
         csv_file: Path,

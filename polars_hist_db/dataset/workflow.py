@@ -71,10 +71,13 @@ async def _run_workflow(
     start_time = time.perf_counter()
 
     input_source = InputSourceFactory.create_input_source(input_config)
-    async for partitions, commit_fn in await input_source.next_df(
-        dataset, tables, engine
-    ):
-        await try_upload(partitions, dataset, tables, engine, commit_fn)
+    try:
+        async for partitions, commit_fn in await input_source.next_df(
+            dataset, tables, engine
+        ):
+            await try_upload(partitions, dataset, tables, engine, commit_fn)
+    finally:
+        await input_source.cleanup()
 
     Clock().add_timing("workflow", time.perf_counter() - start_time)
 

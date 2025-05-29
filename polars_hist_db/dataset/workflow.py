@@ -74,7 +74,7 @@ async def _run_workflow(
     async for partitions, commit_fn in await input_source.next_df(
         dataset, tables, engine
     ):
-        try_upload(partitions, dataset, tables, engine, commit_fn)
+        await try_upload(partitions, dataset, tables, engine, commit_fn)
 
     Clock().add_timing("workflow", time.perf_counter() - start_time)
 

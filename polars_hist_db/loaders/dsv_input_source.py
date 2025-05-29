@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import time
-from typing import AsyncGenerator, Callable, Dict, Tuple
+from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -85,10 +85,16 @@ class DsvInputSource(InputSource):
         engine: Engine,
         scrape_limit: int = -1,
     ) -> AsyncGenerator[
-        Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]], None
+        Tuple[
+            Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
+        ],
+        None,
     ]:
         async def _generator() -> AsyncGenerator[
-            Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]],
+            Tuple[
+                Dict[Tuple[datetime], pl.DataFrame],
+                Callable[[Connection], Awaitable[bool]],
+            ],
             None,
         ]:
             table_name = dataset.pipeline.get_main_table_name()
@@ -126,7 +132,7 @@ class DsvInputSource(InputSource):
                     Path(csv_file), file_time, dataset, tables
                 )
 
-                def commit_fn(connection: Connection) -> bool:
+                async def commit_fn(connection: Connection) -> bool:
                     result: bool = aops.add_entry(
                         "dsv",
                         Path(csv_file).absolute().as_posix(),

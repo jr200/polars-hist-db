@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Callable, Dict, Tuple
+from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple
 from datetime import datetime
 
 import polars as pl
@@ -18,7 +18,10 @@ class InputSource(ABC):
         engine: Engine,
         scrape_limit: int = -1,
     ) -> AsyncGenerator[
-        Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]], None
+        Tuple[
+            Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
+        ],
+        None,
     ]:
         """Async generator that yields the next dataframe to process"""
         raise NotImplementedError("InputSource is an abstract class")

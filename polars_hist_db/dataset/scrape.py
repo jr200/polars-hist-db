@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from time import sleep
-from typing import Callable, Dict, Tuple
+from typing import Awaitable, Callable, Dict, Tuple
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -35,12 +35,12 @@ def _scrape_pipeline_item(
         raise ValueError(f"unknown item type: {item_type}")
 
 
-def try_upload(
+async def try_upload(
     partitions: Dict[Tuple[datetime,], pl.DataFrame],
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
-    commit_fn: Callable[[Connection], bool],
+    commit_fn: Callable[[Connection], Awaitable[bool]],
     num_retries: int = 3,
     seconds_between_retries: float = 60,
 ):
@@ -85,7 +85,7 @@ def try_upload(
                                 connection,
                             )
 
-                    success = commit_fn(connection)
+                    success = await commit_fn(connection)
                     if success:
                         return
 

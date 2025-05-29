@@ -19,7 +19,7 @@ from .helpers import custom_try_to_usd
 @pytest.fixture
 def fixture_with_config():
     fn_reg = FunctionRegistry()
-    fn_reg.register_function("try_to_usd", custom_try_to_usd)
+    fn_reg.register_function("try_to_usd", custom_try_to_usd, allow_overwrite=True)
 
     yield from setup_fixture_dataset("foodprices_dataset.yaml")
 

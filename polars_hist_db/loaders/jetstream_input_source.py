@@ -2,15 +2,13 @@ from datetime import datetime
 import json
 import logging
 from pathlib import Path
-from typing import Any, AsyncGenerator, Callable, Dict, Mapping, Tuple
+from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Mapping, Tuple
 
 import nats
 from nats.aio.msg import Msg
 
 import polars as pl
 from sqlalchemy import Connection, Engine
-
-from polars_hist_db.core.audit import AuditOps
 
 from ..config.dataset import DatasetConfig
 from ..config.input_source import JetStreamInputConfig
@@ -24,7 +22,7 @@ class JetStreamInputSource(InputSource):
     def __init__(self, config: JetStreamInputConfig):
         self.config = config
 
-    async def get_nats_client(self) -> nats.NATS:
+    async def _get_nats_client(self) -> nats.NATS:
         nats_url = f"nats://{self.config.nats.host}:{self.config.nats.port}"
         options = self.config.nats.options or {}
         nats_client = await nats.connect(nats_url, **options)
@@ -45,66 +43,62 @@ class JetStreamInputSource(InputSource):
             if file_size < 512:
                 raise ValueError(f"Invalid credentials file: {creds_file}. Check file.")
 
+    @staticmethod
+    def _load_df_from_msg(msg: Msg) -> pl.DataFrame:
+        data = json.loads(msg.data.decode())
+        return pl.from_dict(data)
+
     async def next_df(
         self,
         dataset: DatasetConfig,
-        tables: TableConfigs,
-        engine: Engine,
+        _tables: TableConfigs,
+        _engine: Engine,
         scrape_limit: int = -1,
+        load_df_from_msg: Callable[[Msg], pl.DataFrame] = _load_df_from_msg,
     ) -> AsyncGenerator[
-        Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]], None
+        Tuple[
+            Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
+        ],
+        None,
     ]:
         async def _generator() -> AsyncGenerator[
-            Tuple[Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], bool]],
+            Tuple[
+                Dict[Tuple[datetime], pl.DataFrame],
+                Callable[[Connection], Awaitable[bool]],
+            ],
             None,
         ]:
-            table_name = dataset.pipeline.get_main_table_name()
-            table_config = tables[table_name]
-            table_schema = table_config.schema
+            nc = None
+            try:
+                nc = await self._get_nats_client()
+                js = nc.jetstream()
+                remaining_msgs = scrape_limit
 
-            aops = AuditOps(table_schema)
-
-            with engine.begin() as connection:
-                latest_entry = aops.get_latest_entry(
-                    table_name, "jetstream", connection
+                sub = await js.pull_subscribe(
+                    self.config.js_args.subjects[0],
+                    stream=self.config.js_args.name,
+                    durable=self.config.js_args.durable_consumer_name,
                 )
-                if latest_entry.is_empty():
-                    latest_ts: datetime = datetime.fromtimestamp(0)
-                else:
-                    latest_ts = latest_entry.item(0, "data_source_ts")
 
-            nc = await self.get_nats_client()
-            js = nc.jetstream()
+                while remaining_msgs != 0:
+                    remaining_msgs -= 1
+                    try:
+                        msgs = await sub.fetch()
 
-            osub = await js.subscribe(
-                self.config.js_args.name,
-                durable=self.config.js_args.durable_consumer_name,
-                ordered_consumer=True,
-            )
+                        for msg in msgs:
+                            partitions = load_df_from_msg(msg)
+                            ts: datetime = msg.metadata.timestamp
 
-            while scrape_limit != 0:
-                try:
-                    msg: Msg = await osub.next_msg()
-                    data = json.loads(msg.data.decode())
-                    partitions = pl.read_json(data)
-                    ts: datetime = msg.metadata.timestamp
+                            async def commit_fn(_: Connection) -> bool:
+                                await msg.ack()
+                                return True
 
-                    if ts <= latest_ts:
-                        continue
+                            yield {(ts,): partitions}, commit_fn
 
-                    def commit_fn(connection: Connection) -> bool:
-                        result: bool = aops.add_entry(
-                            "jetstream",
-                            self.config.js_args.name,
-                            table_name,
-                            connection,
-                            ts,
-                        )
-                        return result
-
-                    yield {(ts,): partitions}, commit_fn
-
-                except TimeoutError:
-                    break
+                    except TimeoutError:
+                        break
+            finally:
+                if nc is not None:
+                    await nc.close()
 
         return _generator()

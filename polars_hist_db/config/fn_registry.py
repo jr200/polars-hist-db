@@ -38,11 +38,15 @@ class FunctionRegistry:
         if name in self._registry:
             del self._registry[name]
 
-    def register_function(self, name: str, fn: FnSignature) -> None:
-        if name in self._registry:
+    def register_function(
+        self, name: str, fn: FnSignature, allow_overwrite: bool = False
+    ) -> None:
+        if name in self._registry and not allow_overwrite:
             raise ValueError(
                 f"A function with the name '{name}' is already registered."
             )
+
+        LOGGER.debug("added function %s to registry", name)
         self._registry[name] = fn
 
     def call_function(

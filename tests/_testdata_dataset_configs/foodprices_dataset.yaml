@@ -64,14 +64,15 @@ datasets:
       nats:
         host: 127.0.0.1
         port: 4112
-        options: ~
+        options:
+          name: turkey_test_pubsub
       js_args:
-        name: turkey_food_stream
-        durable_consumer_name: test_consumer
+        name: turkey_test_food_stream
+        durable_consumer_name: turkey_test_consumer
         subjects:
-          - test.unit_info
-          - product_info
-          - food_prices
+          - turkey_test.unit_info
+          - turkey_test.product_info
+          - turkey_test.food_prices
 
     pipeline:
       - table: unit_info

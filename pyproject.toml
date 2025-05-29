@@ -20,6 +20,7 @@ pyyaml = "^6.0.2"
 sql-metadata = "^2.17.0"
 sqlalchemy = { version = "2.0.40", extras = ["asyncio"] }
 scandir-rs = "2.8.0"
+nats-py = "^2.10.0"
 
 [tool.poetry.extras]
 sqlachemy = ["polars"]

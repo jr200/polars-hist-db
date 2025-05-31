@@ -1,7 +1,9 @@
+from datetime import datetime
 import logging
 import time
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
+import polars as pl
 from sqlalchemy import Engine
 
 from ..loaders.input_source_factory import InputSourceFactory
@@ -16,12 +18,21 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def run_workflows(
-    config: Config, engine: Engine, dataset_name: Optional[str] = None
+    config: Config,
+    engine: Engine,
+    dataset_name: Optional[str] = None,
+    debug_capture_output: Optional[Dict[Tuple[datetime,], pl.DataFrame]] = None,
 ):
     for dataset in config.datasets.datasets:
         if dataset_name is None or dataset.name == dataset_name:
             LOGGER.info("scraping dataset %s", dataset.name)
-            await _run_workflow(dataset.input_config, dataset, config.tables, engine)
+            await _run_workflow(
+                dataset.input_config,
+                dataset,
+                config.tables,
+                engine,
+                debug_capture_output,
+            )
 
 
 def _create_delta_table(
@@ -60,6 +71,7 @@ async def _run_workflow(
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
+    debug_capture_output: Optional[Dict[Tuple[datetime,], pl.DataFrame]],
 ):
     table_name = dataset.pipeline.get_main_table_name()
     table_config = tables[table_name]
@@ -73,6 +85,9 @@ async def _run_workflow(
     input_source = InputSourceFactory.create_input_source(tables, dataset, input_config)
     try:
         async for partitions, commit_fn in await input_source.next_df(engine):
+            if debug_capture_output is not None:
+                debug_capture_output.update(partitions)
+
             await try_upload(partitions, dataset, tables, engine, commit_fn)
 
     except Exception as e:

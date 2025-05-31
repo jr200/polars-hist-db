@@ -151,7 +151,7 @@ def load_typed_dsv(
     dsv_df.columns = [c.strip() for c in dsv_df.columns]
 
     dsv_df = _apply_transformations(dsv_df, column_configs)
-    # dsv_df = _populate_nulls(dsv_df, column_configs)
+    dsv_df = _populate_nulls(dsv_df, column_configs)
 
     df = _validate_output_df(dsv_df, column_configs, header_configs, schema_overrides)
     # df = _populate_nulls(df, column_configs)

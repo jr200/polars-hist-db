@@ -46,7 +46,7 @@ async def try_upload(
 ):
     main_table_config: TableConfig = tables[dataset.pipeline.get_main_table_name()]
     tbl_to_header_map = dataset.pipeline.get_header_map(main_table_config.name)
-    header_keys = [tbl_to_header_map[k] for k in main_table_config.primary_keys]
+    header_keys = [tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys]
 
     while num_retries > 0:
         with engine.connect() as connection:

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 import logging
 from types import MappingProxyType
 from typing import Dict, Iterable, List, Literal, Mapping, Optional, Union
@@ -107,6 +107,10 @@ class DataframeOps:
                     default_value = pl.lit(bool(default_values[col])).cast(
                         col_polars_dtype
                     )
+                elif col_polars_dtype == pl.Time:
+                    default_value = pl.lit(
+                        time.fromisoformat(default_values[col])
+                    ).cast(col_polars_dtype)
                 else:
                     default_value = pl.lit(default_values[col]).cast(col_polars_dtype)
 

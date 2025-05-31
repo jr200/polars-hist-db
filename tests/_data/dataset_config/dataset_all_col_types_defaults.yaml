@@ -1,3 +1,11 @@
+db:
+  backend: mariadb
+  hostname: 127.0.0.1
+  port: 3306
+  username: root
+  password: admin
+
+
 table_configs:
   - name: all_col_types
     schema: test
@@ -41,16 +49,15 @@ datasets:
     scrape_limit: ~
     input_config:
       type: dsv
-      search_paths: []
     pipeline:
       - table: all_col_types
         type: primary
         columns:
-          # - { source: id, target: id }
+          - { source: id, target: id }
           - { source: bigint_col, target: bigint_col, value_if_missing: "9223372036854775807" }
           - { source: bit_col, target: bit_col, value_if_missing: "0" }
-          - { source: bool_col, target: bool_col, value_if_missing: "0" }
-          - { source: boolean_col, target: boolean_col, value_if_missing: "0" }
+          - { source: bool_col, target: bool_col, value_if_missing: "false" }
+          - { source: boolean_col, target: boolean_col, value_if_missing: "false" }
           - { source: char_col, target: char_col, value_if_missing: "?" }
           - { source: date_col, target: date_col, value_if_missing: "1985-10-26" }
           - { source: datetime_col, target: datetime_col, value_if_missing: "1985-10-26T01:21:00" }

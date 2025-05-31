@@ -78,7 +78,7 @@ class DsvCrawlerInputSource(InputSource):
         else:
             partitions = {(payload_time,): df}
 
-        return partitions
+        return partitions  # type: ignore[return-value]
 
     def _search_and_filter_files(
         self, table_schema: str, table_name: str, engine: Engine

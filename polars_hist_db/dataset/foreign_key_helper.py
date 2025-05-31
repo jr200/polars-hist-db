@@ -124,7 +124,7 @@ def deduce_foreign_keys(
             for c in parent_table_config.columns
             if c.default_value is not None and c.name
         }
-        new_items_to_insert_in_parent = DataframeOps.populate_nulls(
+        new_items_to_insert_in_parent = DataframeOps.fill_nulls_with_defaults(
             new_items_to_insert_in_parent, missing_values_map
         )
         LOGGER.debug(

@@ -14,7 +14,7 @@ from ..utils.dsv_helper import (
 
 @pytest.fixture
 def fixutre_with_simple_table():
-    yield from setup_fixture_tableconfigs("simple_nontemporal_table.yaml")
+    yield from setup_fixture_tableconfigs("table_config/table_simple_nontemporal.yaml")
 
 
 def test_select_sql(fixutre_with_simple_table):

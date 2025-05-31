@@ -2,7 +2,16 @@ from datetime import datetime
 import json
 import logging
 from pathlib import Path
-from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Mapping, Tuple, Optional
+from typing import (
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Dict,
+    Mapping,
+    Tuple,
+    Optional,
+)
 
 import nats
 from nats.aio.msg import Msg
@@ -19,7 +28,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class JetStreamInputSource(InputSource):
-    def __init__(self, config: JetStreamInputConfig):
+    def __init__(
+        self, tables: TableConfigs, dataset: DatasetConfig, config: JetStreamInputConfig
+    ):
+        super().__init__(tables, dataset)
         self.config = config
         self._nats_client: Optional[nats.NATS] = None
 
@@ -56,12 +68,7 @@ class JetStreamInputSource(InputSource):
             self._nats_client = None
 
     async def next_df(
-        self,
-        dataset: DatasetConfig,
-        _tables: TableConfigs,
-        _engine: Engine,
-        scrape_limit: int = -1,
-        load_df_from_msg: Callable[[Msg], pl.DataFrame] = _load_df_from_msg,
+        self, _engine: Engine
     ) -> AsyncGenerator[
         Tuple[
             Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
@@ -75,36 +82,32 @@ class JetStreamInputSource(InputSource):
             ],
             None,
         ]:
-            try:
-                nc = await self._get_nats_client()
-                js = nc.jetstream()
-                remaining_msgs = scrape_limit
+            nc = await self._get_nats_client()
+            js = nc.jetstream()
+            remaining_msgs = self.dataset.scrape_limit
 
-                sub = await js.pull_subscribe(
-                    self.config.js_args.subjects[0],
-                    stream=self.config.js_args.name,
-                    durable=self.config.js_args.durable_consumer_name,
-                )
+            sub = await js.pull_subscribe(
+                self.config.js_args.subjects[0],
+                stream=self.config.js_args.name,
+                durable=self.config.js_args.durable_consumer_name,
+            )
 
-                while remaining_msgs != 0:
-                    remaining_msgs -= 1
-                    try:
-                        msgs = await sub.fetch()
+            while remaining_msgs != 0:
+                remaining_msgs -= 1
+                try:
+                    msgs = await sub.fetch()
 
-                        for msg in msgs:
-                            partitions = load_df_from_msg(msg)
-                            ts: datetime = msg.metadata.timestamp
+                    for msg in msgs:
+                        partitions = self._load_df_from_msg(msg)
+                        ts: datetime = msg.metadata.timestamp
 
-                            async def commit_fn(_: Connection) -> bool:
-                                await msg.ack()
-                                return True
+                        async def commit_fn(_: Connection) -> bool:
+                            await msg.ack()
+                            return True
 
-                            yield {(ts,): partitions}, commit_fn
+                        yield {(ts,): partitions}, commit_fn
 
-                    except TimeoutError:
-                        break
-            except Exception:
-                await self.cleanup()
-                raise
+                except TimeoutError:
+                    break
 
         return _generator()

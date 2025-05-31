@@ -97,13 +97,19 @@ class DataframeOps:
         return df
 
     @staticmethod
-    def populate_nulls(
+    def fill_nulls_with_defaults(
         df: pl.DataFrame, default_values: Dict[str, str]
     ) -> pl.DataFrame:
         for col in df.columns:
             if col in default_values.keys():
                 col_polars_dtype = df[col].dtype
-                default_value = pl.lit(default_values[col]).cast(col_polars_dtype)
+                if col_polars_dtype == pl.Boolean:
+                    default_value = pl.lit(bool(default_values[col])).cast(
+                        col_polars_dtype
+                    )
+                else:
+                    default_value = pl.lit(default_values[col]).cast(col_polars_dtype)
+
                 df = df.with_columns(pl.col(col).fill_null(default_value))
 
         return df

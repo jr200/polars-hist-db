@@ -43,13 +43,8 @@ def _tests_dir():
     return tests_dir
 
 
-def get_table_config(filename: str):
-    data_dir = os.path.join(_tests_dir(), "_testdata_table_configs")
-    return os.path.join(data_dir, filename)
-
-
-def get_dataset_config(filename: str):
-    data_dir = os.path.join(_tests_dir(), "_testdata_dataset_configs")
+def get_test_config(filename: str):
+    data_dir = os.path.join(_tests_dir(), "_data")
     return os.path.join(data_dir, filename)
 
 
@@ -192,7 +187,7 @@ def from_test_result(
 
 def setup_fixture_tableconfigs(*test_files: str):
     engine = mariadb_engine_test()
-    table_configs = TableConfigs.from_yamls(*[get_table_config(f) for f in test_files])
+    table_configs = TableConfigs.from_yamls(*[get_test_config(f) for f in test_files])
     table_schema = table_configs.schemas()[0]
 
     with engine.begin() as connection:
@@ -214,7 +209,7 @@ def setup_fixture_tableconfigs(*test_files: str):
 
 def setup_fixture_dataset(test_file: str):
     engine = mariadb_engine_test()
-    config = Config.from_yaml(get_dataset_config(test_file))
+    config = Config.from_yaml(get_test_config(test_file))
     table_schema = config.tables.schemas()[0]
     table_configs = config.tables
     audit_table = AuditOps(table_schema)

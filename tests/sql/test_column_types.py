@@ -2,6 +2,8 @@ from datetime import datetime
 import pytest
 from polars.testing import assert_frame_equal
 
+from polars_hist_db.utils.compare import compare_dataframes
+
 from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
@@ -11,12 +13,16 @@ from ..utils.dsv_helper import (
 
 @pytest.fixture
 def fixture_with_nullable():
-    yield from setup_fixture_tableconfigs("all_col_types_nullable.yaml")
+    yield from setup_fixture_tableconfigs(
+        "table_config/table_all_col_types_nullable.yaml"
+    )
 
 
 @pytest.fixture
 def fixture_with_defaults():
-    yield from setup_fixture_tableconfigs("all_col_types_defaults.yaml")
+    yield from setup_fixture_tableconfigs(
+        "dataset_config/dataset_all_col_types_defaults.yaml"
+    )
 
 
 def test_types_nullable(fixture_with_nullable):
@@ -231,4 +237,19 @@ def test_types_defaults(fixture_with_defaults):
         table_configs,
     )
 
-    assert_frame_equal(df_expected, df_read)
+    # using server-side defaults, the loaded df will have nulls
+    diff_df, missing_cols = compare_dataframes(
+        df_2,
+        df_expected,
+        on=["id"],
+    )
+    assert len(diff_df) == 1
+    assert len(missing_cols) == 2
+
+    diff_df, missing_cols = compare_dataframes(
+        df_read,
+        df_expected,
+        on=["id"],
+    )
+    assert diff_df.is_empty()
+    assert len(missing_cols) == 0

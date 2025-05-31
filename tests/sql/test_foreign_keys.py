@@ -8,15 +8,15 @@ from ..utils.dsv_helper import setup_fixture_tableconfigs
 
 @pytest.fixture
 def fixture_with_column_selection():
-    yield from setup_fixture_tableconfigs("exchange_config.yaml")
+    yield from setup_fixture_tableconfigs("table_config/table_exchanges.yaml")
 
 
 @pytest.fixture
 def fixture_with_linked_tables():
     yield from setup_fixture_tableconfigs(
-        "exchange_config.yaml",
-        "cryptocurrency_config.yaml",
-        "trading_pairs_config.yaml",
+        "table_config/table_exchanges.yaml",
+        "table_config/table_cryptocurrencies.yaml",
+        "table_config/table_trading_pairs.yaml",
     )
 
 

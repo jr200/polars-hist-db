@@ -97,11 +97,25 @@ def _infer_input_columns_from_tables(
                 source=column.name,
                 target=column.name,
                 nullable=column.nullable,
-                value_if_missing=column.default_value,
             )
             items.append(dc)
 
     return items
+
+
+def clean_dsv_string(data: str) -> str:
+    input_io = StringIO(data.strip())
+    output_io = StringIO()
+
+    reader = csv.reader(input_io)
+    writer = csv.writer(output_io, quoting=csv.QUOTE_MINIMAL)
+
+    for row in reader:
+        cleaned_row = [field.strip() if field is not None else "" for field in row]
+        writer.writerow(cleaned_row)
+
+    csv_output = output_io.getvalue().strip() + "\n"
+    return csv_output
 
 
 def from_test_result(
@@ -112,21 +126,7 @@ def from_test_result(
     skip_time_partition: bool = True,
     schema_overrides: Optional[Dict[str, pl.DataType]] = None,
 ) -> pl.DataFrame:
-    def _clean_csv_data(data: str) -> str:
-        input_io = StringIO(data.strip())
-        output_io = StringIO()
-
-        reader = csv.reader(input_io)
-        writer = csv.writer(output_io, quoting=csv.QUOTE_MINIMAL)
-
-        for row in reader:
-            cleaned_row = [field.strip() if field is not None else "" for field in row]
-            writer.writerow(cleaned_row)
-
-        csv_output = output_io.getvalue().strip() + "\n"
-        return csv_output
-
-    x_cleaned = _clean_csv_data(x)
+    x_cleaned = clean_dsv_string(x)
 
     if dataset:
         column_definitions = [

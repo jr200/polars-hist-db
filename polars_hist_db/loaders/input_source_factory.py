@@ -20,11 +20,6 @@ class InputSourceFactory:
         if config.type == "dsv":
             assert isinstance(config, DsvCrawlerInputConfig)
             return DsvCrawlerInputSource(tables, dataset, config)
-        elif config.type == "dsv-text":
-            # assert isinstance(config, DsvTextInputConfig)
-            # return DsvTextInputSource(config)
-            raise ValueError("TODO")
-
         elif config.type == "jetstream":
             assert isinstance(config, JetStreamInputConfig)
             return JetStreamInputSource(tables, dataset, config)

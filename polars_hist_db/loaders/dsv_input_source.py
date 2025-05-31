@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import time
-from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple
+from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple, Union
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -11,7 +11,6 @@ from ..config.dataset import DatasetConfig
 from ..config.input_source import DsvCrawlerInputConfig
 from ..config.table import TableConfig, TableConfigs
 from ..core.audit import AuditOps
-from ..core.dataframe import DataframeOps
 from .dsv.dsv_loader import load_typed_dsv
 from .dsv.file_search import find_files
 from .input_source import InputSource
@@ -33,11 +32,15 @@ class DsvCrawlerInputSource(InputSource):
     async def cleanup(self) -> None:
         pass
 
-    def _scrape_single_file(self, payload: Path | bytes, payload_time: datetime):
+    def _process_payload(
+        self, payload: Union[Path, bytes], payload_time: datetime
+    ) -> Dict[Tuple[datetime], pl.DataFrame]:
         pipeline = self.dataset.pipeline
         main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
         tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
-        header_keys = [tbl_to_header_map[k] for k in main_table_config.primary_keys]
+        header_keys = [
+            tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys
+        ]
 
         assert main_table_config.delta_config is not None
 
@@ -48,13 +51,6 @@ class DsvCrawlerInputSource(InputSource):
         df = load_typed_dsv(
             payload, column_definitions, null_values=self.dataset.null_values
         )
-
-        missing_values_map = {
-            c.source: c.value_if_missing
-            for c in column_definitions
-            if c.value_if_missing and c.source
-        }
-        df = DataframeOps.fill_nulls_with_defaults(df, missing_values_map)
 
         LOGGER.debug("loaded %d rows", len(df))
 
@@ -78,6 +74,7 @@ class DsvCrawlerInputSource(InputSource):
                     "__interval", include_key=False, as_dict=True, maintain_order=True
                 )
             )
+
         else:
             partitions = {(payload_time,): df}
 
@@ -85,7 +82,7 @@ class DsvCrawlerInputSource(InputSource):
 
     def _search_and_filter_files(
         self, table_schema: str, table_name: str, engine: Engine
-    ):
+    ) -> pl.DataFrame:
         assert isinstance(self.config.search_paths, pl.DataFrame)
         csv_files_df = find_files(self.config.search_paths)
 
@@ -122,6 +119,24 @@ class DsvCrawlerInputSource(InputSource):
             table_config = self.tables[table_name]
             table_schema = table_config.schema
 
+            if self.config.has_payload():
+                assert isinstance(self.config.payload, str)
+                assert self.config.payload_time is not None
+
+                partitions = self._process_payload(
+                    bytes(self.config.payload, "UTF8"), self.config.payload_time
+                )
+
+                async def commit_fn(connection: Connection) -> bool:
+                    return True
+
+                yield partitions, commit_fn
+                return
+
+            # Handle file-based case
+            if self.config.search_paths is None:
+                raise ValueError("Either payload or search_paths must be provided")
+
             csv_files_df = self._search_and_filter_files(
                 table_schema, table_name, engine
             )
@@ -138,7 +153,7 @@ class DsvCrawlerInputSource(InputSource):
 
                 start_time = time.perf_counter()
 
-                partitions = self._scrape_single_file(Path(csv_file), file_time)
+                partitions = self._process_payload(Path(csv_file), file_time)
 
                 async def commit_fn(connection: Connection) -> bool:
                     aops = AuditOps(table_schema)

@@ -17,7 +17,9 @@ from ..utils.dsv_helper import (
 
 @pytest.fixture
 def temp_table():
-    yield from setup_fixture_tableconfigs("all_col_types_nullable.yaml")
+    yield from setup_fixture_tableconfigs(
+        "table_config/table_all_col_types_nullable.yaml"
+    )
 
 
 def test_time_hints(temp_table):

@@ -73,6 +73,10 @@ datasets:
           - turkey_test.unit_info
           - turkey_test.product_info
           - turkey_test.food_prices
+    time_partition:
+      column: time
+      truncate: 5d
+      unique_strategy: last
 
     pipeline:
       - table: unit_info

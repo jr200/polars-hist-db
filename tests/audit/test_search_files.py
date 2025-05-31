@@ -18,7 +18,7 @@ def fixture_with_tmpdir():
 
 @pytest.fixture(scope="session", autouse=True)
 def fixture_with_table():
-    yield from setup_fixture_tableconfigs("simple_nontemporal_table.yaml")
+    yield from setup_fixture_tableconfigs("table_config/table_simple_nontemporal.yaml")
 
 
 def test_find_files(fixture_with_tmpdir):

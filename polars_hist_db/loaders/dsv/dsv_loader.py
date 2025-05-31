@@ -5,6 +5,8 @@ from typing import Optional, Mapping, Sequence, Tuple, Union
 
 import polars as pl
 
+from polars_hist_db.core.dataframe import DataframeOps
+
 from ...config.parser_config import IngestionColumnConfig
 from ...config.fn_registry import FunctionRegistry
 from ...types import PolarsType
@@ -74,6 +76,18 @@ def _get_column_dtype(
     raise ValueError("bad configuration. missing column definition for {column_name}")
 
 
+def _populate_nulls(
+    df: pl.DataFrame, column_definitions: Sequence[IngestionColumnConfig]
+) -> pl.DataFrame:
+    missing_values_map = {
+        c.source: c.value_if_missing
+        for c in column_definitions
+        if c.value_if_missing and c.source
+    }
+    df = DataframeOps.fill_nulls_with_defaults(df, missing_values_map)
+    return df
+
+
 def load_typed_dsv(
     file_or_bytes: Union[Path, bytes],
     column_configs: Sequence[IngestionColumnConfig],
@@ -81,7 +95,10 @@ def load_typed_dsv(
     delimiter: Optional[str] = None,
     null_values: Optional[Sequence[str]] = None,
 ) -> pl.DataFrame:
-    LOGGER.info("loading csv %s", str(file_or_bytes))
+    if isinstance(file_or_bytes, Path):
+        LOGGER.info("loading csv from path %s", str(file_or_bytes))
+    else:
+        LOGGER.info("loading csv from string (%d bytes)", len(file_or_bytes))
 
     sep, headers = _parse_header_row(file_or_bytes, delimiter)
 
@@ -133,6 +150,18 @@ def load_typed_dsv(
 
     dsv_df.columns = [c.strip() for c in dsv_df.columns]
 
+    dsv_df = _apply_transformations(dsv_df, column_configs)
+    # dsv_df = _populate_nulls(dsv_df, column_configs)
+
+    df = _validate_output_df(dsv_df, column_configs, header_configs, schema_overrides)
+    # df = _populate_nulls(df, column_configs)
+
+    return df
+
+
+def _apply_transformations(
+    dsv_df: pl.DataFrame, column_configs: Sequence[IngestionColumnConfig]
+) -> pl.DataFrame:
     for col_cfg in column_configs:
         # skip columns already computed
         if (
@@ -145,16 +174,13 @@ def load_typed_dsv(
 
         dsv_df = dsv_df.pipe(_apply_header_transforms, col_cfg)
 
-    headers_target_schema: Mapping[str, pl.DataType] = {
-        cfg.source: PolarsType.from_sql(cfg.target_data_type)
-        for cfg in header_configs
-        if cfg.source
-    }
-
-    dsv_df = dsv_df.pipe(
-        PolarsType.apply_schema_to_dataframe,
-        **headers_target_schema,
-        **schema_overrides,
+    # # drop headers only used in temporary calc
+    dsv_df = dsv_df.drop(
+        [
+            col_cfg.source
+            for col_cfg in column_configs
+            if col_cfg.column_type == "dsv_only" and col_cfg.source in dsv_df.columns
+        ]
     )
 
     agg_headers = {
@@ -166,6 +192,27 @@ def load_typed_dsv(
         dsv_df = dsv_df.group_by(pl.exclude(agg_headers), maintain_order=True).agg(
             pl.sum(c) for c in agg_headers.intersection(dsv_df.columns)
         )
+
+    return dsv_df
+
+
+def _validate_output_df(
+    dsv_df: pl.DataFrame,
+    column_configs: Sequence[IngestionColumnConfig],
+    header_configs: Sequence[IngestionColumnConfig],
+    schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
+) -> pl.DataFrame:
+    headers_target_schema: Mapping[str, pl.DataType] = {
+        cfg.source: PolarsType.from_sql(cfg.target_data_type)
+        for cfg in header_configs
+        if cfg.source
+    }
+
+    dsv_df = dsv_df.pipe(
+        PolarsType.apply_schema_to_dataframe,
+        **headers_target_schema,
+        **schema_overrides,
+    )
 
     expected_headers = [c.source for c in header_configs if c.source]
 
@@ -207,19 +254,10 @@ def load_typed_dsv(
 
         LOGGER.debug(missing_columns_df)
 
-    # # drop headers only used in temporary calc
-    df = dsv_df.drop(
-        [
-            col_cfg.source
-            for col_cfg in column_configs
-            if col_cfg.column_type == "dsv_only" and col_cfg.source in dsv_df.columns
-        ]
-    )
-
     # df = df.with_columns(
     #     pl.col(col_cfg.source).cast(PolarsType.from_sql(col_cfg.data_type))
     #     for col_cfg in column_configs
     #     if col_cfg.source in dsv_df.columns
     # ).pipe(PolarsType.cast_str_to_cat)
 
-    return df
+    return dsv_df

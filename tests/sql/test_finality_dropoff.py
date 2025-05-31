@@ -12,7 +12,7 @@ from ..utils.dsv_helper import (
 
 @pytest.fixture
 def fixture_with_simple_table():
-    yield from setup_fixture_tableconfigs("simple_table.yaml")
+    yield from setup_fixture_tableconfigs("table_config/table_simple.yaml")
 
 
 def test_dataframe_reinsert(fixture_with_simple_table):

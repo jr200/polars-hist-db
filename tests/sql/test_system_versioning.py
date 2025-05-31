@@ -8,12 +8,12 @@ from ..utils.dsv_helper import setup_fixture_tableconfigs
 
 @pytest.fixture
 def fixture_with_simple_table_1():
-    yield from setup_fixture_tableconfigs("simple_table.yaml")
+    yield from setup_fixture_tableconfigs("table_config/table_simple.yaml")
 
 
 @pytest.fixture
 def fixture_with_simple_table_2():
-    yield from setup_fixture_tableconfigs("simple_table.yaml")
+    yield from setup_fixture_tableconfigs("table_config/table_simple.yaml")
 
 
 def test_long_write(fixture_with_simple_table_1, fixture_with_simple_table_2):

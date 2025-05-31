@@ -70,12 +70,13 @@ async def _run_workflow(
 
     start_time = time.perf_counter()
 
-    input_source = InputSourceFactory.create_input_source(input_config)
+    input_source = InputSourceFactory.create_input_source(tables, dataset, input_config)
     try:
-        async for partitions, commit_fn in await input_source.next_df(
-            dataset, tables, engine
-        ):
+        async for partitions, commit_fn in await input_source.next_df(engine):
             await try_upload(partitions, dataset, tables, engine, commit_fn)
+
+    except Exception as e:
+        LOGGER.error("error while processing InputSource: %s", e, exc_info=e)
     finally:
         await input_source.cleanup()
 

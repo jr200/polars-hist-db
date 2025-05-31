@@ -10,13 +10,14 @@ from ..config.table import TableConfigs
 
 
 class InputSource(ABC):
+    def __init__(self, tables: TableConfigs, dataset: DatasetConfig):
+        self.tables: TableConfigs = tables
+        self.dataset: DatasetConfig = dataset
+
     @abstractmethod
     async def next_df(
         self,
-        dataset: DatasetConfig,
-        tables: TableConfigs,
         engine: Engine,
-        scrape_limit: int = -1,
     ) -> AsyncGenerator[
         Tuple[
             Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]

@@ -8,7 +8,7 @@ import polars as pl
 from sqlalchemy import Connection, Engine
 
 from ..config.dataset import DatasetConfig
-from ..config.input_source import DSVInputConfig
+from ..config.input_source import DsvCrawlerInputConfig
 from ..config.table import TableConfig, TableConfigs
 from ..core.audit import AuditOps
 from ..core.dataframe import DataframeOps
@@ -20,31 +20,33 @@ from ..utils.clock import Clock
 LOGGER = logging.getLogger(__name__)
 
 
-class DsvInputSource(InputSource):
-    def __init__(self, config: DSVInputConfig):
+class DsvCrawlerInputSource(InputSource):
+    def __init__(
+        self,
+        tables: TableConfigs,
+        dataset: DatasetConfig,
+        config: DsvCrawlerInputConfig,
+    ):
+        super().__init__(tables, dataset)
         self.config = config
 
     async def cleanup(self) -> None:
         pass
 
-    def _scrape_file(
-        self,
-        csv_file: Path,
-        csv_file_time: datetime,
-        dataset: DatasetConfig,
-        tables: TableConfigs,
-    ):
-        pipeline = dataset.pipeline
-        main_table_config: TableConfig = tables[pipeline.get_main_table_name()]
+    def _scrape_single_file(self, payload: Path | bytes, payload_time: datetime):
+        pipeline = self.dataset.pipeline
+        main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
         tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
         header_keys = [tbl_to_header_map[k] for k in main_table_config.primary_keys]
 
         assert main_table_config.delta_config is not None
 
-        column_definitions = dataset.pipeline.build_ingestion_column_definitions(tables)
+        column_definitions = self.dataset.pipeline.build_ingestion_column_definitions(
+            self.tables
+        )
 
         df = load_typed_dsv(
-            csv_file, column_definitions, null_values=dataset.null_values
+            payload, column_definitions, null_values=self.dataset.null_values
         )
 
         missing_values_map = {
@@ -52,12 +54,12 @@ class DsvInputSource(InputSource):
             for c in column_definitions
             if c.value_if_missing and c.source
         }
-        df = DataframeOps.populate_nulls(df, missing_values_map)
+        df = DataframeOps.fill_nulls_with_defaults(df, missing_values_map)
 
         LOGGER.debug("loaded %d rows", len(df))
 
-        if dataset.time_partition:
-            tp = dataset.time_partition
+        if self.dataset.time_partition:
+            tp = self.dataset.time_partition
             time_col = tp.column
             interval = tp.truncate
             unique_strategy = tp.unique_strategy
@@ -77,16 +79,32 @@ class DsvInputSource(InputSource):
                 )
             )
         else:
-            partitions = {(csv_file_time,): df}
+            partitions = {(payload_time,): df}
 
         return partitions
 
+    def _search_and_filter_files(
+        self, table_schema: str, table_name: str, engine: Engine
+    ):
+        assert isinstance(self.config.search_paths, pl.DataFrame)
+        csv_files_df = find_files(self.config.search_paths)
+
+        aops = AuditOps(table_schema)
+
+        with engine.begin() as connection:
+            csv_files_df = aops.filter_unprocessed_items(
+                csv_files_df, "path", table_name, connection
+            ).sort("created_at")
+
+            if self.dataset.scrape_limit > 0:
+                csv_files_df = csv_files_df.head(self.dataset.scrape_limit)
+
+            aops.prevalidate_new_items(table_name, csv_files_df, connection)
+
+        return csv_files_df
+
     async def next_df(
-        self,
-        dataset: DatasetConfig,
-        tables: TableConfigs,
-        engine: Engine,
-        scrape_limit: int = -1,
+        self, engine: Engine
     ) -> AsyncGenerator[
         Tuple[
             Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
@@ -100,24 +118,13 @@ class DsvInputSource(InputSource):
             ],
             None,
         ]:
-            table_name = dataset.pipeline.get_main_table_name()
-            table_config = tables[table_name]
+            table_name = self.dataset.pipeline.get_main_table_name()
+            table_config = self.tables[table_name]
             table_schema = table_config.schema
 
-            assert isinstance(self.config.search_paths, pl.DataFrame)
-            csv_files_df = find_files(self.config.search_paths)
-
-            aops = AuditOps(table_schema)
-
-            with engine.begin() as connection:
-                csv_files_df = aops.filter_unprocessed_items(
-                    csv_files_df, "path", table_name, connection
-                ).sort("created_at")
-
-                if scrape_limit > 0:
-                    csv_files_df = csv_files_df.head(scrape_limit)
-
-                aops.prevalidate_new_items(table_name, csv_files_df, connection)
+            csv_files_df = self._search_and_filter_files(
+                table_schema, table_name, engine
+            )
 
             timings = Clock()
 
@@ -131,11 +138,10 @@ class DsvInputSource(InputSource):
 
                 start_time = time.perf_counter()
 
-                partitions = self._scrape_file(
-                    Path(csv_file), file_time, dataset, tables
-                )
+                partitions = self._scrape_single_file(Path(csv_file), file_time)
 
                 async def commit_fn(connection: Connection) -> bool:
+                    aops = AuditOps(table_schema)
                     result: bool = aops.add_entry(
                         "dsv",
                         Path(csv_file).absolute().as_posix(),

@@ -6,7 +6,7 @@ import logging
 
 from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
-from .input_source import InputConfig, DSVInputConfig, JetStreamInputConfig
+from .input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -205,22 +205,19 @@ class DatasetConfig:
     delta_table_schema: str
     input_config: InputConfig
     pipeline: Pipeline
-    scrape_limit: Optional[int] = None
+    scrape_limit: int = -1
     time_partition: Optional[TimePartition] = None
     null_values: Optional[Sequence[str]] = None
 
     def __post_init__(self):
+        if not self.scrape_limit:
+            self.scrape_limit = -1
+
         if not isinstance(self.pipeline, Pipeline):
             self.pipeline = Pipeline(items=self.pipeline)
 
         if not isinstance(self.input_config, InputConfig):
-            input_type = self.input_config.get("type", "dsv")
-            if input_type == "dsv":
-                self.input_config = DSVInputConfig(**self.input_config)
-            elif input_type == "jetstream":
-                self.input_config = JetStreamInputConfig(**self.input_config)
-            else:
-                raise ValueError(f"Unsupported input type: {input_type}")
+            self.input_config = InputConfig.from_dict(self.input_config)
 
         if self.time_partition is not None and not isinstance(
             self.time_partition, TimePartition

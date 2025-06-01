@@ -8,18 +8,20 @@ from polars_hist_db.core.table import TableOps
 from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
-    setup_fixture_tableconfigs,
+    setup_fixture_dataset,
 )
 
 
 @pytest.fixture
 def fixutre_with_simple_table():
-    yield from setup_fixture_tableconfigs("table_config/table_simple_nontemporal.yaml")
+    yield from setup_fixture_dataset("simple_nontemporal.yaml")
 
 
 def test_select_sql(fixutre_with_simple_table):
-    engine, table_configs, table_schema = fixutre_with_simple_table
-    table_config = table_configs.items[0]
+    engine, config = fixutre_with_simple_table
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
 
     def _upload_df(df):
         df, _ = modify_and_read(engine, df, table_schema, table_config, None, "upload")

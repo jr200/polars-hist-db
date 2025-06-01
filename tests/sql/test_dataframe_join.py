@@ -11,20 +11,20 @@ from ..utils.dsv_helper import (
     modify_and_read,
     read_df_from_db,
     set_random_seed,
-    setup_fixture_tableconfigs,
+    setup_fixture_dataset,
 )
 
 
 @pytest.fixture
 def temp_table():
-    yield from setup_fixture_tableconfigs(
-        "table_config/table_all_col_types_nullable.yaml"
-    )
+    yield from setup_fixture_dataset("all_col_types_nullable.yaml")
 
 
 def test_time_hints(temp_table):
-    engine, table_configs, table_schema = temp_table
-    table_config = table_configs.items[0]
+    engine, config = temp_table
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
     table_config.delta_config.drop_unchanged_rows = True
 
     # upload then test initial df

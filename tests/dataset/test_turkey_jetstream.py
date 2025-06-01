@@ -37,7 +37,7 @@ def fixture_with_config():
     fn_reg = FunctionRegistry()
     fn_reg.register_function("try_to_usd", custom_try_to_usd, allow_overwrite=True)
 
-    yield from setup_fixture_dataset("dataset_config/dataset_foodprices.yaml")
+    yield from setup_fixture_dataset("foodprices.yaml")
 
 
 async def try_create_stream(

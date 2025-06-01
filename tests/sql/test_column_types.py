@@ -7,27 +7,25 @@ from polars_hist_db.utils.compare import compare_dataframes
 from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
-    setup_fixture_tableconfigs,
+    setup_fixture_dataset,
 )
 
 
 @pytest.fixture
 def fixture_with_nullable():
-    yield from setup_fixture_tableconfigs(
-        "table_config/table_all_col_types_nullable.yaml"
-    )
+    yield from setup_fixture_dataset("all_col_types_nullable.yaml")
 
 
 @pytest.fixture
 def fixture_with_defaults():
-    yield from setup_fixture_tableconfigs(
-        "dataset_config/dataset_all_col_types_defaults.yaml"
-    )
+    yield from setup_fixture_dataset("all_col_types_defaults.yaml")
 
 
 def test_types_nullable(fixture_with_nullable):
-    engine, table_configs, table_schema = fixture_with_nullable
-    table_config = table_configs.items[0]
+    engine, config = fixture_with_nullable
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
     table_config.delta_config.drop_unchanged_rows = True
 
     # upload then test initial df
@@ -181,8 +179,10 @@ def test_types_nullable(fixture_with_nullable):
 
 
 def test_types_defaults(fixture_with_defaults):
-    engine, table_configs, table_schema = fixture_with_defaults
-    table_config = table_configs.items[0]
+    engine, config = fixture_with_defaults
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")

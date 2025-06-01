@@ -6,18 +6,20 @@ from polars.testing import assert_frame_equal
 from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
-    setup_fixture_tableconfigs,
+    setup_fixture_dataset,
 )
 
 
 @pytest.fixture
 def fixture_with_simple_table():
-    yield from setup_fixture_tableconfigs("table_config/table_simple.yaml")
+    yield from setup_fixture_dataset("simple.yaml")
 
 
 def test_dataframe_reinsert(fixture_with_simple_table):
-    engine, table_configs, table_schema = fixture_with_simple_table
-    table_config = table_configs.items[0]
+    engine, config = fixture_with_simple_table
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")
@@ -112,8 +114,10 @@ def test_dataframe_reinsert(fixture_with_simple_table):
 
 
 def test_dataframe_upsert(fixture_with_simple_table):
-    engine, table_configs, table_schema = fixture_with_simple_table
-    table_config = table_configs.items[0]
+    engine, config = fixture_with_simple_table
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")

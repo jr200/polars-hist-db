@@ -15,9 +15,7 @@ from ..utils.dsv_helper import (
 
 @pytest.fixture
 def fixture_with_defaults():
-    yield from setup_fixture_dataset(
-        "dataset_config/dataset_all_col_types_defaults.yaml"
-    )
+    yield from setup_fixture_dataset("all_col_types_defaults.yaml")
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,29 @@
+table_configs:
+  - schema: test
+    name: simple_table
+    is_temporal: true
+    columns:
+      - { name: id, data_type: INT }
+      - { name: double_col, data_type: DOUBLE }
+      - { name: varchar_col, data_type: VARCHAR(10) }
+    primary_keys:
+      - id
+    delta_config:
+      drop_unchanged_rows: true
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: false
+      row_finality: dropout
+
+datasets:
+  - name: simple_table_dataset
+    delta_table_schema: test
+    scrape_limit: ~
+    input_config:
+      type: dsv
+    pipeline:
+      - table: simple_table
+        type: primary
+        columns:
+          - { source: id, target: id }
+          - { source: double_col, target: double_col, value_if_missing: "1.618033988749895" }
+          - { source: varchar_col, target: varchar_col, value_if_missing: "?abcdefghijklmn?" }

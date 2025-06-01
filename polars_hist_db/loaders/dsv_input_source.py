@@ -7,6 +7,8 @@ from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple, Union
 import polars as pl
 from sqlalchemy import Connection, Engine
 
+from .transform import apply_transformations
+
 from ..config.dataset import DatasetConfig
 from ..config.input_source import DsvCrawlerInputConfig
 from ..config.table import TableConfig, TableConfigs
@@ -32,8 +34,8 @@ class DsvCrawlerInputSource(InputSource):
     async def cleanup(self) -> None:
         pass
 
-    def _process_payload(
-        self, payload: Union[Path, bytes], payload_time: datetime
+    def _apply_time_partitioning(
+        self, df: pl.DataFrame, payload_time: datetime
     ) -> Dict[Tuple[datetime], pl.DataFrame]:
         pipeline = self.dataset.pipeline
         main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
@@ -43,16 +45,6 @@ class DsvCrawlerInputSource(InputSource):
         ]
 
         assert main_table_config.delta_config is not None
-
-        column_definitions = self.dataset.pipeline.build_ingestion_column_definitions(
-            self.tables
-        )
-
-        df = load_typed_dsv(
-            payload, column_definitions, null_values=self.dataset.null_values
-        )
-
-        LOGGER.debug("loaded %d rows", len(df))
 
         if self.dataset.time_partition:
             tp = self.dataset.time_partition
@@ -79,6 +71,23 @@ class DsvCrawlerInputSource(InputSource):
             partitions = {(payload_time,): df}
 
         return partitions  # type: ignore[return-value]
+
+    def _process_payload(
+        self, payload: Union[Path, bytes], payload_time: datetime
+    ) -> Dict[Tuple[datetime], pl.DataFrame]:
+        column_definitions = self.dataset.pipeline.build_ingestion_column_definitions(
+            self.tables
+        )
+
+        df = load_typed_dsv(
+            payload, column_definitions, null_values=self.dataset.null_values
+        )
+        LOGGER.debug("loaded %d rows", len(df))
+
+        df = apply_transformations(df, column_definitions)
+        partitions = self._apply_time_partitioning(df, payload_time)
+
+        return partitions
 
     def _search_and_filter_files(
         self, table_schema: str, table_name: str, engine: Engine

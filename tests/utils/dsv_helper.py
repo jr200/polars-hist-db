@@ -29,13 +29,6 @@ from polars_hist_db.core import (
 )
 from polars_hist_db.types import PolarsType, SQLAlchemyType
 
-# some test defaults for debugging
-pl.Config(
-    set_tbl_cols=100,
-    fmt_str_lengths=1000,
-    tbl_width_chars=1000,
-)
-
 
 def _tests_dir():
     tests_dir = Path(__file__).parent.parent.parent.absolute()
@@ -44,7 +37,7 @@ def _tests_dir():
 
 
 def get_test_config(filename: str):
-    data_dir = os.path.join(_tests_dir(), "_data")
+    data_dir = os.path.join(_tests_dir(), "_data", "config")
     return os.path.join(data_dir, filename)
 
 
@@ -185,31 +178,10 @@ def from_test_result(
     return df
 
 
-def setup_fixture_tableconfigs(*test_files: str):
-    engine = mariadb_engine_test()
-    table_configs = TableConfigs.from_yamls(*[get_test_config(f) for f in test_files])
-    table_schema = table_configs.schemas()[0]
-
-    with engine.begin() as connection:
-        TableConfigOps(connection).drop_all(table_configs)
-
-        for tc in table_configs.items:
-            DbOps(connection).db_create(tc.schema)
-            TableConfigOps(connection).create(tc)
-            if tc.schema != table_schema:
-                raise ValueError(
-                    "mixed-schema tests not supported (to keep things simple)"
-                )
-
-    yield engine, table_configs, table_schema
-
-    with engine.begin() as connection:
-        TableConfigOps(connection).drop_all(table_configs)
-
-
 def setup_fixture_dataset(test_file: str):
-    engine = mariadb_engine_test()
     config = Config.from_yaml(get_test_config(test_file))
+    engine = mariadb_engine_test()
+
     table_schema = config.tables.schemas()[0]
     table_configs = config.tables
     audit_table = AuditOps(table_schema)

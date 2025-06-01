@@ -3,28 +3,27 @@ import pytest
 from polars_hist_db.core.table_config import TableConfigOps
 from polars_hist_db.config import TableConfig
 from polars_hist_db.core.table import TableOps
-from ..utils.dsv_helper import setup_fixture_tableconfigs
+from tests.utils.dsv_helper import setup_fixture_dataset
 
 
 @pytest.fixture
 def fixture_with_column_selection():
-    yield from setup_fixture_tableconfigs("table_config/table_exchanges.yaml")
+    yield from setup_fixture_dataset("trading_pairs.yaml")
 
 
 @pytest.fixture
 def fixture_with_linked_tables():
-    yield from setup_fixture_tableconfigs(
-        "table_config/table_exchanges.yaml",
-        "table_config/table_cryptocurrencies.yaml",
-        "table_config/table_trading_pairs.yaml",
-    )
+    yield from setup_fixture_dataset("trading_pairs.yaml")
 
 
 def test_foreign_keys(fixture_with_linked_tables):
-    engine, configs, table_schema = fixture_with_linked_tables
-    expected_exchange_config = configs["exchanges"]
-    expected_cryptocurrency_config = configs["cryptocurrencies"]
-    expected_trading_pair_configs = configs["trading_pairs"]
+    engine, config = fixture_with_linked_tables
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+
+    expected_exchange_config = table_configs["exchanges"]
+    expected_cryptocurrency_config = table_configs["cryptocurrencies"]
+    expected_trading_pair_configs = table_configs["trading_pairs"]
 
     with engine.begin() as connection:
         read_exchange_config = TableConfigOps(connection).from_table(
@@ -63,8 +62,10 @@ def test_foreign_keys(fixture_with_linked_tables):
 
 
 def test_column_selection(fixture_with_column_selection):
-    engine, configs, table_schema = fixture_with_column_selection
-    table_config = configs["exchanges"]
+    engine, config = fixture_with_column_selection
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = table_configs["exchanges"]
 
     all_column_defs = table_config.columns
 

@@ -1,0 +1,29 @@
+table_configs:
+  - schema: test
+    name: simple_nontemporal
+    is_temporal: false
+    columns:
+      - { name: id, data_type: INT }
+      - { name: double_col, data_type: DOUBLE }
+      - { name: varchar_col, data_type: VARCHAR(10) }
+    primary_keys:
+      - id
+    delta_config:
+      drop_unchanged_rows: false
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: false
+      row_finality: disabled
+
+datasets:    
+  - name: simple_nontemporal_dataset
+    delta_table_schema: test
+    scrape_limit: ~
+    input_config:
+      type: dsv
+    pipeline:
+      - table: simple_nontemporal
+        type: primary
+        columns:
+          - { source: id, target: id }
+          - { source: double_col, target: double_col}
+          - { source: varchar_col, target: varchar_col}

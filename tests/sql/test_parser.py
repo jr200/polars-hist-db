@@ -26,7 +26,7 @@ def assert_table_config_object(table_config: TableConfig):
 
 
 def test_cryptocurrency_config_deserialization():
-    file_path = get_test_config("table_config/table_cryptocurrencies.yaml")
+    file_path = get_test_config("trading_pairs.yaml")
     config = TableConfigs.from_yamls(file_path)["cryptocurrencies"]
     assert_table_config_object(config)
 
@@ -43,7 +43,7 @@ def test_cryptocurrency_config_deserialization():
 
 
 def test_exchange_config_deserialization():
-    file_path = get_test_config("table_config/table_exchanges.yaml")
+    file_path = get_test_config("trading_pairs.yaml")
     config = TableConfigs.from_yamls(file_path)["exchanges"]
     assert_table_config_object(config)
 
@@ -55,11 +55,8 @@ def test_exchange_config_deserialization():
 
 
 def test_trading_pairs_config_deserialization():
-    configs = TableConfigs.from_yamls(
-        get_test_config("table_config/table_exchanges.yaml"),
-        get_test_config("table_config/table_cryptocurrencies.yaml"),
-        get_test_config("table_config/table_trading_pairs.yaml"),
-    )
+    file_path = get_test_config("trading_pairs.yaml")
+    configs = TableConfigs.from_yamls(file_path)
 
     exchange_config = configs["exchanges"]
     cryptocurrency_config = configs["cryptocurrencies"]

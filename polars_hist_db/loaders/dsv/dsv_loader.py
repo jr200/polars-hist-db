@@ -5,10 +5,9 @@ from typing import Optional, Mapping, Sequence, Tuple, Union
 
 import polars as pl
 
-from polars_hist_db.core.dataframe import DataframeOps
 
 from ...config.parser_config import IngestionColumnConfig
-from ...config.fn_registry import FunctionRegistry
+from ..transform import header_configs
 from ...types import PolarsType
 
 LOGGER = logging.getLogger(__name__)
@@ -42,31 +41,7 @@ def _parse_header_row(
     raise ValueError(f"couldn't infer delimiter of dsv {str(input)}")
 
 
-def _apply_header_transforms(
-    df: pl.DataFrame, col_def: IngestionColumnConfig
-) -> pl.DataFrame:
-    if not col_def.transforms:
-        return df
-
-    input_col = col_def.target if col_def.source is None else col_def.source
-    if input_col is None:
-        raise ValueError(f"missing source-output column for {col_def}")
-
-    fn_reg = FunctionRegistry()
-    for fn_name, fn_args in col_def.transforms.items():
-        if fn_args is None:
-            continue
-
-        # source_col = col_def.target if col_def.source is None else col_def.source
-        df = fn_reg.call_function(fn_name, df, input_col, fn_args)
-
-    result_col_dtype = PolarsType.from_sql(col_def.target_data_type)
-    df = df.with_columns(pl.col(input_col).cast(result_col_dtype))
-
-    return df
-
-
-def _get_column_dtype(
+def _get_column_target_dtype(
     column_name: str, column_configs: Sequence[IngestionColumnConfig]
 ) -> pl.DataType:
     for cfg in column_configs:
@@ -74,18 +49,6 @@ def _get_column_dtype(
             return PolarsType.from_sql(cfg.target_data_type)
 
     raise ValueError("bad configuration. missing column definition for {column_name}")
-
-
-def _populate_nulls(
-    df: pl.DataFrame, column_definitions: Sequence[IngestionColumnConfig]
-) -> pl.DataFrame:
-    missing_values_map = {
-        c.source: c.value_if_missing
-        for c in column_definitions
-        if c.value_if_missing and c.source
-    }
-    df = DataframeOps.fill_nulls_with_defaults(df, missing_values_map)
-    return df
 
 
 def load_typed_dsv(
@@ -107,15 +70,9 @@ def load_typed_dsv(
             dtype.is_temporal() or dtype.is_decimal() or dtype in {pl.String, pl.Utf8}
         )
 
-    header_configs = [
-        cfg
-        for cfg in column_configs
-        if cfg.source and cfg.column_type in ["data", "dsv_only"]
-    ]
-
     headers_ingestion_schema: Mapping[str, pl.DataType] = {
         cfg.source: PolarsType.from_sql(cfg.ingestion_data_type)
-        for cfg in header_configs
+        for cfg in header_configs(column_configs)
         if cfg.source
     }
 
@@ -150,71 +107,18 @@ def load_typed_dsv(
 
     dsv_df.columns = [c.strip() for c in dsv_df.columns]
 
-    dsv_df = _apply_transformations(dsv_df, column_configs)
-    dsv_df = _populate_nulls(dsv_df, column_configs)
-
-    df = _validate_output_df(dsv_df, column_configs, header_configs, schema_overrides)
-    # df = _populate_nulls(df, column_configs)
-
-    return df
-
-
-def _apply_transformations(
-    dsv_df: pl.DataFrame, column_configs: Sequence[IngestionColumnConfig]
-) -> pl.DataFrame:
-    for col_cfg in column_configs:
-        # skip columns already computed
-        if (
-            col_cfg.source is None
-            and col_cfg.target in dsv_df.columns
-            and col_cfg.column_type == "computed"
-        ):
-            LOGGER.debug("Skipping already-transformed column %s", col_cfg.target)
-            continue
-
-        dsv_df = dsv_df.pipe(_apply_header_transforms, col_cfg)
-
-    # # drop headers only used in temporary calc
-    dsv_df = dsv_df.drop(
-        [
-            col_cfg.source
-            for col_cfg in column_configs
-            if col_cfg.column_type == "dsv_only" and col_cfg.source in dsv_df.columns
-        ]
-    )
-
-    agg_headers = {
-        cfg.source
-        for cfg in column_configs
-        if cfg.aggregation is not None and cfg.source
-    }
-    if agg_headers:
-        dsv_df = dsv_df.group_by(pl.exclude(agg_headers), maintain_order=True).agg(
-            pl.sum(c) for c in agg_headers.intersection(dsv_df.columns)
-        )
+    dsv_df = _validate_expected_columns(dsv_df, column_configs, schema_overrides)
 
     return dsv_df
 
 
-def _validate_output_df(
+def _validate_expected_columns(
     dsv_df: pl.DataFrame,
     column_configs: Sequence[IngestionColumnConfig],
-    header_configs: Sequence[IngestionColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
 ) -> pl.DataFrame:
-    headers_target_schema: Mapping[str, pl.DataType] = {
-        cfg.source: PolarsType.from_sql(cfg.target_data_type)
-        for cfg in header_configs
-        if cfg.source
-    }
-
-    dsv_df = dsv_df.pipe(
-        PolarsType.apply_schema_to_dataframe,
-        **headers_target_schema,
-        **schema_overrides,
-    )
-
-    expected_headers = [c.source for c in header_configs if c.source]
+    header_cfgs = header_configs(column_configs)
+    expected_headers = [c.source for c in header_cfgs if c.source]
 
     headers_no_config = (
         set(dsv_df.columns)
@@ -247,17 +151,11 @@ def _validate_output_df(
         missing_columns_df = pl.DataFrame()
         missing_columns_df = missing_columns_df.with_columns(
             [
-                pl.lit(None).cast(_get_column_dtype(h, header_configs)).alias(h)
+                pl.lit(None).cast(_get_column_target_dtype(h, header_cfgs)).alias(h)
                 for h in defined_but_missing_headers
             ]
         ).clear()
 
         LOGGER.debug(missing_columns_df)
-
-    # df = df.with_columns(
-    #     pl.col(col_cfg.source).cast(PolarsType.from_sql(col_cfg.data_type))
-    #     for col_cfg in column_configs
-    #     if col_cfg.source in dsv_df.columns
-    # ).pipe(PolarsType.cast_str_to_cat)
 
     return dsv_df

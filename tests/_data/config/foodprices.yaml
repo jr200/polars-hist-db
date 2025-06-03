@@ -66,6 +66,9 @@ datasets:
         port: 4112
         options:
           name: turkey_test_pubsub
+      js_fetch:
+        batch_size: 1000
+        batch_timeout: 0.5
       js_options: ~
       js_sub:
         subject: turkey_test.unit_info

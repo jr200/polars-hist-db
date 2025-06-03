@@ -77,7 +77,7 @@ def compare_dataframes(
         f"missing:{c}{_lhs}" for c in set(rhs.columns).difference(lhs.columns)
     ]
 
-    missing_cols = lhs_missing_cols + rhs_missing_cols
+    missing_cols = sorted(lhs_missing_cols) + sorted(rhs_missing_cols)
     intersect_cols = sorted(set(rhs.columns).intersection(lhs.columns))
     if cmp_cols is None:
         cmp_cols = sorted(set(intersect_cols).difference(on))

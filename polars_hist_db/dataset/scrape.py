@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from time import sleep
-from typing import Awaitable, Callable, Dict, Tuple
+from typing import Awaitable, Callable, List, Tuple
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -36,7 +36,7 @@ def _scrape_pipeline_item(
 
 
 async def try_upload(
-    partitions: Dict[Tuple[datetime,], pl.DataFrame],
+    partitions: List[Tuple[datetime, pl.DataFrame]],
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
@@ -52,7 +52,7 @@ async def try_upload(
         with engine.connect() as connection:
             try:
                 with connection.begin():
-                    for i, ((ts,), partition_df) in enumerate(partitions.items()):
+                    for i, (ts, partition_df) in enumerate(partitions):
                         assert isinstance(ts, datetime), (
                             f"timestamp is not a datetime [{type(ts)}]"
                         )

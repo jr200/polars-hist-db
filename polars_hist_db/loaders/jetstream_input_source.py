@@ -7,7 +7,7 @@ from typing import (
     AsyncGenerator,
     Awaitable,
     Callable,
-    Dict,
+    List,
     Mapping,
     Tuple,
     Optional,
@@ -72,13 +72,13 @@ class JetStreamInputSource(InputSource):
         self, _engine: Engine
     ) -> AsyncGenerator[
         Tuple[
-            Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
+            List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
         ],
         None,
     ]:
         async def _generator() -> AsyncGenerator[
             Tuple[
-                Dict[Tuple[datetime], pl.DataFrame],
+                List[Tuple[datetime, pl.DataFrame]],
                 Callable[[Connection], Awaitable[bool]],
             ],
             None,
@@ -88,6 +88,7 @@ class JetStreamInputSource(InputSource):
             remaining_msgs = self.dataset.scrape_limit
 
             js_sub_cfg = self.config.js_sub
+
             sub = await js.pull_subscribe(
                 subject=js_sub_cfg.subject,
                 durable=js_sub_cfg.durable,
@@ -95,15 +96,12 @@ class JetStreamInputSource(InputSource):
                 **js_sub_cfg.options,
             )
 
-            batch_size = 5000
-            batch_timeout = 10.0  # seconds
             total_msgs = 0
-
             while remaining_msgs != 0:
                 try:
-                    msgs = await sub.fetch(batch_size, batch_timeout)
-                    LOGGER.error(
-                        "*****MSG BATCH: %d (total: %d)", len(msgs), total_msgs
+                    msgs = await sub.fetch(
+                        self.config.js_fetch.batch_size,
+                        self.config.js_fetch.batch_timeout,
                     )
 
                     if len(msgs) == 0:
@@ -114,7 +112,6 @@ class JetStreamInputSource(InputSource):
                     all_dfs = [self._load_df_from_msg(msg) for msg in msgs]
                     df = pl.concat(all_dfs)
 
-                    # Use timestamp of last message in batch
                     ts: datetime = msgs[-1].metadata.timestamp
 
                     df = apply_transformations(df, self.column_definitions)
@@ -127,8 +124,9 @@ class JetStreamInputSource(InputSource):
 
                     yield partitions, commit_fn
 
-                except TimeoutError as e:
-                    LOGGER.error("****TIMEOUT msg %s", e)
+                except TimeoutError:
                     break
+
+            LOGGER.info("Processed %d msgs", total_msgs)
 
         return _generator()

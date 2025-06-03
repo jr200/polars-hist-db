@@ -6,13 +6,16 @@ import polars as pl
 from sqlalchemy import Connection, Engine
 
 from ..config.dataset import DatasetConfig
-from ..config.table import TableConfigs
+from ..config.table import TableConfig, TableConfigs
 
 
 class InputSource(ABC):
     def __init__(self, tables: TableConfigs, dataset: DatasetConfig):
         self.tables: TableConfigs = tables
         self.dataset: DatasetConfig = dataset
+        self.column_definitions = (
+            self.dataset.pipeline.build_ingestion_column_definitions(self.tables)
+        )
 
     @abstractmethod
     async def next_df(
@@ -31,3 +34,41 @@ class InputSource(ABC):
     async def cleanup(self) -> None:
         """Clean up any resources used by the input source"""
         raise NotImplementedError("InputSource is an abstract class")
+
+    def _apply_time_partitioning(
+        self, df: pl.DataFrame, payload_time: datetime
+    ) -> Dict[Tuple[datetime], pl.DataFrame]:
+        pipeline = self.dataset.pipeline
+        main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
+        tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
+        header_keys = [
+            tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys
+        ]
+
+        assert main_table_config.delta_config is not None
+
+        if self.dataset.time_partition:
+            tp = self.dataset.time_partition
+            time_col = tp.column
+            interval = tp.truncate
+            unique_strategy = tp.unique_strategy
+
+            partitions = (
+                df.with_columns(
+                    __interval=pl.col(time_col).dt.truncate(interval).cast(pl.Datetime)
+                )
+                .sort(time_col)
+                .unique(
+                    [*header_keys, "__interval"],
+                    keep=unique_strategy,
+                    maintain_order=True,
+                )
+                .partition_by(
+                    "__interval", include_key=False, as_dict=True, maintain_order=True
+                )
+            )
+
+        else:
+            partitions = {(payload_time,): df}
+
+        return partitions  # type: ignore[return-value]

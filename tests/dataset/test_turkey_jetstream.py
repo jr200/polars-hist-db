@@ -2,23 +2,23 @@ import asyncio
 import pytest
 import pytest_asyncio
 import polars as pl
-import nats
+import logging
 
 from polars_hist_db.config import FunctionRegistry
 from polars_hist_db.dataset import run_workflows
 from .helpers import custom_try_to_usd
 from ..utils.nats_helper import (
-    create_nats_js_client,
     create_nats_server,
+    create_nats_js_client,
     publish_dataframe_messages,
+    try_create_test_stream,
 )
 
 from ..utils.dsv_helper import (
     setup_fixture_dataset,
 )
 
-_STREAM_NAME = "turkey_test_food_stream"
-_SUBJECT_PREFIX = "turkey_test"
+LOGGER = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -28,7 +28,7 @@ def nats_server():
 
 @pytest_asyncio.fixture
 async def nats_js(nats_server):
-    async for js in create_nats_js_client(_STREAM_NAME, [_SUBJECT_PREFIX + ".>"]):
+    async for js in create_nats_js_client():
         yield js
 
 
@@ -40,36 +40,42 @@ def fixture_with_config():
     yield from setup_fixture_dataset("foodprices.yaml")
 
 
-async def try_create_stream(
-    nats_js: nats.js.JetStreamContext, stream_name: str, subjects: list[str]
-):
-    try:
-        await nats_js.add_stream(name=stream_name, subjects=subjects)
-    except nats.js.errors.BadRequestError:
-        # Stream might already exist
-        pass
-
-
-# @pytest.mark.asyncio
-async def xtest_turkey_stream(nats_js, fixture_with_config):
-    test_data = pl.read_json("tests/_testdata_dataset_data/turkey_food_prices.json")
+@pytest.mark.asyncio
+async def test_turkey_stream(nats_js, fixture_with_config):
+    unique_keys = ["Year", "Month", "ProductId", "UmId"]
+    test_data = (
+        pl.read_csv("tests/_testdata_dataset_data/turkey_food_prices.csv")
+        .sort(*unique_keys)
+        .unique(subset=unique_keys, maintain_order=True, keep="last")
+    )
 
     engine, base_config = fixture_with_config
     dataset_name = "turkey_food_prices_jetstream"
     dataset = base_config.datasets[dataset_name]
 
-    js_config = dataset.input_config.js_args
+    js_config = dataset.input_config.js_sub
 
     # Publish messages from DataFrame
-    await try_create_stream(nats_js, js_config.name, js_config.subjects)
-    await publish_dataframe_messages(
-        nats_js, test_data, js_config.subjects[0], js_config.name
+    await try_create_test_stream(nats_js, js_config.stream, js_config.subject)
+    expected_msgs = await publish_dataframe_messages(
+        nats_js, test_data, js_config.subject, js_config.stream
     )
+
+    print(expected_msgs)
 
     # wait for 1 second
     await asyncio.sleep(1)
 
-    await run_workflows(base_config, engine, "turkey_food_prices_jetstream")
+    time_partitions = dict()
+    await run_workflows(
+        base_config,
+        engine,
+        "turkey_food_prices_jetstream",
+        debug_capture_output=time_partitions,
+    )
+
+    df = pl.concat(time_partitions.values())
+    assert not df.is_empty()
 
     # # Create a consumer
     # sub = await nats_js.subscribe(

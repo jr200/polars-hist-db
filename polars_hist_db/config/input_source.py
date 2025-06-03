@@ -72,22 +72,38 @@ class DsvCrawlerInputConfig(InputConfig):
 class NatsConfig:
     host: str
     port: int
-    options: Optional[Dict[str, Any]]
+    options: Dict[str, Any]
+
+    def __post_init__(self):
+        if self.options is None:
+            self.options = dict()
 
 
 @dataclass
-class JetStreamArgs:
-    durable_consumer_name: str
-    name: str
-    subjects: List[str]
+class JetStreamSubscription:
+    subject: str
+    stream: str
+    durable: Optional[str]
+    options: Dict[str, Any]
+
+    def __post_init__(self):
+        if self.options is None:
+            self.options = dict()
 
 
 @dataclass
 class JetStreamInputConfig(InputConfig):
     nats: NatsConfig
-    js_args: JetStreamArgs
+    js_options: Dict[str, Any]
+    js_sub: JetStreamSubscription
+    # js_args: JetStreamArgs
 
     def __post_init__(self):
+        if self.js_options is None:
+            self.js_options = dict()
+
         if isinstance(self.nats, dict):
             self.nats = NatsConfig(**self.nats)
-            self.js_args = JetStreamArgs(**self.js_args)
+
+        if isinstance(self.js_sub, dict):
+            self.js_sub = JetStreamSubscription(**self.js_sub)

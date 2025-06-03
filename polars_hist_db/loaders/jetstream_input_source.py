@@ -23,6 +23,7 @@ from ..config.dataset import DatasetConfig
 from ..config.input_source import JetStreamInputConfig
 from ..config.table import TableConfigs
 from .input_source import InputSource
+from .transform import apply_transformations
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,31 +84,51 @@ class JetStreamInputSource(InputSource):
             None,
         ]:
             nc = await self._get_nats_client()
-            js = nc.jetstream()
+            js = nc.jetstream(**self.config.js_options)
             remaining_msgs = self.dataset.scrape_limit
 
+            js_sub_cfg = self.config.js_sub
             sub = await js.pull_subscribe(
-                self.config.js_args.subjects[0],
-                stream=self.config.js_args.name,
-                durable=self.config.js_args.durable_consumer_name,
+                subject=js_sub_cfg.subject,
+                durable=js_sub_cfg.durable,
+                stream=js_sub_cfg.stream,
+                **js_sub_cfg.options,
             )
 
+            batch_size = 5000
+            batch_timeout = 10.0  # seconds
+            total_msgs = 0
+
             while remaining_msgs != 0:
-                remaining_msgs -= 1
                 try:
-                    msgs = await sub.fetch()
+                    msgs = await sub.fetch(batch_size, batch_timeout)
+                    LOGGER.error(
+                        "*****MSG BATCH: %d (total: %d)", len(msgs), total_msgs
+                    )
 
-                    for msg in msgs:
-                        partitions = self._load_df_from_msg(msg)
-                        ts: datetime = msg.metadata.timestamp
+                    if len(msgs) == 0:
+                        continue
 
-                        async def commit_fn(_: Connection) -> bool:
+                    total_msgs += len(msgs)
+
+                    all_dfs = [self._load_df_from_msg(msg) for msg in msgs]
+                    df = pl.concat(all_dfs)
+
+                    # Use timestamp of last message in batch
+                    ts: datetime = msgs[-1].metadata.timestamp
+
+                    df = apply_transformations(df, self.column_definitions)
+                    partitions = self._apply_time_partitioning(df, ts)
+
+                    async def commit_fn(_: Connection) -> bool:
+                        for msg in msgs:
                             await msg.ack()
-                            return True
+                        return True
 
-                        yield {(ts,): partitions}, commit_fn
+                    yield partitions, commit_fn
 
-                except TimeoutError:
+                except TimeoutError as e:
+                    LOGGER.error("****TIMEOUT msg %s", e)
                     break
 
         return _generator()

@@ -57,9 +57,10 @@ async def try_upload(
                             f"timestamp is not a datetime [{type(ts)}]"
                         )
                         LOGGER.info(
-                            "-- processing time_partition (%d/%d) %s",
+                            "-- (%d/%d) time_partition[%d]  %s",
                             i + 1,
                             len(partitions),
+                            len(partition_df),
                             ts.isoformat(),
                         )
 

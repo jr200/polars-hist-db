@@ -6,6 +6,7 @@ import logging
 
 from polars_hist_db.config import FunctionRegistry
 from polars_hist_db.dataset import run_workflows
+from polars_hist_db.utils.compare import compare_dataframes
 from .helpers import custom_try_to_usd
 from ..utils.nats_helper import (
     create_nats_server,
@@ -57,16 +58,14 @@ async def test_turkey_stream(nats_js, fixture_with_config):
 
     # Publish messages from DataFrame
     await try_create_test_stream(nats_js, js_config.stream, js_config.subject)
-    expected_msgs = await publish_dataframe_messages(
+    _num_expected_msgs = await publish_dataframe_messages(
         nats_js, test_data, js_config.subject, js_config.stream
     )
-
-    print(expected_msgs)
 
     # wait for 1 second
     await asyncio.sleep(1)
 
-    time_partitions = dict()
+    time_partitions = list()
     await run_workflows(
         base_config,
         engine,
@@ -74,8 +73,23 @@ async def test_turkey_stream(nats_js, fixture_with_config):
         debug_capture_output=time_partitions,
     )
 
-    df = pl.concat(time_partitions.values())
-    assert not df.is_empty()
+    uploaded_df = pl.concat([df for _, df in time_partitions])
+    assert not uploaded_df.is_empty()
+    assert len(uploaded_df) == len(test_data)
+
+    diff_df, missing_cols = compare_dataframes(
+        uploaded_df,
+        test_data,
+        on=["UmId", "ProductId", "Place", "Price"],
+    )
+    assert len(diff_df) == 0
+    assert len(missing_cols) == 4
+    assert missing_cols == [
+        "missing:Month_lhs",
+        "missing:Year_lhs",
+        "missing:price_usd_rhs",
+        "missing:time_rhs",
+    ]
 
     # # Create a consumer
     # sub = await nats_js.subscribe(

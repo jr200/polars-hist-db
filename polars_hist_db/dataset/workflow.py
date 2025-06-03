@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 import time
-from typing import Dict, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import polars as pl
 from sqlalchemy import Engine
@@ -21,7 +21,7 @@ async def run_workflows(
     config: Config,
     engine: Engine,
     dataset_name: Optional[str] = None,
-    debug_capture_output: Optional[Dict[Tuple[datetime,], pl.DataFrame]] = None,
+    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]] = None,
 ):
     for dataset in config.datasets.datasets:
         if dataset_name is None or dataset.name == dataset_name:
@@ -71,7 +71,7 @@ async def _run_workflow(
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
-    debug_capture_output: Optional[Dict[Tuple[datetime,], pl.DataFrame]],
+    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
 ):
     table_name = dataset.pipeline.get_main_table_name()
     table_config = tables[table_name]
@@ -86,7 +86,7 @@ async def _run_workflow(
     try:
         async for partitions, commit_fn in await input_source.next_df(engine):
             if debug_capture_output is not None:
-                debug_capture_output.update(partitions)
+                debug_capture_output.extend(partitions)
 
             await try_upload(partitions, dataset, tables, engine, commit_fn)
 

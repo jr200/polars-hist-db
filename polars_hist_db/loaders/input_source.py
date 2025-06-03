@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple
+from typing import AsyncGenerator, Awaitable, Callable, List, Tuple
 from datetime import datetime
 
 import polars as pl
@@ -23,7 +23,7 @@ class InputSource(ABC):
         engine: Engine,
     ) -> AsyncGenerator[
         Tuple[
-            Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
+            List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
         ],
         None,
     ]:
@@ -37,7 +37,7 @@ class InputSource(ABC):
 
     def _apply_time_partitioning(
         self, df: pl.DataFrame, payload_time: datetime
-    ) -> Dict[Tuple[datetime], pl.DataFrame]:
+    ) -> List[Tuple[datetime, pl.DataFrame]]:
         pipeline = self.dataset.pipeline
         main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
         tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
@@ -68,7 +68,9 @@ class InputSource(ABC):
                 )
             )
 
-        else:
-            partitions = {(payload_time,): df}
+            result = [(k[0], v) for k, v in partitions.items()]
 
-        return partitions  # type: ignore[return-value]
+        else:
+            result = [(payload_time, df)]
+
+        return result  # type: ignore[return-value]

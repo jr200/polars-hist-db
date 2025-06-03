@@ -92,11 +92,20 @@ class JetStreamSubscription:
 
 
 @dataclass
+class JetStreamFetchConfig:
+    # number of messages to fetch in a single call
+    batch_size: int = 1000
+
+    # timeout for a single fetch call in seconds
+    batch_timeout: float = 5.0
+
+
+@dataclass
 class JetStreamInputConfig(InputConfig):
     nats: NatsConfig
+    js_fetch: JetStreamFetchConfig
     js_options: Dict[str, Any]
     js_sub: JetStreamSubscription
-    # js_args: JetStreamArgs
 
     def __post_init__(self):
         if self.js_options is None:
@@ -107,3 +116,6 @@ class JetStreamInputConfig(InputConfig):
 
         if isinstance(self.js_sub, dict):
             self.js_sub = JetStreamSubscription(**self.js_sub)
+
+        if isinstance(self.js_fetch, dict):
+            self.js_fetch = JetStreamFetchConfig(**self.js_fetch)

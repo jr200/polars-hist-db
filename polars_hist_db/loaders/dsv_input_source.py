@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 import time
-from typing import AsyncGenerator, Awaitable, Callable, Dict, Tuple, Union
+from typing import AsyncGenerator, Awaitable, Callable, List, Tuple, Union
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -36,7 +36,7 @@ class DsvCrawlerInputSource(InputSource):
 
     def _process_payload(
         self, payload: Union[Path, bytes], payload_time: datetime
-    ) -> Dict[Tuple[datetime], pl.DataFrame]:
+    ) -> List[Tuple[datetime, pl.DataFrame]]:
         df = load_typed_dsv(
             payload, self.column_definitions, null_values=self.dataset.null_values
         )
@@ -71,13 +71,13 @@ class DsvCrawlerInputSource(InputSource):
         self, engine: Engine
     ) -> AsyncGenerator[
         Tuple[
-            Dict[Tuple[datetime], pl.DataFrame], Callable[[Connection], Awaitable[bool]]
+            List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
         ],
         None,
     ]:
         async def _generator() -> AsyncGenerator[
             Tuple[
-                Dict[Tuple[datetime], pl.DataFrame],
+                List[Tuple[datetime, pl.DataFrame]],
                 Callable[[Connection], Awaitable[bool]],
             ],
             None,

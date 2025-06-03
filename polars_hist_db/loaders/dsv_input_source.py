@@ -11,7 +11,7 @@ from .transform import apply_transformations
 
 from ..config.dataset import DatasetConfig
 from ..config.input_source import DsvCrawlerInputConfig
-from ..config.table import TableConfig, TableConfigs
+from ..config.table import TableConfigs
 from ..core.audit import AuditOps
 from .dsv.dsv_loader import load_typed_dsv
 from .dsv.file_search import find_files
@@ -34,57 +34,15 @@ class DsvCrawlerInputSource(InputSource):
     async def cleanup(self) -> None:
         pass
 
-    def _apply_time_partitioning(
-        self, df: pl.DataFrame, payload_time: datetime
-    ) -> Dict[Tuple[datetime], pl.DataFrame]:
-        pipeline = self.dataset.pipeline
-        main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
-        tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
-        header_keys = [
-            tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys
-        ]
-
-        assert main_table_config.delta_config is not None
-
-        if self.dataset.time_partition:
-            tp = self.dataset.time_partition
-            time_col = tp.column
-            interval = tp.truncate
-            unique_strategy = tp.unique_strategy
-
-            partitions = (
-                df.with_columns(
-                    __interval=pl.col(time_col).dt.truncate(interval).cast(pl.Datetime)
-                )
-                .sort(time_col)
-                .unique(
-                    [*header_keys, "__interval"],
-                    keep=unique_strategy,
-                    maintain_order=True,
-                )
-                .partition_by(
-                    "__interval", include_key=False, as_dict=True, maintain_order=True
-                )
-            )
-
-        else:
-            partitions = {(payload_time,): df}
-
-        return partitions  # type: ignore[return-value]
-
     def _process_payload(
         self, payload: Union[Path, bytes], payload_time: datetime
     ) -> Dict[Tuple[datetime], pl.DataFrame]:
-        column_definitions = self.dataset.pipeline.build_ingestion_column_definitions(
-            self.tables
-        )
-
         df = load_typed_dsv(
-            payload, column_definitions, null_values=self.dataset.null_values
+            payload, self.column_definitions, null_values=self.dataset.null_values
         )
         LOGGER.debug("loaded %d rows", len(df))
 
-        df = apply_transformations(df, column_definitions)
+        df = apply_transformations(df, self.column_definitions)
         partitions = self._apply_time_partitioning(df, payload_time)
 
         return partitions

@@ -35,7 +35,7 @@ def _scrape_pipeline_item(
         raise ValueError(f"unknown item type: {item_type}")
 
 
-async def try_upload(
+async def try_upload_to_delta_table(
     partitions: List[Tuple[datetime, pl.DataFrame]],
     dataset: DatasetConfig,
     tables: TableConfigs,

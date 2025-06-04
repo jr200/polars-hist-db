@@ -25,7 +25,7 @@ def test_time_hints(temp_table):
     table_schema = config.tables.schemas()[0]
     table_configs = config.tables
     table_config = config.tables.items[0]
-    table_config.delta_config.drop_unchanged_rows = True
+    config.datasets[0].delta_config.drop_unchanged_rows = True
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1988-01-01T00:00:01Z")
@@ -43,7 +43,7 @@ def test_time_hints(temp_table):
         df_i = add_random_row(df_1, table_config, {"id": 1})
         ts_i = ts_1 + timedelta(days=i * 30)
         df_read, df_read_history = modify_and_read(
-            engine, df_i, table_schema, table_config, ts_i, "upload"
+            engine, df_i, config.datasets[0], table_schema, table_config, ts_i, "upload"
         )
 
     df_read, df_read_history = read_df_from_db(engine, table_schema, table_config)

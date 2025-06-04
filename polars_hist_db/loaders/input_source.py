@@ -45,8 +45,6 @@ class InputSource(ABC):
             tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys
         ]
 
-        assert main_table_config.delta_config is not None
-
         if self.dataset.time_partition:
             tp = self.dataset.time_partition
             time_col = tp.column

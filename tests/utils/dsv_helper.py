@@ -22,7 +22,6 @@ from polars_hist_db.core import (
     AuditOps,
     DataframeOps,
     DbOps,
-    DeltaTableOps,
     TableConfigOps,
     TableOps,
     make_engine,
@@ -253,6 +252,7 @@ def read_df_from_db(
 def modify_and_read(
     engine: Engine,
     df: pl.DataFrame,
+    dataset: DatasetConfig,
     table_schema: str,
     table_config: TableConfig,
     app_time: datetime,
@@ -270,48 +270,16 @@ def modify_and_read(
                 df, table_schema, config.name, app_time
             )
         elif operation == "upload":
-            assert config.delta_config is not None
+            assert dataset.delta_config is not None
             DataframeOps(connection).table_upsert_temporal(
                 df,
                 table_schema,
                 config.name,
-                config.delta_config,
+                dataset.delta_config,
                 app_time,
                 src_tgt_colname_map=MappingProxyType({}),
             )
     return read_df_from_db(engine, table_schema, table_config, app_time, return_view)
-
-
-def upsert_then_read_nontemporal(
-    engine: Engine,
-    table_schema: str,
-    source_table_config: TableConfig,
-    target_table_config: TableConfig,
-    source_columns: List[str],
-    return_view: bool = False,
-) -> Tuple[int, int, pl.DataFrame]:
-    with engine.begin() as connection:
-        tbo = TableOps(table_schema, source_table_config.name, connection)
-        scs = tbo.get_column_intersection(source_columns)
-        num_inserts, num_updates = DeltaTableOps(
-            table_schema,
-            source_table_config.name,
-            target_table_config.delta_config,
-            connection,
-        )._table_upsert_nontemporal(
-            table_schema,
-            source_table_config.name,
-            target_table_config.name,
-            source_columns=[sc.name for sc in scs],
-        )
-    df, _ = read_df_from_db(
-        engine,
-        table_schema,
-        target_table_config,
-        datetime.now(timezone.utc),
-        return_view,
-    )
-    return num_inserts, num_updates, df
 
 
 def set_random_seed(seed: int):

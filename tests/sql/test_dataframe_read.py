@@ -24,7 +24,9 @@ def test_select_sql(fixutre_with_simple_table):
     table_config = config.tables.items[0]
 
     def _upload_df(df):
-        df, _ = modify_and_read(engine, df, table_schema, table_config, None, "upload")
+        df, _ = modify_and_read(
+            engine, df, config.datasets[0], table_schema, table_config, None, "upload"
+        )
 
         return df
 

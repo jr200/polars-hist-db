@@ -28,7 +28,10 @@ def fixture_with_config():
 async def test_load_file(fixture_with_config):
     engine, base_config = fixture_with_config
 
-    await run_workflows(base_config, engine, "turkey_food_prices_dsv")
+    uploaded_dfs = []
+    await run_workflows(
+        base_config, engine, "turkey_food_prices_dsv", debug_capture_output=uploaded_dfs
+    )
 
     with engine.begin() as connection:
         unit_info_df = DataframeOps(connection).from_table("test", "unit_info")

@@ -25,8 +25,6 @@ def scrape_extract_item(
 ):
     pipeline = dataset.pipeline
     delta_table_name = dataset.name
-    main_table_config = tables[pipeline.get_main_table_name()]
-    assert main_table_config.delta_config is not None
 
     target_table_config: TableConfig = tables[target_table]
     if target_table_config.is_temporal:
@@ -53,7 +51,7 @@ def scrape_extract_item(
         raise NonRetryableException(err)
 
     deduce_foreign_keys(
-        main_table_config.schema,
+        dataset.delta_table_schema,
         delta_table_name,
         target_table_config,
         col_info,
@@ -72,13 +70,14 @@ def scrape_extract_item(
     }
 
     ni, nu, nd = DeltaTableOps(
-        main_table_config.schema,
+        dataset.delta_table_schema,
         delta_table_name,
-        target_table_config.delta_config,
+        dataset.delta_config,
         connection,
     ).upsert(
         target_table_config.name,
         upload_time,
+        is_main_table=False,
         source_columns=found_source_cols,
         src_tgt_colname_map=col_map_dict,
     )

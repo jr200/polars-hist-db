@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Literal, Optional, Sequence
 
 import polars as pl
@@ -9,6 +9,22 @@ from .table import TableColumnConfig, TableConfigs
 from .input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class DeltaConfig:
+    drop_unchanged_rows: bool = False
+    on_duplicate_key: Literal["error", "take_last", "take_first"] = "error"
+    prefill_nulls_with_default: bool = False
+
+    # tracks the finality of rows in the target (temporal) table
+    # disabled: no tracking, rows are not deleted from the target table
+    # dropout: rows are deleted from the target table if they are not present in the source table
+    # manual: a separate column tracks the finality of rows in the target table
+    row_finality: Literal["disabled", "dropout", "manual"] = "disabled"
+
+    def tmp_table_name(self, table_name: str) -> str:
+        return f"__{table_name}_tmp"
 
 
 @dataclass
@@ -208,8 +224,12 @@ class DatasetConfig:
     scrape_limit: int = -1
     time_partition: Optional[TimePartition] = None
     null_values: Optional[Sequence[str]] = None
+    delta_config: DeltaConfig = field(default_factory=DeltaConfig)
 
     def __post_init__(self):
+        if not isinstance(self.delta_config, DeltaConfig):
+            self.delta_config = DeltaConfig(**self.delta_config)
+
         if not self.scrape_limit:
             self.scrape_limit = -1
 
@@ -232,9 +252,12 @@ class DatasetsConfig:
     def __post_init__(self):
         self.datasets = [DatasetConfig(**ds_dict) for ds_dict in self.datasets]
 
-    def __getitem__(self, name: str) -> Optional[DatasetConfig]:
+    def __getitem__(self, key: str) -> Optional[DatasetConfig]:
         try:
-            ds = next((ds for ds in self.datasets if ds.name == name), None)
+            if isinstance(key, int):
+                return self.datasets[key]
+
+            ds = next((ds for ds in self.datasets if ds.name == key), None)
             return ds
         except StopIteration:
             return None

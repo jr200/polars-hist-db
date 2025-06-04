@@ -16,6 +16,7 @@ from ..utils.nats_helper import (
 )
 
 from ..utils.dsv_helper import (
+    read_df_from_db,
     setup_fixture_dataset,
 )
 
@@ -91,25 +92,37 @@ async def test_turkey_stream(nats_js, fixture_with_config):
         "missing:time_rhs",
     ]
 
-    # # Create a consumer
-    # sub = await nats_js.subscribe(
-    #     _SUBJECT_PREFIX + ".>", stream=_STREAM_NAME, durable="test_consumer"
-    # )
+    table_schema = base_config.tables.schemas()[0]
+    table_config = base_config.tables["food_prices"]
+    df_read, df_read_history = read_df_from_db(engine, table_schema, table_config)
 
-    # # Wait for and verify all messages
-    # received_messages = []
-    # async for msg in sub.messages:
-    #     received_data = json.loads(msg.data.decode())
-    #     received_messages.append(received_data)
-    #     await msg.ack()
-    #     if len(received_messages) == len(test_data):
-    #         break
+    assert df_read_history.shape == (2845, 6)
+    assert df_read.shape == (52, 6)
 
-    # # Convert received messages to DataFrame for comparison
-    # received_df = pl.DataFrame(received_messages)
+    expected_df_read = (
+        uploaded_df.group_by("ProductId", "UmId", maintain_order=True)
+        .last()
+        .unique(subset=["ProductId", "UmId"], maintain_order=True, keep="last")
+    )
 
-    # # Verify all data was received correctly
-    # assert received_df.equals(test_data)
+    renamings = {
+        c.target: c.source
+        for c in dataset.pipeline.build_ingestion_column_definitions(base_config.tables)
+        if c.target is not None and c.source is not None and c.target in df_read.columns
+    }
 
-    # Cleanup
-    # await sub.unsubscribe()
+    diff_df, missing_cols = compare_dataframes(
+        df_read.rename(renamings),
+        expected_df_read,
+        on=["UmId", "ProductId", "Price", "price_usd"],
+    )
+
+    assert len(diff_df) == 0
+    assert missing_cols == [
+        "missing:Place_lhs",
+        "missing:ProductName_lhs",
+        "missing:UmName_lhs",
+        "missing:time_lhs",
+        "missing:__valid_from_rhs",
+        "missing:__valid_to_rhs",
+    ]

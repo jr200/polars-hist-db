@@ -1,6 +1,5 @@
 from polars_hist_db.config import (
     TableColumnConfig,
-    DeltaConfig,
     ForeignKeyConfig,
     TableConfig,
     TableConfigs,
@@ -9,10 +8,6 @@ from ..utils.dsv_helper import get_test_config
 
 
 def assert_table_config_object(table_config: TableConfig):
-    assert isinstance(table_config, TableConfig)
-    if table_config.delta_config:
-        assert isinstance(table_config.delta_config, DeltaConfig)
-
     for column in table_config.columns:
         assert isinstance(column, TableColumnConfig)
 
@@ -80,7 +75,6 @@ def test_trading_pairs_config_deserialization():
     assert config.foreign_keys[2].references.column == "id"
     assert config.foreign_keys[2].name == "exchange_id"
 
-    assert isinstance(config.delta_config, DeltaConfig)
     assert config.is_temporal
 
 

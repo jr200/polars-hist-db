@@ -1,27 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Literal, Mapping, Optional
+from typing import Dict, Iterable, List, Mapping, Optional
 
 import polars as pl
 from sqlalchemy import Column, Identity
 import yaml
 
 from ..types import PolarsType, SQLType, SQLAlchemyType
-
-
-@dataclass
-class DeltaConfig:
-    drop_unchanged_rows: bool = False
-    on_duplicate_key: Literal["error", "take_last", "take_first"] = "error"
-    prefill_nulls_with_default: bool = False
-
-    # tracks the finality of rows in the target (temporal) table
-    # disabled: no tracking, rows are not deleted from the target table
-    # dropout: rows are deleted from the target table if they are not present in the source table
-    # manual: a separate column tracks the finality of rows in the target table
-    row_finality: Literal["disabled", "dropout", "manual"] = "disabled"
-
-    def tmp_table_name(self, table_name: str) -> str:
-        return f"__{table_name}_tmp"
 
 
 @dataclass
@@ -92,12 +76,8 @@ class TableConfig:
     foreign_keys: Iterable["ForeignKeyConfig"] = field(default_factory=tuple)
     is_temporal: bool = False
     primary_keys: Iterable[str] = field(default_factory=tuple)
-    delta_config: DeltaConfig = field(default_factory=DeltaConfig)
 
     def __post_init__(self):
-        if not isinstance(self.delta_config, DeltaConfig):
-            self.delta_config = DeltaConfig(**self.delta_config)
-
         columns = []
         for col in self.columns:
             if not isinstance(col, TableColumnConfig):

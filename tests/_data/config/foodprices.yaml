@@ -9,11 +9,6 @@ table_configs:
   - name: unit_info
     schema: test
     is_temporal: false
-    delta_config:
-      drop_unchanged_rows: false
-      # pre_prune_idential_rows: false
-      # truncate_table_first: false
-      on_duplicate_key: take_last
     primary_keys:
       - id
     columns:
@@ -24,11 +19,6 @@ table_configs:
   - name: product_info
     schema: test
     is_temporal: false
-    delta_config:
-      drop_unchanged_rows: false
-      # pre_prune_idential_rows: false
-      # truncate_table_first: false
-      on_duplicate_key: take_last
     primary_keys:
       - id
     columns:
@@ -38,10 +28,6 @@ table_configs:
   - name: food_prices
     schema: test
     is_temporal: true
-    delta_config:
-      drop_unchanged_rows: true
-      # pre_prune_idential_rows: true
-      # truncate_table_first: true
     primary_keys:
       - product_id
       - um_id
@@ -80,6 +66,11 @@ datasets:
       column: time
       truncate: 5d
       unique_strategy: last
+
+    delta_config:
+      drop_unchanged_rows: true
+      # pre_prune_idential_rows: true
+      # truncate_table_first: true
 
     pipeline:
       - table: unit_info
@@ -122,6 +113,10 @@ datasets:
       column: time
       truncate: 5d
       unique_strategy: last
+    delta_config:
+      drop_unchanged_rows: true
+      # pre_prune_idential_rows: true
+      # truncate_table_first: true
 
 
     pipeline:

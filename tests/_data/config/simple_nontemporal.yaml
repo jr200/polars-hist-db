@@ -8,11 +8,6 @@ table_configs:
       - { name: varchar_col, data_type: VARCHAR(10) }
     primary_keys:
       - id
-    delta_config:
-      drop_unchanged_rows: false
-      on_duplicate_key: take_last
-      prefill_nulls_with_default: false
-      row_finality: disabled
 
 datasets:    
   - name: simple_nontemporal_dataset
@@ -20,6 +15,11 @@ datasets:
     scrape_limit: ~
     input_config:
       type: dsv
+    delta_config:
+      drop_unchanged_rows: false
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: false
+      row_finality: disabled
     pipeline:
       - table: simple_nontemporal
         type: primary

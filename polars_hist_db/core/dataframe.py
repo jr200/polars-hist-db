@@ -369,6 +369,7 @@ class DataframeOps:
         ).upsert(
             table_name,
             update_time,
+            is_main_table=True,
             source_columns=[c.name for c in common_columns],
             src_tgt_colname_map=src_tgt_colname_map,
         )

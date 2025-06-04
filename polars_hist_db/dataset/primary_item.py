@@ -20,7 +20,6 @@ def scrape_primary_item(
     delta_table_schema = dataset.delta_table_schema
     delta_table_name = dataset.name
     main_table_config = tables[pipeline.get_main_table_name()]
-    assert main_table_config.delta_config is not None
     LOGGER.debug("(item %d) scraping item %s", pipeline_id, main_table_config.name)
 
     upload_items = pipeline.extract_items(pipeline_id)
@@ -40,12 +39,13 @@ def scrape_primary_item(
             )
 
     ni, nu, nd = DeltaTableOps(
-        delta_table_schema, delta_table_name, main_table_config.delta_config, connection
+        delta_table_schema, delta_table_name, dataset.delta_config, connection
     ).upsert(
         main_table_config.name,
         upload_time,
-        common_columns,
-        dict(upload_items.select("source", "target").iter_rows()),
+        is_main_table=True,
+        source_columns=common_columns,
+        src_tgt_colname_map=dict(upload_items.select("source", "target").iter_rows()),
     )
 
     LOGGER.debug("(item %d) upserted %d rows", -1, ni + nu)

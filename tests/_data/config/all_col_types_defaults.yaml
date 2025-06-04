@@ -28,11 +28,6 @@ table_configs:
     primary_keys:
       - id
     foreign_keys: []
-    delta_config:
-      drop_unchanged_rows: true
-      on_duplicate_key: take_last
-      prefill_nulls_with_default: true
-      row_finality: disabled
 
 
 datasets:
@@ -41,6 +36,11 @@ datasets:
     scrape_limit: ~
     input_config:
       type: dsv
+    delta_config:
+      drop_unchanged_rows: true
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: true
+      row_finality: disabled
     pipeline:
       - table: all_col_types
         type: primary

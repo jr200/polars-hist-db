@@ -52,15 +52,18 @@ datasets:
         port: 4112
         options:
           name: turkey_test_pubsub
-      js_fetch:
-        batch_size: 1000
-        batch_timeout: 0.5
-      js_options: ~
-      js_sub:
-        subject: turkey_test.unit_info
-        stream: turkey_test_food_stream
-        durable: turkey_test_consumer
-        options: ~
+      jetstream:
+        context: ~
+        subscription:
+          subject: turkey_test.unit_info
+          stream: turkey_test_food_stream
+          durable: turkey_test_consumer
+          options: ~
+          consumer_args:
+            max_ack_pending: 5000
+        fetch:
+          batch_size: 1000
+          batch_timeout: 0.5
 
     time_partition:
       column: time

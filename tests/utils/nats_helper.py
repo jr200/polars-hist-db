@@ -9,17 +9,20 @@ from nats.aio.client import Client as NATS
 import nats
 from nats.js.client import JetStreamContext
 
-LOGGER = logging.getLogger(__name__)
+from polars_hist_db.config.input_source import JetStreamSubscriptionConfig
+from tests.utils.dsv_helper import _tests_dir
 
-TEST_NATS_PORT = "4112"
+LOGGER = logging.getLogger(__name__)
 
 
 async def publish_dataframe_messages(
     js: JetStreamContext,
     df: pl.DataFrame,
-    nats_subject: str,
-    stream: str,
+    subscription: JetStreamSubscriptionConfig,
 ):
+    nats_subject = subscription.subject
+    stream = subscription.stream
+
     acks = []
     for row in df.iter_rows(named=True):
         # Convert row to JSON and publish
@@ -43,8 +46,9 @@ async def publish_dataframe_messages(
 
 def create_nats_server():
     # Start NATS server with JetStream enabled
+    conf_file = os.path.join(_tests_dir(), "nats-server.conf")
     server = subprocess.Popen(
-        ["nats-server", "-js", "-p", TEST_NATS_PORT],
+        ["nats-server", "-c", conf_file],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         preexec_fn=os.setsid,  # This ensures we can kill the entire process group
@@ -66,8 +70,11 @@ def create_nats_server():
 
 
 async def try_create_test_stream(
-    nats_js: nats.js.JetStreamContext, stream_name: str, subject: str
+    nats_js: nats.js.JetStreamContext, subscription: JetStreamSubscriptionConfig
 ):
+    stream_name = subscription.stream
+    subject = subscription.subject
+
     # delete the stream if it exists
     try:
         did_delete = await nats_js.delete_stream(stream_name)
@@ -88,7 +95,7 @@ async def try_create_test_stream(
 
 async def create_nats_js_client():
     nc = NATS()
-    await nc.connect(f"nats://localhost:{TEST_NATS_PORT}")
+    await nc.connect("nats://localhost:4112")
     js = nc.jetstream()
 
     try:

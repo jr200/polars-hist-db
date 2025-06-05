@@ -55,12 +55,12 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     dataset_name = "turkey_food_prices_jetstream"
     dataset = base_config.datasets[dataset_name]
 
-    js_config = dataset.input_config.js_sub
+    js_config = dataset.input_config.jetstream
 
     # Publish messages from DataFrame
-    await try_create_test_stream(nats_js, js_config.stream, js_config.subject)
+    await try_create_test_stream(nats_js, dataset.input_config.jetstream.subscription)
     _num_expected_msgs = await publish_dataframe_messages(
-        nats_js, test_data, js_config.subject, js_config.stream
+        nats_js, test_data, js_config.subscription
     )
 
     # wait for 1 second

@@ -23,6 +23,9 @@ class DeltaConfig:
     # manual: a separate column tracks the finality of rows in the target table
     row_finality: Literal["disabled", "dropout", "manual"] = "disabled"
 
+    # for debugging purposes, we can set this to False to keep the delta table
+    is_temporary_table: bool = True
+
     def tmp_table_name(self, table_name: str) -> str:
         return f"__{table_name}_tmp"
 

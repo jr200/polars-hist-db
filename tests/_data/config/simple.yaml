@@ -1,3 +1,10 @@
+db:
+  backend: mariadb
+  hostname: 127.0.0.1
+  port: 3306
+  username: root
+  password: admin
+
 table_configs:
   - schema: test
     name: simple_table

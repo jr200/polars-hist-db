@@ -66,22 +66,23 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     # wait for 1 second
     await asyncio.sleep(1)
 
-    time_partitions = list()
+    uploaded_dfs = list()
     await run_workflows(
         base_config,
         engine,
         "turkey_food_prices_jetstream",
-        debug_capture_output=time_partitions,
+        debug_capture_output=uploaded_dfs,
     )
 
-    uploaded_df = pl.concat([df for _, df in time_partitions])
+    uploaded_df = pl.concat([df for _, df in uploaded_dfs])
+
     assert not uploaded_df.is_empty()
     assert len(uploaded_df) == len(test_data)
 
     diff_df, missing_cols = compare_dataframes(
         uploaded_df,
         test_data,
-        on=["UmId", "ProductId", "Place", "Price"],
+        on=["UmId", "ProductId", "Price", "Place"],
     )
     assert len(diff_df) == 0
     assert len(missing_cols) == 4
@@ -100,8 +101,9 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     assert df_read.shape == (52, 6)
 
     expected_df_read = (
-        uploaded_df.group_by("ProductId", "UmId", maintain_order=True)
-        .last()
+        uploaded_df
+        # .group_by("ProductId", "UmId", maintain_order=True)
+        # .last()
         .unique(subset=["ProductId", "UmId"], maintain_order=True, keep="last")
     )
 
@@ -114,7 +116,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     diff_df, missing_cols = compare_dataframes(
         df_read.rename(renamings),
         expected_df_read,
-        on=["UmId", "ProductId", "Price", "price_usd"],
+        on=["UmId", "ProductId"],
     )
 
     assert len(diff_df) == 0

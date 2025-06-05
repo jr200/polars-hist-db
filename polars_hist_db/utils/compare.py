@@ -84,10 +84,13 @@ def compare_dataframes(
     else:
         intersect_cols = sorted(set(intersect_cols).intersection(cmp_cols).union(on))
 
+    if len(cmp_cols) == 0:
+        raise ValueError("No columns to compare")
+
     diffs_df = (
         lhs.select(intersect_cols)
         .select(pl.col(c).cast(rhs[c].dtype) for c in intersect_cols)
-        .join(rhs, on=on, how="full", suffix=f"{_rhs}")
+        .join(rhs, on=on, how="full", suffix=f"{_rhs}", coalesce=True)
         .pipe(compute_diff, [(c, f"{c}{_rhs}") for c in cmp_cols])
         .select(
             itertools.chain(

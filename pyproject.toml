@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "polars-hist-db"
-version = "0.5.2"
+version = "0.6.0"
 description = "dsv --> dataframe <--> bitemporal-tables"
 authors = ["jr200 <jayshan+git@gmail.com>"]
 repository = "https://github.com/jr200/polars-hist-db"
@@ -11,7 +11,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"
-pandas = "^2.2.3"
+pandas = "^2.3.0"
 polars = { version="1.30.0", extras=["sqlachemy"] }
 pyarrow = "^19.0.1"
 pymysql = "^1.1.1"

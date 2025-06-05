@@ -4,7 +4,7 @@ import pytest
 import polars as pl
 
 from polars_hist_db.core.table import TableOps
-from polars_hist_db.dataset.workflow import run_datasets
+from polars_hist_db.dataset.entrypoint import run_datasets
 from polars_hist_db.utils.compare import compare_dataframes
 
 from ..utils.dsv_helper import (

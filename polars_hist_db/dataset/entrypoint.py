@@ -91,6 +91,6 @@ async def _run_dataset(
     finally:
         await input_source.cleanup()
 
-    Clock().add_timing("workflow", time.perf_counter() - start_time)
+    Clock().add_timing("dataset", time.perf_counter() - start_time)
 
     LOGGER.info("stopped scrape - %s", dataset.name)

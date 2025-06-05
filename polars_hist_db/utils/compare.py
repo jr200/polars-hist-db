@@ -77,17 +77,20 @@ def compare_dataframes(
         f"missing:{c}{_lhs}" for c in set(rhs.columns).difference(lhs.columns)
     ]
 
-    missing_cols = lhs_missing_cols + rhs_missing_cols
+    missing_cols = sorted(lhs_missing_cols) + sorted(rhs_missing_cols)
     intersect_cols = sorted(set(rhs.columns).intersection(lhs.columns))
     if cmp_cols is None:
         cmp_cols = sorted(set(intersect_cols).difference(on))
     else:
         intersect_cols = sorted(set(intersect_cols).intersection(cmp_cols).union(on))
 
+    if len(cmp_cols) == 0:
+        raise ValueError("No columns to compare")
+
     diffs_df = (
         lhs.select(intersect_cols)
         .select(pl.col(c).cast(rhs[c].dtype) for c in intersect_cols)
-        .join(rhs, on=on, how="full", suffix=f"{_rhs}")
+        .join(rhs, on=on, how="full", suffix=f"{_rhs}", coalesce=True)
         .pipe(compute_diff, [(c, f"{c}{_rhs}") for c in cmp_cols])
         .select(
             itertools.chain(

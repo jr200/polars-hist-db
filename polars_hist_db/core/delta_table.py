@@ -48,6 +48,7 @@ class DeltaTableOps:
         self,
         target_table: str,
         update_time: Optional[datetime] = None,
+        is_main_table: bool = True,
         source_columns: Optional[List[str]] = None,
         src_tgt_colname_map: Mapping[str, str] = MappingProxyType({}),
     ) -> Tuple[int, int, int]:
@@ -68,7 +69,7 @@ class DeltaTableOps:
             source_tbl = tbo.get_table_metadata()
             source_columns = [c.name for c in source_tbl.columns]
 
-        if self.delta_config.drop_unchanged_rows:
+        if is_main_table and self.delta_config.drop_unchanged_rows:
             ref_columns = [src_tgt_colname_map.get(c, c) for c in source_columns]
             num_deletions += self._drop_unchanged_rows(
                 self.table_schema,
@@ -157,10 +158,6 @@ class DeltaTableOps:
             )
 
             num_updates = result.rowcount
-
-        LOGGER.debug(
-            "updated %d rows in %s.%s", num_updates, table_schema, target_table
-        )
 
         primary_key_matches = (
             tk == src_tbl.c[tgt_to_src_map.get(tk.name, tk.name)] for tk in tgt_pk
@@ -252,9 +249,16 @@ class DeltaTableOps:
             LOGGER.error(e)
             raise e
         num_inserts = result.rowcount
-        LOGGER.debug(
-            "inserted %s rows in %s.%s", num_inserts, table_schema, target_table
-        )
+
+        if num_inserts > 0 or num_updates > 0:
+            LOGGER.debug(
+                "Table[%s.%s]: inserted %d, updated %d",
+                table_schema,
+                target_table,
+                num_inserts,
+                num_updates,
+            )
+
         return num_inserts, num_updates
 
     def _coalesce_if_nullable(

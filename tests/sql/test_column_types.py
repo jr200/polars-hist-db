@@ -2,27 +2,31 @@ from datetime import datetime
 import pytest
 from polars.testing import assert_frame_equal
 
-from tests.utils import (
+from polars_hist_db.utils.compare import compare_dataframes
+
+from ..utils.dsv_helper import (
     from_test_result,
     modify_and_read,
-    setup_fixture_tableconfigs,
+    setup_fixture_dataset,
 )
 
 
 @pytest.fixture
 def fixture_with_nullable():
-    yield from setup_fixture_tableconfigs("all_col_types_nullable.yaml")
+    yield from setup_fixture_dataset("all_col_types_nullable.yaml")
 
 
 @pytest.fixture
 def fixture_with_defaults():
-    yield from setup_fixture_tableconfigs("all_col_types_defaults.yaml")
+    yield from setup_fixture_dataset("all_col_types_defaults.yaml")
 
 
 def test_types_nullable(fixture_with_nullable):
-    engine, table_configs, table_schema = fixture_with_nullable
-    table_config = table_configs.items[0]
-    table_config.delta_config.drop_unchanged_rows = True
+    engine, config = fixture_with_nullable
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
+    config.datasets[0].delta_config.drop_unchanged_rows = True
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")
@@ -38,7 +42,7 @@ def test_types_nullable(fixture_with_nullable):
     )
 
     df_read, df_read_history = modify_and_read(
-        engine, df_1, table_schema, table_config, ts_1, "upload"
+        engine, df_1, config.datasets[0], table_schema, table_config, ts_1, "upload"
     )
 
     df_expected = from_test_result(
@@ -58,7 +62,7 @@ def test_types_nullable(fixture_with_nullable):
     # insert the same dataframe, should be no inserts
     ts_2 = datetime.fromisoformat("1986-01-01T00:00:01Z")
     df_read, df_read_history = modify_and_read(
-        engine, df_1, table_schema, table_config, ts_2, "upload"
+        engine, df_1, config.datasets[0], table_schema, table_config, ts_2, "upload"
     )
 
     assert_frame_equal(df_expected, df_read)
@@ -79,7 +83,7 @@ def test_types_nullable(fixture_with_nullable):
     )
 
     df_read, df_read_history = modify_and_read(
-        engine, df_3, table_schema, table_config, ts_3, "upload"
+        engine, df_3, config.datasets[0], table_schema, table_config, ts_3, "upload"
     )
 
     df_expected = from_test_result(
@@ -112,7 +116,7 @@ def test_types_nullable(fixture_with_nullable):
     )
 
     df_read, df_read_history = modify_and_read(
-        engine, df_4, table_schema, table_config, ts_4, "upload"
+        engine, df_4, config.datasets[0], table_schema, table_config, ts_4, "upload"
     )
 
     df_expected = from_test_result(
@@ -155,7 +159,7 @@ def test_types_nullable(fixture_with_nullable):
     )
 
     df_read, df_read_history = modify_and_read(
-        engine, df_5, table_schema, table_config, ts_5, "upload"
+        engine, df_5, config.datasets[0], table_schema, table_config, ts_5, "upload"
     )
 
     df_expected = from_test_result(
@@ -175,8 +179,10 @@ def test_types_nullable(fixture_with_nullable):
 
 
 def test_types_defaults(fixture_with_defaults):
-    engine, table_configs, table_schema = fixture_with_defaults
-    table_config = table_configs.items[0]
+    engine, config = fixture_with_defaults
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")
@@ -190,7 +196,7 @@ def test_types_defaults(fixture_with_defaults):
     )
 
     df_read, df_read_history = modify_and_read(
-        engine, df_1, table_schema, table_config, ts_1, "upload"
+        engine, df_1, config.datasets[0], table_schema, table_config, ts_1, "upload"
     )
 
     df_expected = from_test_result(
@@ -218,7 +224,7 @@ def test_types_defaults(fixture_with_defaults):
     )
 
     df_read, df_read_history = modify_and_read(
-        engine, df_2, table_schema, table_config, ts_2, "upload"
+        engine, df_2, config.datasets[0], table_schema, table_config, ts_2, "upload"
     )
 
     df_expected = from_test_result(
@@ -231,4 +237,19 @@ def test_types_defaults(fixture_with_defaults):
         table_configs,
     )
 
-    assert_frame_equal(df_expected, df_read)
+    # using server-side defaults, the loaded df will have nulls
+    diff_df, missing_cols = compare_dataframes(
+        df_2,
+        df_expected,
+        on=["id"],
+    )
+    assert len(diff_df) == 1
+    assert len(missing_cols) == 2
+
+    diff_df, missing_cols = compare_dataframes(
+        df_read,
+        df_expected,
+        on=["id"],
+    )
+    assert diff_df.is_empty()
+    assert len(missing_cols) == 0

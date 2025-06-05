@@ -6,7 +6,7 @@ import polars as pl
 
 from polars_hist_db.core import AuditOps
 from polars_hist_db.loaders import find_files
-from tests.utils import create_temp_file_tree, setup_fixture_tableconfigs
+from ..utils.dsv_helper import create_temp_file_tree, setup_fixture_dataset
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -18,7 +18,7 @@ def fixture_with_tmpdir():
 
 @pytest.fixture(scope="session", autouse=True)
 def fixture_with_table():
-    yield from setup_fixture_tableconfigs("simple_nontemporal_table.yaml")
+    yield from setup_fixture_dataset("simple_nontemporal.yaml")
 
 
 def test_find_files(fixture_with_tmpdir):
@@ -58,8 +58,9 @@ def test_find_files(fixture_with_tmpdir):
 
 
 def test_loader(fixture_with_table):
-    engine, _table_configs, table_schema = fixture_with_table
+    engine, config = fixture_with_table
     app_name = "myapp"
+    table_schema = config.tables.schemas()[0]
 
     aops = AuditOps(table_schema)
     with engine.connect() as connection:

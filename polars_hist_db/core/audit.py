@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
 import logging
-from os.path import normpath
-from pathlib import Path
 from typing import Literal
 
 import polars as pl
@@ -200,8 +198,8 @@ class AuditOps:
 
     def add_entry(
         self,
-        data_source_type: Literal["file"],
-        data_source: Path,
+        data_source_type: Literal["dsv", "jetstream"],
+        data_source: str,
         target_table_name: str,
         connection: Connection,
         data_source_timestamp: datetime,
@@ -211,7 +209,7 @@ class AuditOps:
         new_item = {
             "table_name": f"{target_table_name}",
             "data_source_type": data_source_type,
-            "data_source": normpath(data_source.absolute()),
+            "data_source": data_source,
             "data_source_ts": data_source_timestamp,
             "upload_ts": datetime.now(timezone.utc),
         }
@@ -223,3 +221,28 @@ class AuditOps:
 
         did_insert = result.rowcount == 1
         return did_insert
+
+    def get_latest_entry(
+        self,
+        target_table_name: str,
+        data_source_type: Literal["dsv", "jetstream"],
+        connection: Connection,
+    ) -> pl.DataFrame:
+        tbl = self.create(connection)
+        latest_log_sql = (
+            select(tbl)
+            .where(
+                and_(
+                    *[
+                        tbl.c["data_source_type"] == data_source_type,
+                        tbl.c["table_name"] == target_table_name,
+                    ]
+                )
+            )
+            .order_by(tbl.c["data_source_ts"])
+            .limit(1)
+        )
+
+        latest_log = DataframeOps(connection).from_selectable(latest_log_sql)
+
+        return latest_log

@@ -5,25 +5,27 @@ from polars.testing import assert_frame_equal
 
 from polars_hist_db.core.dataframe import TimeHint, DataframeOps
 
-from tests.utils import (
+from ..utils.dsv_helper import (
     add_random_row,
     from_test_result,
     modify_and_read,
     read_df_from_db,
     set_random_seed,
-    setup_fixture_tableconfigs,
+    setup_fixture_dataset,
 )
 
 
 @pytest.fixture
 def temp_table():
-    yield from setup_fixture_tableconfigs("all_col_types_nullable.yaml")
+    yield from setup_fixture_dataset("all_col_types_nullable.yaml")
 
 
 def test_time_hints(temp_table):
-    engine, table_configs, table_schema = temp_table
-    table_config = table_configs.items[0]
-    table_config.delta_config.drop_unchanged_rows = True
+    engine, config = temp_table
+    table_schema = config.tables.schemas()[0]
+    table_configs = config.tables
+    table_config = config.tables.items[0]
+    config.datasets[0].delta_config.drop_unchanged_rows = True
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1988-01-01T00:00:01Z")
@@ -41,7 +43,7 @@ def test_time_hints(temp_table):
         df_i = add_random_row(df_1, table_config, {"id": 1})
         ts_i = ts_1 + timedelta(days=i * 30)
         df_read, df_read_history = modify_and_read(
-            engine, df_i, table_schema, table_config, ts_i, "upload"
+            engine, df_i, config.datasets[0], table_schema, table_config, ts_i, "upload"
         )
 
     df_read, df_read_history = read_df_from_db(engine, table_schema, table_config)

@@ -1,95 +1,96 @@
+from datetime import datetime
 import logging
-from pathlib import Path
 import time
-from typing import Optional
+from typing import List, Optional, Tuple
 
+import polars as pl
 from sqlalchemy import Engine
 
-from ..config import (
-    Config,
-    DatasetConfig,
-    TableConfigs,
-)
-from ..core import AuditOps, DeltaTableOps, TableConfigOps, TableOps
-from ..loaders import find_files
-from ..utils import Clock
-from .scrape import scrape_pipeline_as_transaction
+from ..loaders.input_source_factory import InputSourceFactory
+from ..utils.clock import Clock
+
+from ..config import Config, DatasetConfig, TableConfigs
+from ..config.input_source import InputConfig
+from ..core import DeltaTableOps, TableConfigOps, TableOps
+from .scrape import try_upload_to_delta_table
 
 LOGGER = logging.getLogger(__name__)
 
 
-def run_workflows(config: Config, engine: Engine, dataset_name: Optional[str] = None):
+async def run_workflows(
+    config: Config,
+    engine: Engine,
+    dataset_name: Optional[str] = None,
+    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]] = None,
+):
     for dataset in config.datasets.datasets:
         if dataset_name is None or dataset.name == dataset_name:
             LOGGER.info("scraping dataset %s", dataset.name)
-            _run_workflow(dataset, config.tables, engine)
+            await _run_workflow(
+                dataset.input_config,
+                dataset,
+                config.tables,
+                engine,
+                debug_capture_output,
+            )
 
 
-def _run_workflow(
-    dataset: DatasetConfig,
-    tables: TableConfigs,
+def _create_delta_table(
     engine: Engine,
+    tables: TableConfigs,
+    dataset: DatasetConfig,
 ):
-    table_name = dataset.pipeline.get_main_table_name()
-    table_config = tables[table_name]
-    table_schema = table_config.schema
-    aops = AuditOps(table_schema)
-
-    LOGGER.info(f"starting ingest for {table_name}")
-
-    scrape_limit = dataset.scrape_limit
-    csv_files_df = find_files(dataset.search_paths)
-
-    with engine.begin() as connection:
-        csv_files_df = aops.filter_unprocessed_items(
-            csv_files_df, "path", table_name, connection
-        ).sort("created_at")
-
-        if scrape_limit is not None:
-            csv_files_df = csv_files_df.head(scrape_limit)
-
-        aops.prevalidate_new_items(table_name, csv_files_df, connection)
-
     with engine.begin() as connection:
         TableConfigOps(connection).create_all(tables)
 
-    if table_config.delta_config is not None:
-        col_defs = dataset.pipeline.build_delta_table_column_configs(
-            tables, dataset.name
-        )
-        with engine.begin() as connection:
-            delta_table_config = DeltaTableOps(
-                dataset.delta_table_schema,
-                dataset.name,
-                table_config.delta_config,
-                connection,
-            ).table_config(col_defs)
+    col_defs = dataset.pipeline.build_delta_table_column_configs(tables, dataset.name)
 
-            if not TableOps(
-                delta_table_config.schema, delta_table_config.name, connection
-            ).table_exists():
-                TableConfigOps(connection).create(
-                    delta_table_config,
-                    is_delta_table=True,
-                    is_temporary_table=False,
-                )
+    with engine.begin() as connection:
+        delta_table_config = DeltaTableOps(
+            dataset.delta_table_schema,
+            dataset.name,
+            dataset.delta_config,
+            connection,
+        ).table_config(col_defs)
 
-    timings = Clock()
+        if not TableOps(
+            delta_table_config.schema, delta_table_config.name, connection
+        ).table_exists():
+            TableConfigOps(connection).create(
+                delta_table_config,
+                is_delta_table=True,
+                is_temporary_table=False,
+            )
 
-    for i, (csv_file, file_time) in enumerate(csv_files_df.rows()):
-        LOGGER.info(
-            "[%d/%d] processing file mtime=%s", i + 1, len(csv_files_df), file_time
-        )
 
-        start_time = time.perf_counter()
+async def _run_workflow(
+    input_config: InputConfig,
+    dataset: DatasetConfig,
+    tables: TableConfigs,
+    engine: Engine,
+    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
+):
+    LOGGER.info(f"starting ingest for {dataset.name}")
 
-        scrape_pipeline_as_transaction(
-            Path(csv_file), file_time, dataset, tables, engine
-        )
+    _create_delta_table(engine, tables, dataset)
 
-        pipeline_time = time.perf_counter() - start_time
-        timings.add_timing("pipeline", pipeline_time)
-        LOGGER.debug("avg pipeline time %f seconds", timings.get_avg("pipeline"))
-        LOGGER.debug("eta: %s", str(timings.eta("pipeline", len(csv_files_df) - i - 1)))
+    start_time = time.perf_counter()
 
-    LOGGER.info("stopped scrape - %s", table_name)
+    input_source = InputSourceFactory.create_input_source(tables, dataset, input_config)
+    try:
+        async for partitions, commit_fn in await input_source.next_df(engine):
+            if debug_capture_output is not None:
+                debug_capture_output.extend(partitions)
+
+            await try_upload_to_delta_table(
+                partitions, dataset, tables, engine, commit_fn
+            )
+
+    except Exception as e:
+        LOGGER.error("error while processing InputSource: %s", e, exc_info=e)
+    finally:
+        await input_source.cleanup()
+
+    Clock().add_timing("workflow", time.perf_counter() - start_time)
+
+    LOGGER.info("stopped scrape - %s", dataset.name)

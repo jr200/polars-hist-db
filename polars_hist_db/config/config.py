@@ -17,26 +17,20 @@ class Config:
         db_config_path: Iterable[str],
         config_filename: Optional[str] = None,
     ):
-        if db_config_path:
-            self.db_config = DbEngineConfig(
-                **Config.get_nested_key(cfg_dict, db_config_path)
-            )
+        dataset_params = Config._get_nested_key(cfg_dict, datasets_path)
+        db_params = Config._get_nested_key(cfg_dict, db_config_path)
+        table_params = Config._get_nested_key(cfg_dict, table_configs_path)
 
-            self.tables = TableConfigs(
-                items=Config.get_nested_key(cfg_dict, table_configs_path)
-            )
+        self.tables = TableConfigs(items=table_params)
 
-        if datasets_path:
-            config_dir = (
-                None if config_filename is None else os.path.dirname(config_filename)
-            )
-            self.datasets = DatasetsConfig(
-                datasets=Config.get_nested_key(cfg_dict, datasets_path),
-                base_dir=config_dir,
-            )
+        if db_params:
+            self.db_config = DbEngineConfig(**db_params)
+
+        if dataset_params:
+            self.datasets = DatasetsConfig(datasets=dataset_params)
 
     @staticmethod
-    def get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):
+    def _get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):
         try:
             return reduce(lambda d, key: d[key], keys, my_dict)
         except (KeyError, TypeError):

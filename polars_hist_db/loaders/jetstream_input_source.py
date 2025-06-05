@@ -84,15 +84,18 @@ class JetStreamInputSource(InputSource):
             None,
         ]:
             nc = await self._get_nats_client()
-            js = nc.jetstream(**self.config.js_options)
+            js = nc.jetstream(**self.config.jetstream.context)
             remaining_msgs = self.dataset.scrape_limit
 
-            js_sub_cfg = self.config.js_sub
+            js_sub_cfg = self.config.jetstream.subscription
 
             sub = await js.pull_subscribe(
                 subject=js_sub_cfg.subject,
                 durable=js_sub_cfg.durable,
                 stream=js_sub_cfg.stream,
+                config=nats.js.api.ConsumerConfig(
+                    **js_sub_cfg.consumer_args,
+                ),
                 **js_sub_cfg.options,
             )
 
@@ -100,8 +103,8 @@ class JetStreamInputSource(InputSource):
             while remaining_msgs != 0:
                 try:
                     msgs = await sub.fetch(
-                        self.config.js_fetch.batch_size,
-                        self.config.js_fetch.batch_timeout,
+                        self.config.jetstream.fetch.batch_size,
+                        self.config.jetstream.fetch.batch_timeout,
                     )
 
                     if len(msgs) == 0:

@@ -80,15 +80,19 @@ class NatsConfig:
 
 
 @dataclass
-class JetStreamSubscription:
+class JetStreamSubscriptionConfig:
     subject: str
     stream: str
     durable: Optional[str]
     options: Dict[str, Any]
+    consumer_args: Dict[str, Any]
 
     def __post_init__(self):
         if self.options is None:
             self.options = dict()
+
+        if self.consumer_args is None:
+            self.consumer_args = dict()
 
 
 @dataclass
@@ -101,21 +105,30 @@ class JetStreamFetchConfig:
 
 
 @dataclass
-class JetStreamInputConfig(InputConfig):
-    nats: NatsConfig
-    js_fetch: JetStreamFetchConfig
-    js_options: Dict[str, Any]
-    js_sub: JetStreamSubscription
+class JetStreamConfig:
+    subscription: JetStreamSubscriptionConfig
+    fetch: JetStreamFetchConfig
+    context: Dict[str, Any]
 
     def __post_init__(self):
-        if self.js_options is None:
-            self.js_options = dict()
+        if isinstance(self.subscription, dict):
+            self.subscription = JetStreamSubscriptionConfig(**self.subscription)
 
+        if isinstance(self.fetch, dict):
+            self.fetch = JetStreamFetchConfig(**self.fetch)
+
+        if self.context is None:
+            self.context = dict()
+
+
+@dataclass
+class JetStreamInputConfig(InputConfig):
+    nats: NatsConfig
+    jetstream: JetStreamConfig
+
+    def __post_init__(self):
         if isinstance(self.nats, dict):
             self.nats = NatsConfig(**self.nats)
 
-        if isinstance(self.js_sub, dict):
-            self.js_sub = JetStreamSubscription(**self.js_sub)
-
-        if isinstance(self.js_fetch, dict):
-            self.js_fetch = JetStreamFetchConfig(**self.js_fetch)
+        if isinstance(self.jetstream, dict):
+            self.jetstream = JetStreamConfig(**self.jetstream)

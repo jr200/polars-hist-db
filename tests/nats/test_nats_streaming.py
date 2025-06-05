@@ -4,6 +4,7 @@ import pytest_asyncio
 import polars as pl
 import nats
 
+from polars_hist_db.config.input_source import JetStreamSubscriptionConfig
 from tests.utils.nats_helper import (
     create_nats_js_client,
     create_nats_server,
@@ -33,10 +34,18 @@ async def test_nats_streaming(nats_js: nats.js.JetStreamContext):
         .unique(subset=unique_keys, maintain_order=True, keep="last")
     )
 
-    await try_create_test_stream(nats_js, "test_stream", "test.>")
+    subscription_cfg = JetStreamSubscriptionConfig(
+        subject="test.>",
+        stream="test_stream",
+        durable="test_consumer",
+        options={},
+        consumer_args={},
+    )
+
+    await try_create_test_stream(nats_js, subscription_cfg)
 
     # Publish messages from DataFrame
-    await publish_dataframe_messages(nats_js, test_data, "test.message", "test_stream")
+    await publish_dataframe_messages(nats_js, test_data, subscription_cfg)
 
     # Create a consumer
     sub = await nats_js.subscribe(

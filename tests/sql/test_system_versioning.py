@@ -3,22 +3,22 @@ from datetime import datetime, timezone
 import pytest
 
 from polars_hist_db.core import DbOps
-from tests.utils import setup_fixture_tableconfigs
+from tests.utils.dsv_helper import setup_fixture_dataset
 
 
 @pytest.fixture
 def fixture_with_simple_table_1():
-    yield from setup_fixture_tableconfigs("simple_table.yaml")
+    yield from setup_fixture_dataset("simple.yaml")
 
 
 @pytest.fixture
 def fixture_with_simple_table_2():
-    yield from setup_fixture_tableconfigs("simple_table.yaml")
+    yield from setup_fixture_dataset("simple.yaml")
 
 
 def test_long_write(fixture_with_simple_table_1, fixture_with_simple_table_2):
-    engine_1, _table_configs_1, _table_schema_1 = fixture_with_simple_table_1
-    engine_2, _table_configs_2, _table_schema_2 = fixture_with_simple_table_2
+    engine_1, _config_1 = fixture_with_simple_table_1
+    engine_2, _config_2 = fixture_with_simple_table_2
 
     # upload then test initial df
     ts_1 = datetime.fromisoformat("1985-01-01T00:00:01Z")

@@ -1,9 +1,8 @@
 from .config import Config
-from .dataset import DatasetConfig, DatasetsConfig, IngestionColumnConfig
+from .dataset import DatasetConfig, DatasetsConfig, IngestionColumnConfig, DeltaConfig
 from .engine import DbEngineConfig
 from .table import (
     TableColumnConfig,
-    DeltaConfig,
     ForeignKeyConfig,
     TableConfig,
     TableConfigs,

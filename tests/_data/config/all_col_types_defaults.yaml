@@ -1,0 +1,69 @@
+table_configs:
+  - name: all_col_types
+    schema: test
+    is_temporal: true
+    columns:
+      - { name: id, data_type: INT, autoincrement: true, nullable: false }
+      - { name: bigint_col, data_type: BIGINT, default_value: "9223372036854775807" }
+      - { name: bit_col, data_type: BIT, default_value: "0" }
+      - { name: bool_col, data_type: BOOL, default_value: "0" }
+      - { name: boolean_col, data_type: BOOLEAN, default_value: "0" }
+      - { name: char_col, data_type: CHAR(1), default_value: "?" }
+      - { name: date_col, data_type: DATE, default_value: "1985-10-26" }
+      - { name: datetime_col, data_type: DATETIME, default_value: "1985-10-26T01:21:00" }
+      - { name: decimal_col, data_type: "DECIMAL(10,2)", default_value: "2.71" }
+      - { name: double_col, data_type: DOUBLE, default_value: "1.618033988749895" }
+      - { name: float_col, data_type: FLOAT, default_value: "1.1" }
+      - { name: int_col, data_type: INT, default_value: "1" }
+      - { name: integer_col, data_type: INTEGER, default_value: "1" }
+      - { name: mediumint_col, data_type: MEDIUMINT, default_value: "1" }
+      - { name: numeric_col, data_type: "NUMERIC(8,5)", default_value: "3.14159" }
+      - { name: real_col, data_type: REAL, default_value: "1.616255e-35" }
+      - { name: smallint_col, data_type: SMALLINT, default_value: "1" }
+      - { name: text_col, data_type: TEXT(LENGTH=16), default_value: "?abcdef?" }
+      - { name: time_col, data_type: TIME, default_value: "01:20:00" }
+      - { name: timestamp_col, data_type: TIMESTAMP, default_value: "1985-10-26T01:20:00" }
+      - { name: tinyint_col, data_type: TINYINT, default_value: "1" }
+      - { name: varchar_col, data_type: VARCHAR(LENGTH=32), default_value: "?abcdefghijklmn?" }
+    primary_keys:
+      - id
+    foreign_keys: []
+
+
+datasets:
+  - name: all_col_types_defaults_dataset
+    delta_table_schema: test
+    scrape_limit: ~
+    input_config:
+      type: dsv
+    delta_config:
+      drop_unchanged_rows: true
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: true
+      row_finality: disabled
+    pipeline:
+      - table: all_col_types
+        type: primary
+        columns:
+          - { source: id, target: id }
+          - { source: bigint_col, target: bigint_col, value_if_missing: "9223372036854775807" }
+          - { source: bit_col, target: bit_col, value_if_missing: "0" }
+          - { source: bool_col, target: bool_col, value_if_missing: "false" }
+          - { source: boolean_col, target: boolean_col, value_if_missing: "false" }
+          - { source: char_col, target: char_col, value_if_missing: "?" }
+          - { source: date_col, target: date_col, value_if_missing: "1985-10-26" }
+          - { source: datetime_col, target: datetime_col, value_if_missing: "1985-10-26T01:21:00" }
+          - { source: decimal_col, target: decimal_col, value_if_missing: "2.71" }
+          - { source: double_col, target: double_col, value_if_missing: "1.618033988749895" }
+          - { source: float_col, target: float_col, value_if_missing: "1.1" }
+          - { source: int_col, target: int_col, value_if_missing: "1" }
+          - { source: integer_col, target: integer_col, value_if_missing: "1" }
+          - { source: mediumint_col, target: mediumint_col, value_if_missing: "1" }
+          - { source: numeric_col, target: numeric_col, value_if_missing: "3.14159" }
+          - { source: real_col, target: real_col, value_if_missing: "1.616255e-35" }
+          - { source: smallint_col, target: smallint_col, value_if_missing: "1" }
+          - { source: text_col, target: text_col, value_if_missing: "?abcdef?" }
+          - { source: time_col, target: time_col, value_if_missing: "01:20:00" }
+          - { source: timestamp_col, target: timestamp_col, value_if_missing: "1985-10-26T01:20:00" }
+          - { source: tinyint_col, target: tinyint_col, value_if_missing: "1" }
+          - { source: varchar_col, target: varchar_col, value_if_missing: "?abcdefghijklmn?" }

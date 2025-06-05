@@ -22,39 +22,27 @@ from polars_hist_db.core import (
     AuditOps,
     DataframeOps,
     DbOps,
-    DeltaTableOps,
     TableConfigOps,
     TableOps,
     make_engine,
 )
 from polars_hist_db.types import PolarsType, SQLAlchemyType
 
-# some test defaults for debugging
-pl.Config(
-    set_tbl_cols=100,
-    fmt_str_lengths=1000,
-    tbl_width_chars=1000,
-)
-
 
 def _tests_dir():
-    tests_dir = Path(__file__).parent.absolute()
+    tests_dir = Path(__file__).parent.parent.parent.absolute()
+    tests_dir = os.path.join(tests_dir, "tests")
     return tests_dir
 
 
-def get_table_config(filename: str):
-    data_dir = _tests_dir() / "_testdata_table_configs"
-    return data_dir / filename
-
-
-def get_dataset_config(filename: str):
-    data_dir = _tests_dir() / "_testdata_dataset_configs"
-    return data_dir / filename
+def get_test_config(filename: str):
+    data_dir = os.path.join(_tests_dir(), "_data", "config")
+    return os.path.join(data_dir, filename)
 
 
 def get_dataset_data(filename: str):
-    data_dir = _tests_dir() / "_testdata_dataset_data"
-    return data_dir / filename
+    data_dir = os.path.join(_tests_dir(), "_testdata_dataset_data")
+    return os.path.join(data_dir, filename)
 
 
 def mariadb_engine_test(**kwargs) -> Engine:
@@ -101,11 +89,25 @@ def _infer_input_columns_from_tables(
                 source=column.name,
                 target=column.name,
                 nullable=column.nullable,
-                value_if_missing=column.default_value,
             )
             items.append(dc)
 
     return items
+
+
+def clean_dsv_string(data: str) -> str:
+    input_io = StringIO(data.strip())
+    output_io = StringIO()
+
+    reader = csv.reader(input_io)
+    writer = csv.writer(output_io, quoting=csv.QUOTE_MINIMAL)
+
+    for row in reader:
+        cleaned_row = [field.strip() if field is not None else "" for field in row]
+        writer.writerow(cleaned_row)
+
+    csv_output = output_io.getvalue().strip() + "\n"
+    return csv_output
 
 
 def from_test_result(
@@ -116,21 +118,7 @@ def from_test_result(
     skip_time_partition: bool = True,
     schema_overrides: Optional[Dict[str, pl.DataType]] = None,
 ) -> pl.DataFrame:
-    def _clean_csv_data(data: str) -> str:
-        input_io = StringIO(data.strip())
-        output_io = StringIO()
-
-        reader = csv.reader(input_io)
-        writer = csv.writer(output_io, quoting=csv.QUOTE_MINIMAL)
-
-        for row in reader:
-            cleaned_row = [field.strip() if field is not None else "" for field in row]
-            writer.writerow(cleaned_row)
-
-        csv_output = output_io.getvalue().strip() + "\n"
-        return csv_output
-
-    x_cleaned = _clean_csv_data(x)
+    x_cleaned = clean_dsv_string(x)
 
     if dataset:
         column_definitions = [
@@ -189,31 +177,10 @@ def from_test_result(
     return df
 
 
-def setup_fixture_tableconfigs(*test_files: str):
-    engine = mariadb_engine_test()
-    table_configs = TableConfigs.from_yamls(*[get_table_config(f) for f in test_files])
-    table_schema = table_configs.schemas()[0]
-
-    with engine.begin() as connection:
-        TableConfigOps(connection).drop_all(table_configs)
-
-        for tc in table_configs.items:
-            DbOps(connection).db_create(tc.schema)
-            TableConfigOps(connection).create(tc)
-            if tc.schema != table_schema:
-                raise ValueError(
-                    "mixed-schema tests not supported (to keep things simple)"
-                )
-
-    yield engine, table_configs, table_schema
-
-    with engine.begin() as connection:
-        TableConfigOps(connection).drop_all(table_configs)
-
-
 def setup_fixture_dataset(test_file: str):
+    config = Config.from_yaml(get_test_config(test_file))
     engine = mariadb_engine_test()
-    config = Config.from_yaml(get_dataset_config(test_file))
+
     table_schema = config.tables.schemas()[0]
     table_configs = config.tables
     audit_table = AuditOps(table_schema)
@@ -285,6 +252,7 @@ def read_df_from_db(
 def modify_and_read(
     engine: Engine,
     df: pl.DataFrame,
+    dataset: DatasetConfig,
     table_schema: str,
     table_config: TableConfig,
     app_time: datetime,
@@ -302,48 +270,16 @@ def modify_and_read(
                 df, table_schema, config.name, app_time
             )
         elif operation == "upload":
-            assert config.delta_config is not None
+            assert dataset.delta_config is not None
             DataframeOps(connection).table_upsert_temporal(
                 df,
                 table_schema,
                 config.name,
-                config.delta_config,
+                dataset.delta_config,
                 app_time,
                 src_tgt_colname_map=MappingProxyType({}),
             )
     return read_df_from_db(engine, table_schema, table_config, app_time, return_view)
-
-
-def upsert_then_read_nontemporal(
-    engine: Engine,
-    table_schema: str,
-    source_table_config: TableConfig,
-    target_table_config: TableConfig,
-    source_columns: List[str],
-    return_view: bool = False,
-) -> Tuple[int, int, pl.DataFrame]:
-    with engine.begin() as connection:
-        tbo = TableOps(table_schema, source_table_config.name, connection)
-        scs = tbo.get_column_intersection(source_columns)
-        num_inserts, num_updates = DeltaTableOps(
-            table_schema,
-            source_table_config.name,
-            target_table_config.delta_config,
-            connection,
-        )._table_upsert_nontemporal(
-            table_schema,
-            source_table_config.name,
-            target_table_config.name,
-            source_columns=[sc.name for sc in scs],
-        )
-    df, _ = read_df_from_db(
-        engine,
-        table_schema,
-        target_table_config,
-        datetime.now(timezone.utc),
-        return_view,
-    )
-    return num_inserts, num_updates, df
 
 
 def set_random_seed(seed: int):

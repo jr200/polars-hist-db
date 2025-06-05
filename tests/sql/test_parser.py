@@ -1,18 +1,13 @@
 from polars_hist_db.config import (
     TableColumnConfig,
-    DeltaConfig,
     ForeignKeyConfig,
     TableConfig,
     TableConfigs,
 )
-from tests.utils import get_table_config
+from ..utils.dsv_helper import get_test_config
 
 
 def assert_table_config_object(table_config: TableConfig):
-    assert isinstance(table_config, TableConfig)
-    if table_config.delta_config:
-        assert isinstance(table_config.delta_config, DeltaConfig)
-
     for column in table_config.columns:
         assert isinstance(column, TableColumnConfig)
 
@@ -26,7 +21,7 @@ def assert_table_config_object(table_config: TableConfig):
 
 
 def test_cryptocurrency_config_deserialization():
-    file_path = get_table_config("cryptocurrency_config.yaml")
+    file_path = get_test_config("trading_pairs.yaml")
     config = TableConfigs.from_yamls(file_path)["cryptocurrencies"]
     assert_table_config_object(config)
 
@@ -43,7 +38,7 @@ def test_cryptocurrency_config_deserialization():
 
 
 def test_exchange_config_deserialization():
-    file_path = get_table_config("exchange_config.yaml")
+    file_path = get_test_config("trading_pairs.yaml")
     config = TableConfigs.from_yamls(file_path)["exchanges"]
     assert_table_config_object(config)
 
@@ -55,11 +50,8 @@ def test_exchange_config_deserialization():
 
 
 def test_trading_pairs_config_deserialization():
-    configs = TableConfigs.from_yamls(
-        get_table_config("exchange_config.yaml"),
-        get_table_config("cryptocurrency_config.yaml"),
-        get_table_config("trading_pairs_config.yaml"),
-    )
+    file_path = get_test_config("trading_pairs.yaml")
+    configs = TableConfigs.from_yamls(file_path)
 
     exchange_config = configs["exchanges"]
     cryptocurrency_config = configs["cryptocurrencies"]
@@ -83,12 +75,11 @@ def test_trading_pairs_config_deserialization():
     assert config.foreign_keys[2].references.column == "id"
     assert config.foreign_keys[2].name == "exchange_id"
 
-    assert isinstance(config.delta_config, DeltaConfig)
     assert config.is_temporal
 
 
 # def test_trading_pairs_config_serialization_deserialization():
-# file_path = get_table_config("cryptocurrency_config.yaml")
+# file_path = get_test_config("table_cryptocurrencies.yaml")
 # original_config = TableConfig.from_yaml(file_path)
 
 # Serialize to YAML
@@ -109,7 +100,7 @@ def test_trading_pairs_config_deserialization():
 #     assert deserialized_config.is_temporal == original_config.is_temporal
 
 # def test_config_roundtrip():
-#     for filename in ['cryptocurrency_config.yaml', 'exchange_config.yaml', 'trading_pairs_config.yaml']:
+#     for filename in ['table_cryptocurrencies.yaml', 'table_exchanges.yaml', 'table_trading_pairs.yaml']:
 #         original_config_dict = get_test_path(filename)
 
 #         # Serialize to YAML

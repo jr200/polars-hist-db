@@ -1,0 +1,89 @@
+table_configs:
+  - schema: test
+    name: cryptocurrencies
+    columns:
+      - { name: id, data_type: INT, autoincrement: true, nullable: false }
+      - { name: symbol, data_type: VARCHAR(10), nullable: false }
+      - { name: name, data_type: VARCHAR(100), nullable: false }
+      - { name: current_price_usd, data_type: "DECIMAL(18,8)", nullable: true }
+      - { name: market_cap_usd, data_type: "DECIMAL(18,2)", nullable: true }
+      - { name: created_at, data_type: TIMESTAMP, nullable: false }
+    primary_keys:
+      - id
+
+  - schema: test
+    name: exchanges
+    columns:
+      - { name: id, data_type: INT, autoincrement: true, nullable: false }
+      - { name: name, data_type: VARCHAR(100), nullable: false }
+      - { name: website, data_type: VARCHAR(255), nullable: true }
+      - { name: country, data_type: VARCHAR(50), nullable: true }
+      - { name: created_at, data_type: TIMESTAMP, nullable: false }
+    primary_keys:
+      - id
+
+  - schema: test
+    name: trading_pairs
+    is_temporal: true
+    columns:
+      - { name: id, data_type: INT, autoincrement: true, nullable: false }
+      - { name: base_currency_id, data_type: INT, nullable: false }
+      - { name: quote_currency_id, data_type: INT, nullable: false }
+      - { name: exchange_id, data_type: INT, nullable: false }
+      - { name: last_price, data_type: "DECIMAL(18,8)", nullable: true }
+      - { name: volume_24h, data_type: "DECIMAL(18,8)", nullable: true }
+      - { name: updated_at, data_type: TIMESTAMP, nullable: false }
+    primary_keys:
+      - id
+    foreign_keys:
+    - name: base_currency_id
+      references:
+        table: cryptocurrencies
+        column: id
+    - name: quote_currency_id
+      references:
+        table: cryptocurrencies
+        column: id
+    - name: exchange_id
+      references:
+        table: exchanges
+        column: id
+
+
+datasets:
+  - name: cryptocurrencies_dataset
+    delta_table_schema: test
+    scrape_limit: ~
+    input_config:
+      type: dsv
+    delta_config:
+      drop_unchanged_rows: true
+      on_duplicate_key: take_last
+      prefill_nulls_with_default: false
+      row_finality: manual
+    pipeline:
+      - table: exchanges
+        columns:
+          - { source: id, target: id }
+          - { source: name, target: name }
+          - { source: website, target: website }
+          - { source: country, target: country }
+          - { source: created_at, target: created_at }
+
+      - table: cryptocurrencies
+        columns:
+          - { source: id, target: id }
+          - { source: symbol, target: symbol }
+          - { source: name, target: name }
+          - { source: current_price_usd, target: current_price_usd }
+          - { source: market_cap_usd, target: market_cap_usd }
+          - { source: created_at, target: created_at }
+
+      - table: trading_pairs
+        type: primary
+        columns:
+          - { source: id, target: id }
+          - { source: base_currency_id, target: base_currency_id }
+          - { source: quote_currency_id, target: quote_currency_id }
+          - { source: exchange_id, target: exchange_id }
+

@@ -1,14 +1,30 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Literal, Optional, Sequence
-import os
 
 import polars as pl
 import logging
 
 from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
+from .input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class DeltaConfig:
+    drop_unchanged_rows: bool = False
+    on_duplicate_key: Literal["error", "take_last", "take_first"] = "error"
+    prefill_nulls_with_default: bool = False
+
+    # tracks the finality of rows in the target (temporal) table
+    # disabled: no tracking, rows are not deleted from the target table
+    # dropout: rows are deleted from the target table if they are not present in the source table
+    # manual: a separate column tracks the finality of rows in the target table
+    row_finality: Literal["disabled", "dropout", "manual"] = "disabled"
+
+    def tmp_table_name(self, table_name: str) -> str:
+        return f"__{table_name}_tmp"
 
 
 @dataclass
@@ -203,26 +219,25 @@ class TimePartition:
 class DatasetConfig:
     name: str
     delta_table_schema: str
-    search_paths: pl.DataFrame
+    input_config: InputConfig
     pipeline: Pipeline
-    scrape_limit: Optional[int] = None
-    base_dir: Optional[str] = None
+    scrape_limit: int = -1
     time_partition: Optional[TimePartition] = None
     null_values: Optional[Sequence[str]] = None
+    delta_config: DeltaConfig = field(default_factory=DeltaConfig)
 
     def __post_init__(self):
+        if not isinstance(self.delta_config, DeltaConfig):
+            self.delta_config = DeltaConfig(**self.delta_config)
+
+        if not self.scrape_limit:
+            self.scrape_limit = -1
+
         if not isinstance(self.pipeline, Pipeline):
             self.pipeline = Pipeline(items=self.pipeline)
 
-        if not isinstance(self.search_paths, pl.DataFrame):
-            for search_path in self.search_paths:
-                if "root_path" in search_path:
-                    path = search_path["root_path"]
-                    if not os.path.isabs(path):
-                        abs_path = os.path.normpath(os.path.join(self.base_dir, path))
-                        search_path["root_path"] = abs_path
-
-            self.search_paths = pl.from_records(self.search_paths)
+        if not isinstance(self.input_config, InputConfig):
+            self.input_config = InputConfig.from_dict(self.input_config)
 
         if self.time_partition is not None and not isinstance(
             self.time_partition, TimePartition
@@ -233,17 +248,16 @@ class DatasetConfig:
 @dataclass
 class DatasetsConfig:
     datasets: Sequence[DatasetConfig]
-    base_dir: Optional[str]
 
     def __post_init__(self):
-        self.datasets = [
-            DatasetConfig(**ds_dict, base_dir=self.base_dir)
-            for ds_dict in self.datasets
-        ]
+        self.datasets = [DatasetConfig(**ds_dict) for ds_dict in self.datasets]
 
-    def __getitem__(self, name: str) -> Optional[DatasetConfig]:
+    def __getitem__(self, key: str) -> Optional[DatasetConfig]:
         try:
-            ds = next((ds for ds in self.datasets if ds.name == name), None)
+            if isinstance(key, int):
+                return self.datasets[key]
+
+            ds = next((ds for ds in self.datasets if ds.name == key), None)
             return ds
         except StopIteration:
             return None

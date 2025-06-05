@@ -28,8 +28,41 @@ table_configs:
     primary_keys:
       - id
     foreign_keys: []
+
+datasets:    
+  - name: all_col_types_nullable_dataset
+    delta_table_schema: test
+    scrape_limit: ~
+    input_config:
+      type: dsv
     delta_config:
       drop_unchanged_rows: false
       on_duplicate_key: take_last
       prefill_nulls_with_default: true
       row_finality: disabled
+    pipeline:
+      - table: all_col_types
+        type: primary
+        columns:
+          - { source: id, target: id }
+          - { source: bigint_col, target: bigint_col }
+          - { source: bit_col, target: bit_col }
+          - { source: bool_col, target: bool_col }
+          - { source: boolean_col, target: boolean_col }
+          - { source: char_col, target: char_col }
+          - { source: date_col, target: date_col }
+          - { source: datetime_col, target: datetime_col }
+          - { source: decimal_col, target: decimal_col }
+          - { source: double_col, target: double_col }
+          - { source: float_col, target: float_col }
+          - { source: int_col, target: int_col }
+          - { source: integer_col, target: integer_col }
+          - { source: mediumint_col, target: mediumint_col }
+          - { source: numeric_col, target: numeric_col }
+          - { source: real_col, target: real_col }
+          - { source: smallint_col, target: smallint_col }
+          - { source: text_col, target: text_col }
+          - { source: time_col, target: time_col }
+          - { source: timestamp_col, target: timestamp_col }
+          - { source: tinyint_col, target: tinyint_col }
+          - { source: varchar_col, target: varchar_col }

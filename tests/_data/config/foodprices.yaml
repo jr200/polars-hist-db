@@ -67,7 +67,7 @@ datasets:
 
     time_partition:
       column: time
-      truncate: 5d
+      truncate: 1d
       unique_strategy: last
 
     delta_config:
@@ -114,7 +114,7 @@ datasets:
             method: mtime
     time_partition:
       column: time
-      truncate: 5d
+      truncate: 1d
       unique_strategy: last
     delta_config:
       drop_unchanged_rows: true

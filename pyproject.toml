@@ -9,6 +9,11 @@ packages = [
     { include = "polars_hist_db" }
 ]
 
+[tool.poetry.scripts]
+scrape-dataset = "polars_hist_db.scripts.scrape_dataset:main"
+drop-dataset-tables = "polars_hist_db.scripts.drop_dataset_tables:main"
+
+
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"
 pandas = "^2.3.0"

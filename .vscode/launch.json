@@ -11,6 +11,20 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false
-        }
+        },
+        {
+            "name": "dataset: simple",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/bin/scrape-dataset",
+            "args": [
+                "--config",
+                "${workspaceFolder}/tests/_data/config/simple.yaml",
+                "simple_table_dataset"
+            ],
+            "justMyCode": true,
+            "stopOnEntry": false
+            // "envFile": "${workspaceFolder}/.env"
+        },
     ]
 }

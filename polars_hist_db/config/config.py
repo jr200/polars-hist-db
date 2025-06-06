@@ -15,8 +15,9 @@ class Config:
         table_configs_path: Iterable[str],
         datasets_path: Iterable[str],
         db_config_path: Iterable[str],
-        config_filename: Optional[str] = None,
+        config_file_path: Optional[str] = None,
     ):
+        self.config_file_path = config_file_path
         dataset_params = Config._get_nested_key(cfg_dict, datasets_path)
         db_params = Config._get_nested_key(cfg_dict, db_config_path)
         table_params = Config._get_nested_key(cfg_dict, table_configs_path)
@@ -27,7 +28,7 @@ class Config:
             self.db_config = DbEngineConfig(**db_params)
 
         if dataset_params:
-            self.datasets = DatasetsConfig(datasets=dataset_params)
+            self.datasets = DatasetsConfig(datasets=dataset_params, config_file_path=config_file_path)
 
     @staticmethod
     def _get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):
@@ -69,7 +70,7 @@ class Config:
             db_config_path=db_config_path.split("."),
             table_configs_path=table_configs_path.split("."),
             datasets_path=datasets_path.split("."),
-            config_filename=filename,
+            config_file_path=filename,
         )
 
         return config

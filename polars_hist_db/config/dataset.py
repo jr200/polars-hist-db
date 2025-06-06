@@ -228,6 +228,7 @@ class DatasetConfig:
     time_partition: Optional[TimePartition] = None
     null_values: Optional[Sequence[str]] = None
     delta_config: DeltaConfig = field(default_factory=DeltaConfig)
+    config_file_path: Optional[str] = None
 
     def __post_init__(self):
         if not isinstance(self.delta_config, DeltaConfig):
@@ -240,6 +241,8 @@ class DatasetConfig:
             self.pipeline = Pipeline(items=self.pipeline)
 
         if not isinstance(self.input_config, InputConfig):
+            if isinstance(self.input_config, dict):
+                self.input_config["config_file_path"] = self.config_file_path
             self.input_config = InputConfig.from_dict(self.input_config)
 
         if self.time_partition is not None and not isinstance(
@@ -251,9 +254,13 @@ class DatasetConfig:
 @dataclass
 class DatasetsConfig:
     datasets: Sequence[DatasetConfig]
+    config_file_path: Optional[str] = None
 
     def __post_init__(self):
-        self.datasets = [DatasetConfig(**ds_dict) for ds_dict in self.datasets]
+        self.datasets = [
+            DatasetConfig(**ds_dict, config_file_path=self.config_file_path) 
+            for ds_dict in self.datasets
+        ]
 
     def __getitem__(self, key: str) -> Optional[DatasetConfig]:
         try:

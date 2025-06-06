@@ -1,13 +1,18 @@
 [tool.poetry]
 name = "polars-hist-db"
-version = "0.6.0"
-description = "dsv --> dataframe <--> bitemporal-tables"
+version = "0.6.1"
+description = "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
 authors = ["jr200 <jayshan+git@gmail.com>"]
 repository = "https://github.com/jr200/polars-hist-db"
 readme = "README.md"
 packages = [
     { include = "polars_hist_db" }
 ]
+
+[tool.poetry.scripts]
+scrape-dataset = "polars_hist_db.scripts.scrape_dataset:main"
+drop-dataset-tables = "polars_hist_db.scripts.drop_dataset_tables:main"
+
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"

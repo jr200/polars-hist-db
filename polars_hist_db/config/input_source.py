@@ -33,6 +33,7 @@ class DsvCrawlerInputConfig(InputConfig):
     search_paths: Optional[Union[pl.DataFrame, List[Dict[str, Any]]]] = None
     payload: Optional[str] = None
     payload_time: Optional[datetime] = None
+    config_file_path: Optional[str] = None
 
     @staticmethod
     def clean_dsv_string(data: str) -> str:
@@ -62,7 +63,12 @@ class DsvCrawlerInputConfig(InputConfig):
                 if "root_path" in search_path:
                     path = search_path["root_path"]
                     if not os.path.isabs(path):
-                        abs_path = os.path.normpath(os.path.abspath(path))
+                        if self.config_file_path is None:
+                            LOGGER.warning("No config_file_path provided, using current working directory as base for relative path")
+                            base_path = os.getcwd()
+                        else:
+                            base_path = os.path.dirname(os.path.abspath(self.config_file_path))
+                        abs_path = os.path.normpath(os.path.join(base_path, path))
                         search_path["root_path"] = abs_path
 
             self.search_paths = pl.from_records(self.search_paths)

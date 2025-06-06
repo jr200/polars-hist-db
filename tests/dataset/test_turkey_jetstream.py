@@ -5,7 +5,7 @@ import polars as pl
 import logging
 
 from polars_hist_db.config import FunctionRegistry
-from polars_hist_db.dataset import run_workflows
+from polars_hist_db.dataset import run_datasets
 from polars_hist_db.utils.compare import compare_dataframes
 from .helpers import custom_try_to_usd
 from ..utils.nats_helper import (
@@ -67,7 +67,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     await asyncio.sleep(1)
 
     uploaded_dfs = list()
-    await run_workflows(
+    await run_datasets(
         base_config,
         engine,
         "turkey_food_prices_jetstream",

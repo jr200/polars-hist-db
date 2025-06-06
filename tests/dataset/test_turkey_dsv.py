@@ -5,7 +5,7 @@ from polars.testing import assert_frame_equal
 from decimal import Decimal
 
 from polars_hist_db.config.fn_registry import FunctionRegistry
-from polars_hist_db.dataset import run_workflows
+from polars_hist_db.dataset import run_datasets
 from polars_hist_db.core.dataframe import DataframeOps, TimeHint
 from polars_hist_db.utils import compare_dataframes
 from ..utils.dsv_helper import (
@@ -29,7 +29,7 @@ async def test_load_file(fixture_with_config):
     engine, base_config = fixture_with_config
 
     uploaded_dfs = []
-    await run_workflows(
+    await run_datasets(
         base_config, engine, "turkey_food_prices_dsv", debug_capture_output=uploaded_dfs
     )
 

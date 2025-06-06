@@ -17,7 +17,7 @@ from .scrape import try_upload_to_delta_table
 LOGGER = logging.getLogger(__name__)
 
 
-async def run_workflows(
+async def run_datasets(
     config: Config,
     engine: Engine,
     dataset_name: Optional[str] = None,
@@ -26,7 +26,7 @@ async def run_workflows(
     for dataset in config.datasets.datasets:
         if dataset_name is None or dataset.name == dataset_name:
             LOGGER.info("scraping dataset %s", dataset.name)
-            await _run_workflow(
+            await _run_dataset(
                 dataset.input_config,
                 dataset,
                 config.tables,
@@ -59,11 +59,11 @@ def _create_delta_table(
             TableConfigOps(connection).create(
                 delta_table_config,
                 is_delta_table=True,
-                is_temporary_table=False,
+                is_temporary_table=dataset.delta_config.is_temporary_table,
             )
 
 
-async def _run_workflow(
+async def _run_dataset(
     input_config: InputConfig,
     dataset: DatasetConfig,
     tables: TableConfigs,
@@ -91,6 +91,6 @@ async def _run_workflow(
     finally:
         await input_source.cleanup()
 
-    Clock().add_timing("workflow", time.perf_counter() - start_time)
+    Clock().add_timing("dataset", time.perf_counter() - start_time)
 
     LOGGER.info("stopped scrape - %s", dataset.name)

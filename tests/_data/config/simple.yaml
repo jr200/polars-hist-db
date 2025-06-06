@@ -1,3 +1,10 @@
+db:
+  backend: mariadb
+  hostname: 127.0.0.1
+  port: 3306
+  username: root
+  password: admin
+
 table_configs:
   - schema: test
     name: simple_table
@@ -5,7 +12,7 @@ table_configs:
     columns:
       - { name: id, data_type: INT }
       - { name: double_col, data_type: DOUBLE }
-      - { name: varchar_col, data_type: VARCHAR(10) }
+      - { name: varchar_col, data_type: VARCHAR(20) }
     primary_keys:
       - id
 
@@ -15,10 +22,19 @@ datasets:
     scrape_limit: ~
     input_config:
       type: dsv
+      search_paths:
+        - root_path: ../dsv
+          file_include: ['simple_01.csv']
+          is_enabled: true
+          timestamp:
+            source_tz: Europe/London
+            target_tz: UTC          
+            method: manual
+            datetime: 2025-01-01T00:00:00
     delta_config:
       drop_unchanged_rows: true
       on_duplicate_key: take_last
-      prefill_nulls_with_default: false
+      prefill_nulls_with_default: true
       row_finality: dropout
     pipeline:
       - table: simple_table

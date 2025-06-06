@@ -4,7 +4,7 @@ import pytest
 import polars as pl
 
 from polars_hist_db.core.table import TableOps
-from polars_hist_db.dataset.workflow import run_workflows
+from polars_hist_db.dataset.entrypoint import run_datasets
 from polars_hist_db.utils.compare import compare_dataframes
 
 from ..utils.dsv_helper import (
@@ -33,7 +33,7 @@ async def test_value_if_missing(fixture_with_defaults):
 
     base_config.datasets.datasets[0].input_config.set_payload(dsv_1, ts_1)
     uploaded_partitions = list()
-    await run_workflows(base_config, engine, debug_capture_output=uploaded_partitions)
+    await run_datasets(base_config, engine, debug_capture_output=uploaded_partitions)
 
     df_1 = pl.concat([df for _, df in uploaded_partitions])
     df_read, df_read_history = read_df_from_db(engine, table_schema, table_config)
@@ -58,7 +58,7 @@ async def test_value_if_missing(fixture_with_defaults):
 
     base_config.datasets.datasets[0].input_config.set_payload(dsv_2, ts_2)
     uploaded_partitions = list()
-    await run_workflows(base_config, engine, debug_capture_output=uploaded_partitions)
+    await run_datasets(base_config, engine, debug_capture_output=uploaded_partitions)
 
     df_2 = pl.concat([df for _, df in uploaded_partitions])
     df_read, df_read_history = read_df_from_db(engine, table_schema, table_config)

@@ -453,7 +453,7 @@ def _remove_duplicate_rows(
 
     rows_removed = rowcount_before - len(df)
     if rows_removed > 0:
-        LOGGER.info("removed %s duplicate rows", rows_removed)
+        LOGGER.debug("removed %s duplicate rows", rows_removed)
 
     return df
 

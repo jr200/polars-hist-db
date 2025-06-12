@@ -20,7 +20,7 @@ def _parse_time(path, pattern: str, src_tz: TzInfo, target_tz: TzInfo) -> dateti
 
     d = {k: int(v) for k, v in m.groupdict().items()}
     src_dt = src_tz.localize(
-        datetime(d["y"], d["m"], d["d"], d.get("H", 0), d.get("M", 0), d.get("S", 0))
+        datetime(d["y"], d["m"], d["d"], d.get("H", 0), d.get("M", 0), d.get("S", 0), d.get("u", 0))
     )
     target_dt: datetime = src_dt.astimezone(target_tz).replace(tzinfo=None)
     return target_dt

@@ -7,6 +7,8 @@ from typing import AsyncGenerator, Awaitable, Callable, List, Tuple, Union
 import polars as pl
 from sqlalchemy import Connection, Engine
 
+from polars_hist_db.utils.exceptions import NonRetryableException
+
 from .transform import apply_transformations
 
 from ..config.dataset import DatasetConfig
@@ -108,6 +110,9 @@ class DsvCrawlerInputSource(InputSource):
                 table_schema, table_name, engine
             )
 
+            LOGGER.debug("found %d files to process", len(csv_files_df))
+            LOGGER.debug("csv_files_df: %s", csv_files_df)
+
             timings = Clock()
 
             for i, (csv_file, file_time) in enumerate(csv_files_df.rows()):
@@ -124,13 +129,21 @@ class DsvCrawlerInputSource(InputSource):
 
                 async def commit_fn(connection: Connection) -> bool:
                     aops = AuditOps(table_schema)
+                    path = Path(csv_file).absolute()
                     result: bool = aops.add_entry(
                         "dsv",
-                        Path(csv_file).absolute().as_posix(),
+                        path.as_posix(),
                         table_name,
                         connection,
                         file_time,
                     )
+
+                    if result:
+                        LOGGER.info("audit for [%s.%s - %s]: success.", table_schema, table_name, path.name)
+                    else:
+                        LOGGER.error("audit for [%s.%s - %s]: FAILED", table_schema, table_name, path.name)
+                        raise NonRetryableException("Failed to update audit log")
+
                     return result
 
                 yield partitions, commit_fn

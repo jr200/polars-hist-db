@@ -57,11 +57,11 @@ async def try_upload_to_delta_table(
                             f"timestamp is not a datetime [{type(ts)}]"
                         )
                         LOGGER.info(
-                            "-- (%d/%d) time_partition[%d]  %s",
+                            "-- (%d/%d) time_partition[%s] %d rows",
                             i + 1,
                             len(partitions),
-                            len(partition_df),
                             ts.isoformat(),
+                            len(partition_df),
                         )
 
                         DataframeOps(connection).table_insert(

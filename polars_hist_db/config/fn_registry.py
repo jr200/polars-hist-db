@@ -59,7 +59,7 @@ class FunctionRegistry:
         if name not in self._registry:
             raise ValueError(f"No function registered with the name '{name}'.")
 
-        LOGGER.info("applying fn %s to dataframe %s", name, df.shape)
+        LOGGER.debug("applying fn %s to dataframe %s => %s", name, df.shape, result_col)
         fn = self._registry[name]
         result_df = fn(df, result_col, args)
 

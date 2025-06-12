@@ -18,9 +18,9 @@ class Config:
         config_file_path: Optional[str] = None,
     ):
         self.config_file_path = config_file_path
-        dataset_params = Config._get_nested_key(cfg_dict, datasets_path)
-        db_params = Config._get_nested_key(cfg_dict, db_config_path)
-        table_params = Config._get_nested_key(cfg_dict, table_configs_path)
+        dataset_params = Config.get_nested_key(cfg_dict, datasets_path)
+        db_params = Config.get_nested_key(cfg_dict, db_config_path)
+        table_params = Config.get_nested_key(cfg_dict, table_configs_path)
 
         self.tables = TableConfigs(items=table_params)
 
@@ -31,7 +31,7 @@ class Config:
             self.datasets = DatasetsConfig(datasets=dataset_params, config_file_path=config_file_path)
 
     @staticmethod
-    def _get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):
+    def get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):
         try:
             return reduce(lambda d, key: d[key], keys, my_dict)
         except (KeyError, TypeError):

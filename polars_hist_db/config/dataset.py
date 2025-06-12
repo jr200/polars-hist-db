@@ -213,10 +213,9 @@ class Pipeline:
 
 @dataclass
 class TimePartition:
-    column: str = ""
-    truncate: str = ""
+    column: str
+    truncate: str
     unique_strategy: Literal["first", "last"] = "last"
-
 
 @dataclass
 class DatasetConfig:

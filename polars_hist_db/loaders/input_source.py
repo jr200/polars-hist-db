@@ -1,21 +1,34 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Awaitable, Callable, List, Tuple
+from typing import AsyncGenerator, Awaitable, Callable, List, Tuple, TypeVar, Generic
 from datetime import datetime
+import logging
 
 import polars as pl
 from sqlalchemy import Connection, Engine
 
 from ..config.dataset import DatasetConfig
 from ..config.table import TableConfig, TableConfigs
+from ..config.input_source import InputConfig
+
+LOGGER = logging.getLogger(__name__)
+
+TConfig = TypeVar("TConfig", bound=InputConfig)
 
 
-class InputSource(ABC):
-    def __init__(self, tables: TableConfigs, dataset: DatasetConfig):
+class InputSource(ABC, Generic[TConfig]):
+    def __init__(
+        self,
+        tables: TableConfigs,
+        dataset: DatasetConfig,
+        config: TConfig,
+    ):
         self.tables: TableConfigs = tables
         self.dataset: DatasetConfig = dataset
+        self.config: TConfig = config
         self.column_definitions = (
             self.dataset.pipeline.build_ingestion_column_definitions(self.tables)
         )
+        self.previous_payload_time: datetime = datetime.min
 
     @abstractmethod
     async def next_df(
@@ -35,6 +48,25 @@ class InputSource(ABC):
         """Clean up any resources used by the input source"""
         raise NotImplementedError("InputSource is an abstract class")
 
+    def _filter_past_events(self, df: pl.DataFrame, time_col: str) -> pl.DataFrame:
+        previous_row_count = len(df)
+        df = df.filter(pl.col("__interval") > self.previous_payload_time)
+        stale_row_count = previous_row_count - len(df)
+        if stale_row_count > 0:
+            LOGGER.warn(
+                f"Removed {stale_row_count} stale rows <= {self.previous_payload_time.isoformat()}"
+            )
+
+        if len(df) == 0:
+            LOGGER.warn("Empty dataframe after time partitioning")
+        else:
+            self.previous_payload_time = (
+                df.select(pl.col("__interval").max()).to_series().item()
+            )
+            df = df.filter(pl.col(time_col) > self.previous_payload_time)
+
+        return df
+
     def _apply_time_partitioning(
         self, df: pl.DataFrame, payload_time: datetime
     ) -> List[Tuple[datetime, pl.DataFrame]]:
@@ -51,7 +83,7 @@ class InputSource(ABC):
             interval = tp.truncate
             unique_strategy = tp.unique_strategy
 
-            partitions = (
+            prepared_df = (
                 df.with_columns(
                     __interval=pl.col(time_col).dt.truncate(interval).cast(pl.Datetime)
                 )
@@ -61,14 +93,19 @@ class InputSource(ABC):
                     keep=unique_strategy,
                     maintain_order=True,
                 )
-                .partition_by(
-                    "__interval", include_key=False, as_dict=True, maintain_order=True
-                )
+            )
+
+            if self.config.filter_past_events:
+                prepared_df = self._filter_past_events(prepared_df, time_col)
+
+            partitions = prepared_df.partition_by(
+                "__interval", include_key=False, as_dict=True, maintain_order=True
             )
 
             result = [(k[0], v) for k, v in partitions.items()]
 
         else:
             result = [(payload_time, df)]
+            self.previous_payload_time = payload_time
 
         return result  # type: ignore[return-value]

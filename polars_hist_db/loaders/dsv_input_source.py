@@ -23,18 +23,22 @@ from ..utils.clock import Clock
 LOGGER = logging.getLogger(__name__)
 
 
-class DsvCrawlerInputSource(InputSource):
+class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
     def __init__(
         self,
         tables: TableConfigs,
         dataset: DatasetConfig,
         config: DsvCrawlerInputConfig,
     ):
-        super().__init__(tables, dataset)
-        self.config = config
+        super().__init__(tables, dataset, config)
 
     async def cleanup(self) -> None:
         pass
+
+    def files(self) -> pl.DataFrame:
+        assert isinstance(self.config.search_paths, pl.DataFrame)
+        csv_files_df = find_files(self.config.search_paths)
+        return csv_files_df
 
     def _process_payload(
         self, payload: Union[Path, bytes], payload_time: datetime
@@ -52,8 +56,7 @@ class DsvCrawlerInputSource(InputSource):
     def _search_and_filter_files(
         self, table_schema: str, table_name: str, engine: Engine
     ) -> pl.DataFrame:
-        assert isinstance(self.config.search_paths, pl.DataFrame)
-        csv_files_df = find_files(self.config.search_paths)
+        csv_files_df = self.files()
 
         aops = AuditOps(table_schema)
 
@@ -138,10 +141,13 @@ class DsvCrawlerInputSource(InputSource):
                         file_time,
                     )
 
-                    if result:
-                        LOGGER.info("audit for [%s.%s - %s]: success.", table_schema, table_name, path.name)
-                    else:
-                        LOGGER.error("audit for [%s.%s - %s]: FAILED", table_schema, table_name, path.name)
+                    if not result:
+                        LOGGER.error(
+                            "audit for [%s.%s - %s]: FAILED",
+                            table_schema,
+                            table_name,
+                            path.name,
+                        )
                         raise NonRetryableException("Failed to update audit log")
 
                     return result

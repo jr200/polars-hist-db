@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Awaitable, Callable, List, Tuple
+from typing import AsyncGenerator, Awaitable, Callable, List, Tuple, TypeVar, Generic
 from datetime import datetime
 import logging
 
@@ -8,18 +8,23 @@ from sqlalchemy import Connection, Engine
 
 from ..config.dataset import DatasetConfig
 from ..config.table import TableConfig, TableConfigs
+from ..config.input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
 
+TConfig = TypeVar("TConfig", bound=InputConfig)
 
-class InputSource(ABC):
+
+class InputSource(ABC, Generic[TConfig]):
     def __init__(
         self,
         tables: TableConfigs,
         dataset: DatasetConfig,
+        config: TConfig,
     ):
         self.tables: TableConfigs = tables
         self.dataset: DatasetConfig = dataset
+        self.config: TConfig = config
         self.column_definitions = (
             self.dataset.pipeline.build_ingestion_column_definitions(self.tables)
         )

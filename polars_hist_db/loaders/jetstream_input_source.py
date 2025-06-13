@@ -28,12 +28,14 @@ from .transform import apply_transformations
 LOGGER = logging.getLogger(__name__)
 
 
-class JetStreamInputSource(InputSource):
+class JetStreamInputSource(InputSource[JetStreamInputConfig]):
     def __init__(
-        self, tables: TableConfigs, dataset: DatasetConfig, config: JetStreamInputConfig
+        self,
+        tables: TableConfigs,
+        dataset: DatasetConfig,
+        config: JetStreamInputConfig,
     ):
-        super().__init__(tables, dataset)
-        self.config = config
+        super().__init__(tables, dataset, config)
         self._nats_client: Optional[nats.NATS] = None
 
     async def _get_nats_client(self) -> nats.NATS:

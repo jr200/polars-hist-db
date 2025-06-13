@@ -23,15 +23,14 @@ from ..utils.clock import Clock
 LOGGER = logging.getLogger(__name__)
 
 
-class DsvCrawlerInputSource(InputSource):
+class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
     def __init__(
         self,
         tables: TableConfigs,
         dataset: DatasetConfig,
         config: DsvCrawlerInputConfig,
     ):
-        super().__init__(tables, dataset)
-        self.config = config
+        super().__init__(tables, dataset, config)
 
     async def cleanup(self) -> None:
         pass

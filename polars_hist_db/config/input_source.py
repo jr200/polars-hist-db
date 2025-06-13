@@ -15,10 +15,14 @@ LOGGER = logging.getLogger(__name__)
 @dataclass
 class InputConfig(ABC):
     type: Literal["dsv", "jetstream"]
+    config_file_path: str
+    filter_past_events: Optional[bool]
 
     @staticmethod
     def from_dict(config: Dict[str, Any]) -> "InputConfig":
         input_type = config["type"]
+        config.setdefault("filter_past_events", False)
+
         if input_type == "dsv":
             return DsvCrawlerInputConfig(**config)
         elif input_type == "jetstream":
@@ -29,11 +33,9 @@ class InputConfig(ABC):
 
 @dataclass
 class DsvCrawlerInputConfig(InputConfig):
-    type: Literal["dsv", "jetstream"] = "dsv"
     search_paths: Optional[Union[pl.DataFrame, List[Dict[str, Any]]]] = None
     payload: Optional[str] = None
     payload_time: Optional[datetime] = None
-    config_file_path: Optional[str] = None
 
     @staticmethod
     def clean_dsv_string(data: str) -> str:
@@ -64,10 +66,14 @@ class DsvCrawlerInputConfig(InputConfig):
                     path = search_path["root_path"]
                     if not os.path.isabs(path):
                         if self.config_file_path is None:
-                            LOGGER.warning("No config_file_path provided, using current working directory as base for relative path")
+                            LOGGER.warning(
+                                "No config_file_path provided, using current working directory as base for relative path"
+                            )
                             base_path = os.getcwd()
                         else:
-                            base_path = os.path.dirname(os.path.abspath(self.config_file_path))
+                            base_path = os.path.dirname(
+                                os.path.abspath(self.config_file_path)
+                            )
                         abs_path = os.path.normpath(os.path.join(base_path, path))
                         search_path["root_path"] = abs_path
 

@@ -105,7 +105,7 @@ datasets:
     input_config:
       type: dsv
       search_paths:
-        - root_path: tests/_testdata_dataset_data
+        - root_path: ../../_testdata_dataset_data
           file_include: ['turkey_food_prices.csv']
           is_enabled: true
           timestamp:

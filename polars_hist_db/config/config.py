@@ -28,7 +28,9 @@ class Config:
             self.db_config = DbEngineConfig(**db_params)
 
         if dataset_params:
-            self.datasets = DatasetsConfig(datasets=dataset_params, config_file_path=config_file_path)
+            self.datasets = DatasetsConfig(
+                datasets=dataset_params, config_file_path=config_file_path
+            )
 
     @staticmethod
     def get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):

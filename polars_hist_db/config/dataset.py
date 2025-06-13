@@ -217,6 +217,7 @@ class TimePartition:
     truncate: str
     unique_strategy: Literal["first", "last"] = "last"
 
+
 @dataclass
 class DatasetConfig:
     name: str
@@ -257,7 +258,7 @@ class DatasetsConfig:
 
     def __post_init__(self):
         self.datasets = [
-            DatasetConfig(**ds_dict, config_file_path=self.config_file_path) 
+            DatasetConfig(**ds_dict, config_file_path=self.config_file_path)
             for ds_dict in self.datasets
         ]
 

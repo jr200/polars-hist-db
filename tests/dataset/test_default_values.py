@@ -3,9 +3,9 @@ import pytest
 
 import polars as pl
 
-from polars_hist_db.core.table import TableOps
-from polars_hist_db.dataset.entrypoint import run_datasets
-from polars_hist_db.utils.compare import compare_dataframes
+from polars_hist_db.core import TableOps
+from polars_hist_db.dataset import run_datasets
+from polars_hist_db.utils import compare_dataframes, from_ipc_b64, to_ipc_b64
 
 from ..utils.dsv_helper import (
     read_df_from_db,
@@ -73,3 +73,16 @@ async def test_value_if_missing(fixture_with_defaults):
     )
     assert len(diff_df) == 0
     assert len(missing_cols) == len(TableOps.system_versioning_columns())
+
+    # test ipc serialization
+    ipc_str = to_ipc_b64(df_2)
+    assert len(ipc_str) == 8480
+    ipc_df = from_ipc_b64(ipc_str)
+    diff_df, missing_cols = compare_dataframes(
+        ipc_df,
+        df_2,
+        on=["id"],
+    )
+
+    assert diff_df.is_empty()
+    assert len(missing_cols) == 0

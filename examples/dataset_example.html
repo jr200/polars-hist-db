@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turkish Food Prices Dataset Example &mdash; Polars Hist DB 0.3.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api.html" />
+    <link rel="prev" title="Basic Usage Example" href="basic_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Polars Hist DB
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="basic_example.html">Basic Usage Example</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Turkish Food Prices Dataset Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Initialise-Configuration-and-Logging">Initialise Configuration and Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Create-a-SQLAlchemy-Engine-to-connect-to-the-database">Create a SQLAlchemy Engine to connect to the database</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Register-a-custom-parser-function">Register a custom parser function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Run-the-dataset">Run the dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Querying-the-temporal-tables">Querying the temporal tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Delete-the-data-associated-with-the-dataset">Delete the data associated with the dataset</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Polars Hist DB</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../examples.html">Examples</a></li>
+      <li class="breadcrumb-item active">Turkish Food Prices Dataset Example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/dataset_example.nblink.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Turkish-Food-Prices-Dataset-Example">
+<h1>Turkish Food Prices Dataset Example<a class="headerlink" href="#Turkish-Food-Prices-Dataset-Example" title="Link to this heading"></a></h1>
+<p>This example assumes you have the test database up and running locally. From the root of the project run the command: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">infra-up</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from datetime import datetime
+import logging
+from typing import Any, List
+
+import polars as pl
+
+from polars_hist_db.config import Config
+from polars_hist_db.core import (
+    AuditOps,
+    DataframeOps,
+    TableConfigOps,
+    TimeHint,
+    make_engine,
+)
+from polars_hist_db.dataset import run_datasets
+from polars_hist_db.loaders import FunctionRegistry
+</pre></div>
+</div>
+</div>
+<section id="Initialise-Configuration-and-Logging">
+<h2>Initialise Configuration and Logging<a class="headerlink" href="#Initialise-Configuration-and-Logging" title="Link to this heading"></a></h2>
+<p>This example uses configuration and data used in the test suite.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>config_path = &quot;../tests/_testdata_dataset_configs/dataset_foodprices.yaml&quot;
+data_path = &quot;../tests/_testdata_dataset_configs/foodprices_data.csv&quot;
+
+logging.basicConfig(level=logging.INFO)
+
+config = Config.from_yaml(config_path)
+</pre></div>
+</div>
+</div>
+<p>(Optionally) Print the config file to the console</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with open(config_path, &quot;r&quot;) as f:
+    print(f.read())
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Create-a-SQLAlchemy-Engine-to-connect-to-the-database">
+<h2>Create a SQLAlchemy Engine to connect to the database<a class="headerlink" href="#Create-a-SQLAlchemy-Engine-to-connect-to-the-database" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>engine = make_engine(
+    backend=&quot;mariadb&quot;,
+    hostname=&quot;127.0.0.1&quot;,
+    port=3306,
+    username=&quot;root&quot;,
+    password=&quot;admin&quot;,
+)
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Register-a-custom-parser-function">
+<h2>Register a custom parser function<a class="headerlink" href="#Register-a-custom-parser-function" title="Link to this heading"></a></h2>
+<p>The food prices from the data soruce are given in Turkish TRY.</p>
+<p>For some reason, the team only cares about the USD price. As per the dataset config, a yearly TRYUSD fx-rate is applied to the <code class="docutils literal notranslate"><span class="pre">price</span></code> column at scrape time, creating a derived <code class="docutils literal notranslate"><span class="pre">price_usd</span></code> column of type <code class="docutils literal notranslate"><span class="pre">DECIMAL(10,4)</span></code> in the database.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>registry = FunctionRegistry()
+
+
+def custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -&gt; pl.DataFrame:
+    usdtry_fx_rates = pl.from_dict(
+        {
+            &quot;Year&quot;: [
+                2010,
+                2011,
+                2012,
+                2013,
+                2014,
+                2015,
+                2016,
+                2017,
+                2018,
+                2019,
+                2020,
+                2021,
+                2022,
+                2023,
+            ],
+            &quot;fx_usdtry&quot;: [
+                1.507,
+                1.674,
+                1.802,
+                1.915,
+                2.188,
+                2.724,
+                3.020,
+                3.646,
+                4.830,
+                5.680,
+                7.004,
+                8.886,
+                16.566,
+                23.085,
+            ],
+        }
+    )
+
+    col_result = args[0]
+    col_try = args[1]
+    col_year = args[2]
+    df = (
+        df.join(usdtry_fx_rates, left_on=col_year, right_on=&quot;Year&quot;, how=&quot;left&quot;)
+        .with_columns((pl.col(col_try) * 1 / pl.col(&quot;fx_usdtry&quot;)).alias(col_result))
+        .drop(&quot;fx_usdtry&quot;)
+    )
+
+    return df
+
+
+registry.delete_function(&quot;try_to_usd&quot;)
+registry.register_function(&quot;try_to_usd&quot;, custom_try_to_usd)
+
+print(&quot;loaded functions&quot;, registry.list_functions())
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Run-the-dataset">
+<h2>Run the dataset<a class="headerlink" href="#Run-the-dataset" title="Link to this heading"></a></h2>
+<p>This scrapes any new files into to the database.</p>
+<p>(Try running the function a second time…)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>run_datasets(config, engine)
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Querying-the-temporal-tables">
+<h2>Querying the temporal tables<a class="headerlink" href="#Querying-the-temporal-tables" title="Link to this heading"></a></h2>
+<p>Query the latest food prices.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    latest_food_prices_df = DataframeOps(connection).from_table(&quot;test&quot;, &quot;food_prices&quot;)
+</pre></div>
+</div>
+</div>
+<p>Query all the food prices.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    time_hint = TimeHint(mode=&quot;all&quot;)
+    all_food_prices = DataframeOps(connection).from_table(
+        &quot;test&quot;, &quot;food_prices&quot;, time_hint
+    )
+
+
+all_food_prices
+</pre></div>
+</div>
+</div>
+<p>Query the food prices at a specific point in time. In this case <em>1-Jan-2015</em>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    time_hint = TimeHint(mode=&quot;asof&quot;, asof_utc=datetime(2015, 1, 1))
+    food_prices_at_2015_date = DataframeOps(connection).from_table(
+        &quot;test&quot;, &quot;food_prices&quot;, time_hint
+    )
+
+
+food_prices_at_2015_date
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Delete-the-data-associated-with-the-dataset">
+<h2>Delete the data associated with the dataset<a class="headerlink" href="#Delete-the-data-associated-with-the-dataset" title="Link to this heading"></a></h2>
+<p>Reset the example. Subsequent attempts to upload the same data (or past data) into the database will fail.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>with engine.begin() as connection:
+    TableConfigOps(connection).drop_all(config.tables)
+    AuditOps(config.tables.schemas()[0]).drop(connection)
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="basic_example.html" class="btn btn-neutral float-left" title="Basic Usage Example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, jr200.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

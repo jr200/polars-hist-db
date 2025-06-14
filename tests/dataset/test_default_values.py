@@ -75,9 +75,9 @@ async def test_value_if_missing(fixture_with_defaults):
     assert len(missing_cols) == len(TableOps.system_versioning_columns())
 
     # test ipc serialization
-    ipc_str = to_ipc_b64(df_2)
-    assert len(ipc_str) == 8480
-    ipc_df = from_ipc_b64(ipc_str)
+    ipc_bytes = to_ipc_b64(df_2)
+    assert len(ipc_bytes) == 8480
+    ipc_df = from_ipc_b64(ipc_bytes)
     diff_df, missing_cols = compare_dataframes(
         ipc_df,
         df_2,

@@ -1,10 +1,14 @@
-from typing import Union
+from typing import Union, Optional
 import polars as pl
 import base64
+from polars._typing import IpcCompression
 
 
-def to_ipc_b64(df: pl.DataFrame) -> bytes:
-    buffer = df.write_ipc_stream(None, compression="uncompressed")
+def to_ipc_b64(df: pl.DataFrame, compression: Optional[IpcCompression] = None) -> bytes:
+    if compression is None:
+        compression = "uncompressed"
+
+    buffer = df.write_ipc_stream(None, compression=compression)
     base64_bytes = base64.b64encode(buffer.getvalue())
     return base64_bytes
 

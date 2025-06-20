@@ -74,8 +74,9 @@ async def test_value_if_missing(fixture_with_defaults):
     assert len(diff_df) == 0
     assert len(missing_cols) == len(TableOps.system_versioning_columns())
 
-    # test ipc serialization
-    ipc_bytes = to_ipc_b64(df_2, compression="uncompressed")
+    # test ipc serialization (uncompressed)
+    compression = "uncompressed"
+    ipc_bytes = to_ipc_b64(df_2, compression=compression)
     ipc_df = from_ipc_b64(ipc_bytes)
     diff_df, missing_cols = compare_dataframes(
         ipc_df,
@@ -85,3 +86,18 @@ async def test_value_if_missing(fixture_with_defaults):
 
     assert diff_df.is_empty()
     assert len(missing_cols) == 0
+
+    # test ipc serialization (zlib)
+    compression = "zlib"
+    ipc_zlib_bytes = to_ipc_b64(df_2, compression=compression)
+    ipc_zlib_df = from_ipc_b64(ipc_zlib_bytes, use_zlib=True)
+    diff_zlib_df, missing_cols = compare_dataframes(
+        ipc_zlib_df,
+        ipc_df,
+        on=["id"],
+    )
+
+    assert diff_zlib_df.is_empty()
+    assert len(missing_cols) == 0
+    assert len(ipc_zlib_bytes) < len(ipc_bytes)
+

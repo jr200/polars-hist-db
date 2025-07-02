@@ -67,7 +67,8 @@ datasets:
 
     time_partition:
       column: time
-      truncate: 1d
+      bucket_interval: 1d
+      bucket_strategy: round_down
       unique_strategy: last
 
     delta_config:
@@ -114,7 +115,8 @@ datasets:
             method: mtime
     time_partition:
       column: time
-      truncate: 1d
+      bucket_interval: 1d
+      bucket_strategy: round_down
       unique_strategy: last
     delta_config:
       drop_unchanged_rows: true

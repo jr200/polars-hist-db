@@ -100,4 +100,3 @@ async def test_value_if_missing(fixture_with_defaults):
     assert diff_zlib_df.is_empty()
     assert len(missing_cols) == 0
     assert len(ipc_zlib_bytes) < len(ipc_bytes)
-

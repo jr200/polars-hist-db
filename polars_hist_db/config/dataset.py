@@ -214,7 +214,8 @@ class Pipeline:
 @dataclass
 class TimePartition:
     column: str
-    truncate: str
+    bucket_interval: str
+    bucket_strategy: Literal["round_up", "round_down"] = "round_up"
     unique_strategy: Literal["first", "last"] = "last"
 
 

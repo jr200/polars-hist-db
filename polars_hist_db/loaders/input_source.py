@@ -48,20 +48,26 @@ class InputSource(ABC, Generic[TConfig]):
         """Clean up any resources used by the input source"""
         raise NotImplementedError("InputSource is an abstract class")
 
-    def _filter_past_events(self, df: pl.DataFrame, time_col: str) -> pl.DataFrame:
+    def _filter_past_events(
+        self, df: pl.DataFrame, time_col: str, bucket_col: str, bucket_offset: str
+    ) -> pl.DataFrame:
         previous_row_count = len(df)
-        df = df.filter(pl.col("__interval") > self.previous_payload_time)
+
+        # only keep rows that are after the previous bucket's timestamp
+        df = df.filter(pl.col(bucket_col) > self.previous_payload_time)
         stale_row_count = previous_row_count - len(df)
         if stale_row_count > 0:
             LOGGER.warn(
-                f"Removed {stale_row_count} stale rows <= {self.previous_payload_time.isoformat()}"
+                f"Removed {stale_row_count}/{previous_row_count} stale rows <= {self.previous_payload_time.isoformat()}"
             )
 
         if len(df) == 0:
             LOGGER.warn("Empty dataframe after time partitioning")
         else:
             self.previous_payload_time = (
-                df.select(pl.col("__interval").max()).to_series().item()
+                df.select(pl.col(bucket_col).dt.offset_by(f"-{bucket_offset}").max())
+                .to_series()
+                .item()
             )
             df = df.filter(pl.col(time_col) > self.previous_payload_time)
 
@@ -80,26 +86,33 @@ class InputSource(ABC, Generic[TConfig]):
         if self.dataset.time_partition:
             tp = self.dataset.time_partition
             time_col = tp.column
-            interval = tp.truncate
+            interval = tp.bucket_interval
+            bucket_strategy = tp.bucket_strategy
+            bucket_offset = interval if bucket_strategy == "round_up" else "0s"
             unique_strategy = tp.unique_strategy
 
             prepared_df = (
                 df.with_columns(
-                    __interval=pl.col(time_col).dt.truncate(interval).cast(pl.Datetime)
+                    __bucket=pl.col(time_col)
+                    .dt.truncate(interval)
+                    .dt.offset_by(bucket_offset)
+                    .cast(pl.Datetime)
                 )
                 .sort(time_col)
                 .unique(
-                    [*header_keys, "__interval"],
+                    [*header_keys, "__bucket"],
                     keep=unique_strategy,
                     maintain_order=True,
                 )
             )
 
             if self.config.filter_past_events:
-                prepared_df = self._filter_past_events(prepared_df, time_col)
+                prepared_df = self._filter_past_events(
+                    prepared_df, time_col, "__bucket", bucket_offset
+                )
 
             partitions = prepared_df.partition_by(
-                "__interval", include_key=False, as_dict=True, maintain_order=True
+                "__bucket", include_key=False, as_dict=True, maintain_order=True
             )
 
             result = [(k[0], v) for k, v in partitions.items()]

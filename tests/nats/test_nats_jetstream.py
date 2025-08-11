@@ -26,7 +26,7 @@ async def nats_js(nats_server):
 
 
 @pytest.mark.asyncio
-async def test_nats_streaming(nats_js: nats.js.JetStreamContext):
+async def test_nats_jetstream(nats_js: nats.js.JetStreamContext):
     unique_keys = ["Year", "Month", "ProductId", "UmId"]
     test_data = (
         pl.read_csv("tests/_testdata_dataset_data/turkey_food_prices.csv")

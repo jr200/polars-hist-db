@@ -2,19 +2,21 @@ from abc import ABC
 import csv
 from dataclasses import dataclass
 from io import StringIO
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import os
 import logging
 from datetime import datetime
 
 import polars as pl
 
+from .types import InputDataSourceType
+
 LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
 class InputConfig(ABC):
-    type: Literal["dsv", "jetstream"]
+    type: InputDataSourceType
     config_file_path: str
     filter_past_events: Optional[bool]
 
@@ -25,7 +27,7 @@ class InputConfig(ABC):
 
         if input_type == "dsv":
             return DsvCrawlerInputConfig(**config)
-        elif input_type == "jetstream":
+        elif input_type == "nats-jetstream":
             return JetStreamInputConfig(**config)
         else:
             raise ValueError(f"Unsupported input type: {input_type}")

@@ -20,7 +20,7 @@ class InputSourceFactory:
         if config.type == "dsv":
             assert isinstance(config, DsvCrawlerInputConfig)
             return DsvCrawlerInputSource(tables, dataset, config)
-        elif config.type == "jetstream":
+        elif config.type == "nats-jetstream":
             assert isinstance(config, JetStreamInputConfig)
             return JetStreamInputSource(tables, dataset, config)
         else:

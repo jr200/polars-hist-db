@@ -46,7 +46,7 @@ datasets:
     delta_table_schema: test
     scrape_limit: ~
     input_config:
-      type: jetstream
+      type: nats-jetstream
       nats:
         host: 127.0.0.1
         port: 4112

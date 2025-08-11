@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal,  Optional
 
 from .input_source import InputConfig
 from .nats_config import NatsConfig
 
+JetStreamPayloadType = Literal["json", "s3"]
 
 @dataclass
 class JetStreamSubscriptionConfig:
@@ -51,6 +52,7 @@ class JetStreamConfig:
 class JetStreamInputConfig(InputConfig):
     jetstream: JetStreamConfig
     nats: NatsConfig
+    default_payload_type: Optional[JetStreamPayloadType] = None
 
     def __post_init__(self):
         if isinstance(self.nats, dict):

@@ -6,7 +6,7 @@ import logging
 
 from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
-from .input_source import InputConfig
+from .input.input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
 

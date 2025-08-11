@@ -4,7 +4,7 @@ import pytest_asyncio
 import polars as pl
 import nats
 
-from polars_hist_db.config.input_source import JetStreamSubscriptionConfig
+from polars_hist_db.config.input.jetstream_config import JetStreamSubscriptionConfig
 from tests.utils.nats_helper import (
     create_nats_js_client,
     create_nats_server,

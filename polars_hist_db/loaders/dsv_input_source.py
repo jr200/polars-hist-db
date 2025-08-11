@@ -12,7 +12,7 @@ from polars_hist_db.utils.exceptions import NonRetryableException
 from .transform import apply_transformations
 
 from ..config.dataset import DatasetConfig
-from ..config.input_source import DsvCrawlerInputConfig
+from ..config.input.dsv_crawler import DsvCrawlerInputConfig
 from ..config.table import TableConfigs
 from ..core.audit import AuditOps
 from .dsv.dsv_loader import load_typed_dsv

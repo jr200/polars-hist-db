@@ -1,9 +1,8 @@
 from ..config.dataset import DatasetConfig
-from ..config.input_source import (
-    DsvCrawlerInputConfig,
-    InputConfig,
-    JetStreamInputConfig,
-)
+from ..config.input.input_source import InputConfig
+from ..config.input.dsv_crawler import DsvCrawlerInputConfig
+from ..config.input.jetstream_config import JetStreamInputConfig
+
 from ..config.table import TableConfigs
 from .input_source import InputSource
 from .dsv_input_source import DsvCrawlerInputSource

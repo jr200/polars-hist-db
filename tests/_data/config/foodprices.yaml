@@ -48,8 +48,8 @@ datasets:
     input_config:
       type: nats-jetstream
       nats:
-        host: 127.0.0.1
-        port: 4112
+        servers:
+        - nats://127.0.0.1:4112
         options:
           name: turkey_test_pubsub
       jetstream:

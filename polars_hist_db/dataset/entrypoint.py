@@ -10,7 +10,7 @@ from ..loaders.input_source_factory import InputSourceFactory
 from ..utils.clock import Clock
 
 from ..config import Config, DatasetConfig, TableConfigs
-from ..config.input_source import InputConfig
+from ..config.input.input_source import InputConfig
 from ..core import DeltaTableOps, TableConfigOps, TableOps
 from .scrape import try_upload_to_delta_table
 

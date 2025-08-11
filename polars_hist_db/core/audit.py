@@ -5,7 +5,7 @@ from typing import Literal
 import polars as pl
 from sqlalchemy import and_, Connection, delete, select, Table
 
-from ..config.types import InputDataSourceType
+from ..config.input.types import InputDataSourceType
 from ..config.table import TableColumnConfig, TableConfig
 from .dataframe import DataframeOps
 from .db import DbOps
@@ -199,7 +199,7 @@ class AuditOps:
 
     def add_entry(
         self,
-        data_source_type: Literal["dsv", "nats-jetstream"],
+        data_source_type: InputDataSourceType,
         data_source: str,
         target_table_name: str,
         connection: Connection,

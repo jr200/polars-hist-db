@@ -19,8 +19,10 @@ from nats.aio.msg import Msg
 import polars as pl
 from sqlalchemy import Connection, Engine
 
+from .jetstream.nats_client import make_nats_client
+
 from ..config.dataset import DatasetConfig
-from ..config.input_source import JetStreamInputConfig
+from ..config.input.jetstream_config import JetStreamInputConfig
 from ..config.table import TableConfigs
 from .input_source import InputSource
 from .transform import apply_transformations
@@ -40,9 +42,9 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
     async def _get_nats_client(self) -> nats.NATS:
         if self._nats_client is None:
-            nats_url = f"nats://{self.config.nats.host}:{self.config.nats.port}"
-            options = self.config.nats.options or {}
-            self._nats_client = await nats.connect(nats_url, **options)
+            nats_servers = self.config.nats.servers
+            options = self.config.nats.options or dict()
+            self._nats_client = await make_nats_client(nats_servers, options)
         return self._nats_client
 
     @staticmethod

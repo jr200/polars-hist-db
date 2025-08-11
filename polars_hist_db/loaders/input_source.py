@@ -8,7 +8,7 @@ from sqlalchemy import Connection, Engine
 
 from ..config.dataset import DatasetConfig
 from ..config.table import TableConfig, TableConfigs
-from ..config.input_source import InputConfig
+from ..config.input.input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
 

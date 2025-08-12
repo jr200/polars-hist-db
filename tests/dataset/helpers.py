@@ -2,6 +2,14 @@ from typing import Any, List
 import polars as pl
 
 
+def custom_load_json(payload: Any, args: List[Any]) -> pl.DataFrame:
+    assert isinstance(payload, dict)
+    assert args[0] == 42
+    assert args[1] == {"test_param_1": 42, "test_param_2": "42"}
+    df = pl.from_dict(payload)
+    return df
+
+
 def custom_try_to_usd(
     df: pl.DataFrame, result_col: str, args: List[Any]
 ) -> pl.DataFrame:

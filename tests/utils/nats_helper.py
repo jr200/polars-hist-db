@@ -9,7 +9,7 @@ from nats.aio.client import Client as NATS
 import nats
 from nats.js.client import JetStreamContext
 
-from polars_hist_db.config.input_source import JetStreamSubscriptionConfig
+from polars_hist_db.config.input.jetstream_config import JetStreamSubscriptionConfig
 from tests.utils.dsv_helper import _tests_dir
 
 LOGGER = logging.getLogger(__name__)
@@ -93,12 +93,21 @@ async def try_create_test_stream(
         pass
 
 
-async def create_nats_js_client():
+async def create_nats_core_client():
     nc = NATS()
-    await nc.connect("nats://localhost:4112")
-    js = nc.jetstream()
 
     try:
-        yield js
+        await nc.connect("nats://localhost:4112")
+        yield nc
     finally:
         await nc.close()
+
+
+async def create_nats_js_client():
+    async for nc in create_nats_core_client():
+        js = nc.jetstream()
+
+        try:
+            yield js
+        finally:
+            await nc.close()

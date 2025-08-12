@@ -46,10 +46,16 @@ datasets:
     delta_table_schema: test
     scrape_limit: ~
     input_config:
-      type: jetstream
+      type: nats-jetstream
+      run_until: empty
+      payload_ingest:
+        fn_name: ingest_turkey_json
+        fn_args:
+          - 42
+          - { "test_param_1": 42, "test_param_2": "42" }
       nats:
-        host: 127.0.0.1
-        port: 4112
+        servers:
+        - nats://127.0.0.1:4112
         options:
           name: turkey_test_pubsub
       jetstream:

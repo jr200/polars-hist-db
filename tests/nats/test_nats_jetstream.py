@@ -4,7 +4,7 @@ import pytest_asyncio
 import polars as pl
 import nats
 
-from polars_hist_db.config.input_source import JetStreamSubscriptionConfig
+from polars_hist_db.config.input.jetstream_config import JetStreamSubscriptionConfig
 from tests.utils.nats_helper import (
     create_nats_js_client,
     create_nats_server,
@@ -26,7 +26,7 @@ async def nats_js(nats_server):
 
 
 @pytest.mark.asyncio
-async def test_nats_streaming(nats_js: nats.js.JetStreamContext):
+async def test_nats_jetstream(nats_js: nats.js.JetStreamContext):
     unique_keys = ["Year", "Month", "ProductId", "UmId"]
     test_data = (
         pl.read_csv("tests/_testdata_dataset_data/turkey_food_prices.csv")

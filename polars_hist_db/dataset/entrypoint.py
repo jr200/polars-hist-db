@@ -10,9 +10,9 @@ from ..loaders.input_source_factory import InputSourceFactory
 from ..utils.clock import Clock
 
 from ..config import Config, DatasetConfig, TableConfigs
-from ..config.input_source import InputConfig
+from ..config.input.input_source import InputConfig
 from ..core import DeltaTableOps, TableConfigOps, TableOps
-from .scrape import try_upload_to_delta_table
+from .scrape import try_run_pipeline_as_transaction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ async def _run_dataset(
             if debug_capture_output is not None:
                 debug_capture_output.extend(partitions)
 
-            await try_upload_to_delta_table(
+            await try_run_pipeline_as_transaction(
                 partitions, dataset, tables, engine, commit_fn
             )
 

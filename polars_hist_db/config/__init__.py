@@ -8,6 +8,7 @@ from .table import (
     TableConfigs,
 )
 from .transform_fn_registry import TransformFnRegistry, TransformFnSignature
+from .input.ingest_fn_registry import IngestFnRegistry, IngestFnSignature
 
 
 __all__ = [
@@ -23,4 +24,6 @@ __all__ = [
     "TableConfigs",
     "TransformFnRegistry",
     "TransformFnSignature",
+    "IngestFnRegistry",
+    "IngestFnSignature"
 ]

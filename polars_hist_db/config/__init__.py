@@ -7,7 +7,7 @@ from .table import (
     TableConfig,
     TableConfigs,
 )
-from .fn_registry import FunctionRegistry, FnSignature
+from .transform_fn_registry import TransformFnRegistry, TransformFnSignature
 
 
 __all__ = [
@@ -21,6 +21,6 @@ __all__ = [
     "ForeignKeyConfig",
     "TableConfig",
     "TableConfigs",
-    "FunctionRegistry",
-    "FnSignature",
+    "TransformFnRegistry",
+    "TransformFnSignature",
 ]

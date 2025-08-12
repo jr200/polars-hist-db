@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 import logging
 from pathlib import Path
 from typing import (
@@ -14,18 +13,19 @@ from typing import (
 )
 
 import nats
-from nats.aio.msg import Msg
 
 import polars as pl
 from sqlalchemy import Connection, Engine
 
+from .ingest_payload import load_df_from_msg
 from .jetstream.nats_client import make_nats_client
 
 from ..config.dataset import DatasetConfig
-from ..config.input.jetstream_config import JetStreamInputConfig, JetStreamPayloadType
+from ..config.input.jetstream_config import JetStreamInputConfig
 from ..config.table import TableConfigs
 from .input_source import InputSource
 from .transform import apply_transformations
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,18 +61,6 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             file_size = creds_path.stat().st_size
             if file_size < 512:
                 raise ValueError(f"Invalid credentials file: {creds_file}. Check file.")
-
-    @staticmethod
-    def _load_df_from_msg(msg: Msg, default_payload_type: Optional[JetStreamPayloadType]) -> pl.DataFrame:
-        data = json.loads(msg.data.decode())
-        payload_type = data.get("payload_type", default_payload_type)
-        if payload_type == "s3":
-            return pl.from_dict(data)
-        elif payload_type == "json":
-            return pl.from_dict(data)
-        else:
-            raise ValueError("Unable to determine payload_type, and no default set.")
-        return pl.from_dict(data)
 
     async def cleanup(self) -> None:
         if self._nats_client is not None:
@@ -123,7 +111,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     total_msgs += len(msgs)
 
-                    all_dfs = [self._load_df_from_msg(msg, self.config.default_payload_type) for msg in msgs]
+                    all_dfs = [
+                        load_df_from_msg(msg, self.config.payload_ingest)
+                        for msg in msgs
+                    ]
                     df = pl.concat(all_dfs)
 
                     ts: datetime = msgs[-1].metadata.timestamp

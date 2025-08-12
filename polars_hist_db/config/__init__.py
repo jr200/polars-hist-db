@@ -25,5 +25,5 @@ __all__ = [
     "TransformFnRegistry",
     "TransformFnSignature",
     "IngestFnRegistry",
-    "IngestFnSignature"
+    "IngestFnSignature",
 ]

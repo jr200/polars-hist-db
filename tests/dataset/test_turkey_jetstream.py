@@ -4,8 +4,7 @@ import pytest_asyncio
 import polars as pl
 import logging
 
-from polars_hist_db.config import TransformFnRegistry
-from polars_hist_db.config.input.ingest_fn_registry import IngestFnRegistry
+from polars_hist_db.config import TransformFnRegistry, IngestFnRegistry
 from polars_hist_db.dataset import run_datasets
 from polars_hist_db.utils.compare import compare_dataframes
 from .helpers import custom_load_json, custom_try_to_usd

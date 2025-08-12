@@ -2,7 +2,7 @@ from .clock import Clock
 from .exceptions import NonRetryableException
 from .compare import compare_dataframes
 from .marshal import to_ipc_b64, from_ipc_b64
-from .flatten import recursively_flatten
+from .flatten import recursive_flatten
 
 __all__ = [
     "Clock",
@@ -10,5 +10,5 @@ __all__ = [
     "from_ipc_b64",
     "NonRetryableException",
     "to_ipc_b64",
-    "recursively_flatten",
+    "recursive_flatten",
 ]

@@ -26,7 +26,7 @@ def flatten(df):
     return df.with_columns(*map(prefix_field, struct_cols)).unnest(*struct_cols)
 
 
-def recursively_flatten(df):
+def recursive_flatten(df):
     """Recursively flatten list and struct columns"""
     while any(type(dtype) in (pl.Struct, pl.List) for dtype in df.dtypes):
         df = flatten(df)

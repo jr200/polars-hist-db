@@ -4,7 +4,7 @@ from typing import Any, Dict, Literal, Optional
 import polars as pl
 import logging
 
-from .fn_registry import FunctionRegistry
+from .transform_fn_registry import TransformFnRegistry
 
 
 LOGGER = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class IngestionColumnConfig:
             "column_type": pl.Utf8,
             "required": pl.Boolean,
             "transforms": pl.Struct(
-                {k: pl.List(pl.Utf8) for k in FunctionRegistry().list_functions()}
+                {k: pl.List(pl.Utf8) for k in TransformFnRegistry().list_functions()}
             ),
             "aggregation": pl.Utf8,
             "deduce_foreign_key": pl.Boolean,

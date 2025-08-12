@@ -12,18 +12,18 @@ from .fn_builtins import (
 
 LOGGER = logging.getLogger(__name__)
 
-FnSignature = Callable[[pl.DataFrame, str, List[Any]], pl.DataFrame]
-RegistryStore = Dict[str, FnSignature]
+TransformFnSignature = Callable[[pl.DataFrame, str, List[Any]], pl.DataFrame]
+TransformRegistryStore = Dict[str, TransformFnSignature]
 
 
-class FunctionRegistry:
+class TransformFnRegistry:
     _borg: Dict[str, Any] = {"_registry": None}
 
     def __init__(self) -> None:
         self.__dict__ = self._borg
-        self._registry: RegistryStore = self._one_time_init()
+        self._registry: TransformRegistryStore = self._one_time_init()
 
-    def _one_time_init(self) -> RegistryStore:
+    def _one_time_init(self) -> TransformRegistryStore:
         if self._registry is None:
             self._registry = dict()
             self.register_function("null_if_gte", null_if_gte)
@@ -39,14 +39,14 @@ class FunctionRegistry:
             del self._registry[name]
 
     def register_function(
-        self, name: str, fn: FnSignature, allow_overwrite: bool = False
+        self, name: str, fn: TransformFnSignature, allow_overwrite: bool = False
     ) -> None:
         if name in self._registry and not allow_overwrite:
             raise ValueError(
-                f"A function with the name '{name}' is already registered."
+                f"A transform function with the name '{name}' is already registered."
             )
 
-        LOGGER.debug("added function %s to registry", name)
+        LOGGER.debug("added transform function %s to registry", name)
         self._registry[name] = fn
 
     def call_function(
@@ -57,14 +57,18 @@ class FunctionRegistry:
         args: List[Any],
     ) -> pl.DataFrame:
         if name not in self._registry:
-            raise ValueError(f"No function registered with the name '{name}'.")
+            raise ValueError(
+                f"No transform function registered with the name '{name}'."
+            )
 
-        LOGGER.debug("applying fn %s to dataframe %s => %s", name, df.shape, result_col)
+        LOGGER.debug(
+            "applying transform fn %s to dataframe %s => %s", name, df.shape, result_col
+        )
         fn = self._registry[name]
         result_df = fn(df, result_col, args)
 
         if result_df is None:
-            raise ValueError(f"function {name} returned None")
+            raise ValueError(f"transform function {name} returned None")
 
         return result_df
 

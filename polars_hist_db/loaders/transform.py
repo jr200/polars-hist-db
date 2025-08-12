@@ -5,7 +5,7 @@ from typing import Mapping, Sequence
 import polars as pl
 
 
-from ..config.fn_registry import FunctionRegistry
+from ..config.transform_fn_registry import TransformFnRegistry
 from ..config.parser_config import IngestionColumnConfig
 from ..core.dataframe import DataframeOps
 from ..types import PolarsType
@@ -79,7 +79,7 @@ def _apply_header_transforms(
     if input_col is None:
         raise ValueError(f"missing source-output column for {col_def}")
 
-    fn_reg = FunctionRegistry()
+    fn_reg = TransformFnRegistry()
     for fn_name, fn_args in col_def.transforms.items():
         if fn_args is None:
             continue

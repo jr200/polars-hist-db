@@ -4,7 +4,7 @@ import polars as pl
 from polars.testing import assert_frame_equal
 from decimal import Decimal
 
-from polars_hist_db.config.fn_registry import FunctionRegistry
+from polars_hist_db.config.transform_fn_registry import TransformFnRegistry
 from polars_hist_db.dataset import run_datasets
 from polars_hist_db.core.dataframe import DataframeOps, TimeHint
 from polars_hist_db.utils import compare_dataframes
@@ -18,7 +18,7 @@ from .helpers import custom_try_to_usd
 
 @pytest.fixture
 def fixture_with_config():
-    fn_reg = FunctionRegistry()
+    fn_reg = TransformFnRegistry()
     fn_reg.register_function("try_to_usd", custom_try_to_usd, allow_overwrite=True)
 
     yield from setup_fixture_dataset("foodprices.yaml")

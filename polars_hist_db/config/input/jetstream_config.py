@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from .input_source import InputConfig
 from .nats_config import NatsConfig
@@ -58,6 +58,7 @@ class JetStreamInputConfig(InputConfig):
     jetstream: JetStreamConfig
     nats: NatsConfig
     payload_ingest: JetstreamIngestConfig
+    run_until: Literal["empty", "forever"]
 
     def __post_init__(self):
         if isinstance(self.nats, dict):

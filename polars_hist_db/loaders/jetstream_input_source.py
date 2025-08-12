@@ -99,7 +99,11 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             )
 
             total_msgs = 0
-            while remaining_msgs != 0:
+
+            run_until = self.config.run_until
+            while (run_until == "empty" and remaining_msgs != 0) or (
+                run_until == "forever"
+            ):
                 try:
                     msgs = await sub.fetch(
                         self.config.jetstream.fetch.batch_size,
@@ -130,7 +134,13 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                     yield partitions, commit_fn
 
                 except TimeoutError:
-                    break
+                    if run_until == "empty":
+                        LOGGER.info("No more messages, exiting...")
+                        break
+                    else:
+                        LOGGER.info(
+                            f"{js_sub_cfg.stream}: polling {self.config.jetstream.fetch.batch_timeout}s..."
+                        )
 
             LOGGER.info("Processed %d msgs", total_msgs)
 

@@ -4,10 +4,11 @@ import pytest_asyncio
 import polars as pl
 import logging
 
-from polars_hist_db.config import FunctionRegistry
+from polars_hist_db.config import TransformFnRegistry
+from polars_hist_db.config.input.ingest_fn_registry import IngestFnRegistry
 from polars_hist_db.dataset import run_datasets
 from polars_hist_db.utils.compare import compare_dataframes
-from .helpers import custom_try_to_usd
+from .helpers import custom_load_json, custom_try_to_usd
 from ..utils.nats_helper import (
     create_nats_server,
     create_nats_js_client,
@@ -36,8 +37,15 @@ async def nats_js(nats_server):
 
 @pytest.fixture
 def fixture_with_config():
-    fn_reg = FunctionRegistry()
-    fn_reg.register_function("try_to_usd", custom_try_to_usd, allow_overwrite=True)
+    transform_fn_reg = TransformFnRegistry()
+    transform_fn_reg.register_function(
+        "try_to_usd", custom_try_to_usd, allow_overwrite=True
+    )
+
+    ingest_fn_reg = IngestFnRegistry()
+    ingest_fn_reg.register_function(
+        "ingest_turkey_json", custom_load_json, allow_overwrite=True
+    )
 
     yield from setup_fixture_dataset("foodprices.yaml")
 

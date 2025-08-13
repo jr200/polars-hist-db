@@ -7,6 +7,11 @@ on:
 
   workflow_dispatch:
     inputs:
+      checkout-ref:
+        description: "checkout ref"
+        required: false
+        type: string
+        default: "refs/heads/master"
       build-args:
         description: "build-args"
         required: false
@@ -30,6 +35,7 @@ jobs:
     needs: configure
     uses: jr200/github-action-templates/.github/workflows/publish_pypi.yml@main
     with:
+      checkout-ref: ${{ fromJson(needs.configure.outputs.context).checkout-ref }}
       build-args: ${{ fromJson(needs.configure.outputs.context).build-args }}
       publish-args: ${{ fromJson(needs.configure.outputs.context).publish-args }}
     secrets:

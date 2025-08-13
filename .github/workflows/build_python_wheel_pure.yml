@@ -7,6 +7,11 @@ on:
 
   workflow_dispatch:
     inputs:
+      checkout-ref:
+        description: "checkout ref"
+        required: false
+        type: string
+        default: "refs/heads/master"
       artifact_glob:
         description: artifact-glob
         required: false
@@ -29,6 +34,7 @@ jobs:
     needs: configure
     uses: jr200/github-action-templates/.github/workflows/build_python_wheel_pure.yml@main
     with:
+      checkout-ref: ${{ fromJson(needs.configure.outputs.context).checkout-ref }}
       artifact_glob: ${{ fromJson(needs.configure.outputs.context).artifact_glob }}
       artifact_name: ${{ fromJson(needs.configure.outputs.context).artifact_name }}
 

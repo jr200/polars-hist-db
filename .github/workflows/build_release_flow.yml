@@ -19,8 +19,8 @@ jobs:
           client-payload: |-
             {
               "ref": "${{ github.ref }}",
-              "sha": "${{ github.sha }}",
               "tag": "${{ env.TAG }}",
+              "checkout-ref": "${{ env.TAG }}",
               "artifact_name": "pywheel",
               "artifact_glob": "dist/*.whl",
               "build-args": "-v",

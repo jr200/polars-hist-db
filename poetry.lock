@@ -2841,4 +2841,4 @@ sqlachemy = ["polars"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "09aa1e05549491c0b763d1224aa8cc73bc84e1d9211e8060b6fceb62051b3603"
+content-hash = "8535874405d6ea077da940f30c0cfe0f96c10432da26f903d67248f6e9a55ebc"

@@ -17,6 +17,9 @@ import nats
 import polars as pl
 from sqlalchemy import Connection, Engine
 
+from ..core.audit import AuditOps
+from ..utils.exceptions import NonRetryableException
+
 from .ingest_payload import load_df_from_msg
 from .jetstream.nats_client import make_nats_client
 
@@ -68,7 +71,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             self._nats_client = None
 
     async def next_df(
-        self, _engine: Engine
+        self, engine: Engine
     ) -> AsyncGenerator[
         Tuple[
             List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
@@ -101,6 +104,11 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             total_msgs = 0
 
             run_until = self.config.run_until
+            pipeline = self.dataset.pipeline
+            table_name = pipeline.get_main_table_name()
+            table_schema = self.tables.schemas()[0]
+            aops = AuditOps(table_schema)
+
             while (run_until == "empty" and remaining_msgs != 0) or (
                 run_until == "forever"
             ):
@@ -114,21 +122,50 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                         continue
 
                     total_msgs += len(msgs)
+                    msg_ts: datetime = msgs[-1].metadata.timestamp
 
-                    all_dfs = [
-                        load_df_from_msg(msg, self.config.payload_ingest)
-                        for msg in msgs
-                    ]
+                    all_dfs = []
+                    msg_audits = []
+                    for msg in msgs:
+                        df = load_df_from_msg(msg, msg_ts, self.config.payload_ingest)
+                        msg_audits.extend(
+                            list(df.select("path", "created_at").unique().iter_rows())
+                        )
+                        all_dfs.append(df)
+
                     df = pl.concat(all_dfs)
 
-                    ts: datetime = msgs[-1].metadata.timestamp
+                    df = self._search_and_filter_files(
+                        df, table_schema, table_name, engine
+                    ).drop("path", "created_at")
 
                     df = apply_transformations(df, self.column_definitions)
-                    partitions = self._apply_time_partitioning(df, ts)
+                    partitions = self._apply_time_partitioning(df, msg_ts)
 
-                    async def commit_fn(_: Connection) -> bool:
-                        for msg in msgs:
-                            await msg.ack()
+                    async def commit_fn(connection: Connection) -> bool:
+                        for msg, (audit_log_id, created_at) in zip(msgs, msg_audits):
+                            result: bool = aops.add_entry(
+                                "nats-jetstream",
+                                audit_log_id,
+                                table_name,
+                                connection,
+                                created_at,
+                            )
+
+                            if result:
+                                await msg.ack()
+                            else:
+                                await msg.nak()
+                                LOGGER.error(
+                                    "audit for [%s.%s - %s]: FAILED",
+                                    table_schema,
+                                    table_name,
+                                    audit_log_id,
+                                )
+                                raise NonRetryableException(
+                                    "Failed to update audit log"
+                                )
+
                         return True
 
                     yield partitions, commit_fn

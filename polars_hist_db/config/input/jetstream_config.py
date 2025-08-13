@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, Literal, Optional
 
 from .input_source import InputConfig
 from .nats_config import NatsConfig
@@ -50,7 +50,7 @@ class JetStreamConfig:
 @dataclass
 class JetstreamIngestConfig:
     fn_name: str
-    fn_args: Optional[List[str]] = None
+    fn_args: Optional[Dict[str, Any]] = None
 
 
 @dataclass

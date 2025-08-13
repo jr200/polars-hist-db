@@ -1,4 +1,4 @@
-from .base_config import BaseConfig
+from .config import PolarsHistDbConfig
 from .dataset import DatasetConfig, DatasetsConfig, IngestionColumnConfig, DeltaConfig
 from .engine import DbEngineConfig
 from .table import (
@@ -12,7 +12,7 @@ from .input.ingest_fn_registry import IngestFnRegistry, IngestFnSignature
 
 
 __all__ = [
-    "BaseConfig",
+    "PolarsHistDbConfig",
     "DatasetConfig",
     "DatasetsConfig",
     "DbEngineConfig",

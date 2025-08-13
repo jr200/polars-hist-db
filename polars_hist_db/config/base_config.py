@@ -8,7 +8,7 @@ from .engine import DbEngineConfig
 from .table import TableConfigs
 
 
-class Config:
+class BaseConfig:
     def __init__(
         self,
         cfg_dict: Mapping[str, Any],
@@ -18,9 +18,9 @@ class Config:
         config_file_path: Optional[str] = None,
     ):
         self.config_file_path = config_file_path
-        dataset_params = Config.get_nested_key(cfg_dict, datasets_path)
-        db_params = Config.get_nested_key(cfg_dict, db_config_path)
-        table_params = Config.get_nested_key(cfg_dict, table_configs_path)
+        dataset_params = BaseConfig.get_nested_key(cfg_dict, datasets_path)
+        db_params = BaseConfig.get_nested_key(cfg_dict, db_config_path)
+        table_params = BaseConfig.get_nested_key(cfg_dict, table_configs_path)
 
         self.tables = TableConfigs(items=table_params)
 
@@ -65,9 +65,9 @@ class Config:
         table_configs_path: str = "table_configs",
         datasets_path: str = "datasets",
         db_config_path: str = "db",
-    ) -> "Config":
+    ) -> "BaseConfig":
         yaml_dict: Mapping[str, Any] = cls.yaml_to_dict(filename)
-        config = Config(
+        config = BaseConfig(
             yaml_dict,
             db_config_path=db_config_path.split("."),
             table_configs_path=table_configs_path.split("."),

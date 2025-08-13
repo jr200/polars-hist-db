@@ -9,7 +9,7 @@ from sqlalchemy import Engine
 from ..loaders.input_source_factory import InputSourceFactory
 from ..utils.clock import Clock
 
-from ..config import Config, DatasetConfig, TableConfigs
+from ..config import BaseConfig, DatasetConfig, TableConfigs
 from ..config.input.input_source import InputConfig
 from ..core import DeltaTableOps, TableConfigOps, TableOps
 from .scrape import try_run_pipeline_as_transaction
@@ -18,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 async def run_datasets(
-    config: Config,
+    config: BaseConfig,
     engine: Engine,
     dataset_name: Optional[str] = None,
     debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]] = None,

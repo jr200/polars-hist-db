@@ -12,7 +12,7 @@ def custom_load_json(payload: Any, ts: datetime, args: Dict[str, Any]) -> pl.Dat
     args["msg_counter"] += 1
 
     df = pl.from_dict(payload).with_columns(
-        created_at=pl.lit(ts), path=pl.lit(audit_log_id)
+        __created_at=pl.lit(ts), __path=pl.lit(audit_log_id)
     )
 
     return df

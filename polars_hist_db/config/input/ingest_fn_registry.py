@@ -1,10 +1,11 @@
+from datetime import datetime
 import logging
 from typing import Any, Callable, List, Dict
 import polars as pl
 
 LOGGER = logging.getLogger(__name__)
 
-IngestFnSignature = Callable[[Any, List[Any]], pl.DataFrame]
+IngestFnSignature = Callable[[Any, datetime, Dict[str, Any]], pl.DataFrame]
 IngestRegistryStore = Dict[str, IngestFnSignature]
 
 
@@ -39,15 +40,16 @@ class IngestFnRegistry:
     def call_function(
         self,
         payload: Any,
+        ts: datetime,
         name: str,
-        args: List[Any],
+        args: Dict[str, Any],
     ) -> pl.DataFrame:
         if name not in self._registry:
             raise ValueError(f"No ingest function registered with the name '{name}'.")
 
         LOGGER.debug("applying ingest fn %s to payload", name)
         fn = self._registry[name]
-        result_df = fn(payload, args)
+        result_df = fn(payload, ts, args)
 
         if result_df is None:
             raise ValueError(f"ingest function {name} returned None")

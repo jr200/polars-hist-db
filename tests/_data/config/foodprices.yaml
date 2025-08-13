@@ -51,8 +51,8 @@ datasets:
       payload_ingest:
         fn_name: ingest_turkey_json
         fn_args:
-          - 42
-          - { "test_param_1": 42, "test_param_2": "42" }
+          msg_counter: 0
+          test_param_1: "__unused__"
       nats:
         servers:
         - nats://127.0.0.1:4112
@@ -69,7 +69,7 @@ datasets:
             max_ack_pending: 5000
         fetch:
           batch_size: 1000
-          batch_timeout: 0.5
+          batch_timeout: 1
 
     time_partition:
       column: time

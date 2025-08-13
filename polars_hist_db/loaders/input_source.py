@@ -6,6 +6,8 @@ import logging
 import polars as pl
 from sqlalchemy import Connection, Engine
 
+from ..core.audit import AuditOps
+
 from ..config.dataset import DatasetConfig
 from ..config.table import TableConfig, TableConfigs
 from ..config.input.input_source import InputConfig
@@ -54,7 +56,10 @@ class InputSource(ABC, Generic[TConfig]):
         previous_row_count = len(df)
 
         # only keep rows that are after the previous bucket's timestamp
-        df = df.filter(pl.col(bucket_col) > self.previous_payload_time)
+        df = df.filter(
+            pl.col(bucket_col)
+            > pl.lit(self.previous_payload_time).cast(pl.dtype_of(bucket_col))
+        )
         stale_row_count = previous_row_count - len(df)
         if stale_row_count > 0:
             LOGGER.warn(
@@ -69,7 +74,10 @@ class InputSource(ABC, Generic[TConfig]):
                 .to_series()
                 .item()
             )
-            df = df.filter(pl.col(time_col) > self.previous_payload_time)
+            df = df.filter(
+                pl.col(time_col)
+                > pl.lit(self.previous_payload_time).cast(pl.dtype_of(time_col))
+            )
 
         return df
 
@@ -96,7 +104,7 @@ class InputSource(ABC, Generic[TConfig]):
                     __bucket=pl.col(time_col)
                     .dt.truncate(interval)
                     .dt.offset_by(bucket_offset)
-                    .cast(pl.Datetime)
+                    .cast(pl.dtype_of(time_col))
                 )
                 .sort(time_col)
                 .unique(
@@ -122,3 +130,29 @@ class InputSource(ABC, Generic[TConfig]):
             self.previous_payload_time = payload_time
 
         return result  # type: ignore[return-value]
+
+    def _search_and_filter_files(
+        self,
+        upload_candidates_df: pl.DataFrame,
+        table_schema: str,
+        table_name: str,
+        engine: Engine,
+    ) -> pl.DataFrame:
+        assert "path" in upload_candidates_df.columns
+        assert "created_at" in upload_candidates_df.columns
+
+        aops = AuditOps(table_schema)
+        with engine.begin() as connection:
+            filtered_items_df = aops.filter_unprocessed_items(
+                upload_candidates_df, "path", table_name, connection
+            ).sort("created_at")
+
+            if self.dataset.scrape_limit > 0:
+                filtered_items_df = filtered_items_df.head(self.dataset.scrape_limit)
+
+            aops.prevalidate_new_items(table_name, filtered_items_df, connection)
+
+        LOGGER.debug("found %d items to process", len(filtered_items_df))
+        LOGGER.debug("filtered_items_df: %s", filtered_items_df)
+
+        return filtered_items_df

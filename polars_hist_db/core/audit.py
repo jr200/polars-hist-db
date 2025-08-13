@@ -150,7 +150,8 @@ class AuditOps:
 
         latest_log_ts: datetime = latest_log[0, "data_source_ts"]
         invalid_data_source_items = new_data_source_items.filter(
-            pl.col("created_at") <= latest_log_ts
+            pl.col("created_at")
+            <= pl.lit(latest_log_ts).cast(pl.dtype_of(pl.col("created_at")))
         )
 
         if not invalid_data_source_items.is_empty():

@@ -17,7 +17,7 @@ from sqlalchemy.dialects import mysql
 
 from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
-from polars_hist_db.config import Config, TableConfig, TableConfigs, DatasetConfig
+from polars_hist_db.config import BaseConfig, TableConfig, TableConfigs, DatasetConfig
 from polars_hist_db.core import (
     AuditOps,
     DataframeOps,
@@ -178,7 +178,7 @@ def from_test_result(
 
 
 def setup_fixture_dataset(test_file: str):
-    config = Config.from_yaml(get_test_config(test_file))
+    config = BaseConfig.from_yaml(get_test_config(test_file))
     engine = mariadb_engine_test()
 
     table_schema = config.tables.schemas()[0]

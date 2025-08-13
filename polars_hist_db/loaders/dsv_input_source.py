@@ -53,25 +53,6 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
 
         return partitions
 
-    def _search_and_filter_files(
-        self, table_schema: str, table_name: str, engine: Engine
-    ) -> pl.DataFrame:
-        csv_files_df = self.files()
-
-        aops = AuditOps(table_schema)
-
-        with engine.begin() as connection:
-            csv_files_df = aops.filter_unprocessed_items(
-                csv_files_df, "path", table_name, connection
-            ).sort("created_at")
-
-            if self.dataset.scrape_limit > 0:
-                csv_files_df = csv_files_df.head(self.dataset.scrape_limit)
-
-            aops.prevalidate_new_items(table_name, csv_files_df, connection)
-
-        return csv_files_df
-
     async def next_df(
         self, engine: Engine
     ) -> AsyncGenerator[
@@ -110,11 +91,8 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
                 raise ValueError("Either payload or search_paths must be provided")
 
             csv_files_df = self._search_and_filter_files(
-                table_schema, table_name, engine
+                self.files(), table_schema, table_name, engine
             )
-
-            LOGGER.debug("found %d files to process", len(csv_files_df))
-            LOGGER.debug("csv_files_df: %s", csv_files_df)
 
             timings = Clock()
 

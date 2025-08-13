@@ -43,7 +43,7 @@ def find_files(search_paths: pl.DataFrame) -> pl.DataFrame:
             ]
         )
         .unique()
-        .sort("created_at")
+        .sort("__created_at")
     )
 
     if len(files) > 0:
@@ -65,8 +65,8 @@ def _find_files_with_timestamps(
     LOGGER.info("searching files %s in %s", file_include, root_path)
 
     return_schema: Mapping[str, pl.PolarsDataType] = {
-        "path": pl.Utf8,
-        "created_at": pl.Datetime("us"),
+        "__path": pl.Utf8,
+        "__created_at": pl.Datetime("us"),
     }
 
     if not is_enabled:
@@ -97,7 +97,7 @@ def _find_files_with_timestamps(
         return pl.DataFrame(schema=return_schema)
 
     df = df.with_columns(
-        path=pl.concat_str(
+        __path=pl.concat_str(
             [
                 pl.lit(root_path),
                 pl.col("entry").map_elements(lambda x: x.path, return_dtype=pl.Utf8),
@@ -112,7 +112,7 @@ def _find_files_with_timestamps(
             return_dtype=pl.Datetime,
         ),
     ).with_columns(
-        path=pl.col("path").map_elements(
+        __path=pl.col("__path").map_elements(
             lambda x: os.path.normpath(str(x)), skip_nulls=True, return_dtype=pl.Utf8
         )
     )
@@ -120,7 +120,7 @@ def _find_files_with_timestamps(
     if tz_method == "regex":
         datetime_regex = timestamp["datetime_regex"]
         df = df.with_columns(
-            created_at=pl.col("path").map_elements(
+            __created_at=pl.col("__path").map_elements(
                 lambda x: _parse_time(x, datetime_regex, source_tz, target_tz),
                 skip_nulls=True,
                 return_dtype=pl.Datetime,
@@ -133,11 +133,11 @@ def _find_files_with_timestamps(
             .astimezone(target_tz)
             .replace(tzinfo=None)
         )
-        df = df.with_columns(created_at=pl.lit(dt_value))
+        df = df.with_columns(__created_at=pl.lit(dt_value))
 
     elif tz_method == "mtime":
         df = df.with_columns(
-            created_at=pl.col("mtime").map_elements(
+            __created_at=pl.col("mtime").map_elements(
                 lambda x: (
                     source_tz.localize(x).astimezone(target_tz).replace(tzinfo=None)
                 ),
@@ -149,6 +149,6 @@ def _find_files_with_timestamps(
     else:
         raise ValueError(f"unknown tz_method: '{tz_method}'")
 
-    df = df.select(return_schema.keys()).sort("created_at")
+    df = df.select(return_schema.keys()).sort("__created_at")
 
     return df

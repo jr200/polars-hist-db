@@ -129,7 +129,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                     for msg in msgs:
                         df = load_df_from_msg(msg, msg_ts, self.config.payload_ingest)
                         msg_audits.extend(
-                            list(df.select("path", "created_at").unique().iter_rows())
+                            list(df.select("__path", "__created_at").unique().iter_rows())
                         )
                         all_dfs.append(df)
 
@@ -137,7 +137,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     df = self._search_and_filter_files(
                         df, table_schema, table_name, engine
-                    ).drop("path", "created_at")
+                    ).drop("__path", "__created_at")
 
                     df = apply_transformations(df, self.column_definitions)
                     partitions = self._apply_time_partitioning(df, msg_ts)

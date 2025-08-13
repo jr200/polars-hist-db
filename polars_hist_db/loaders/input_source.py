@@ -138,14 +138,14 @@ class InputSource(ABC, Generic[TConfig]):
         table_name: str,
         engine: Engine,
     ) -> pl.DataFrame:
-        assert "path" in upload_candidates_df.columns
-        assert "created_at" in upload_candidates_df.columns
+        assert "__path" in upload_candidates_df.columns
+        assert "__created_at" in upload_candidates_df.columns
 
         aops = AuditOps(table_schema)
         with engine.begin() as connection:
             filtered_items_df = aops.filter_unprocessed_items(
-                upload_candidates_df, "path", table_name, connection
-            ).sort("created_at")
+                upload_candidates_df, "__path", table_name, connection
+            ).sort("__created_at")
 
             if self.dataset.scrape_limit > 0:
                 filtered_items_df = filtered_items_df.head(self.dataset.scrape_limit)

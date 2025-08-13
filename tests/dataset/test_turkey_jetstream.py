@@ -66,7 +66,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
 
     # Publish messages from DataFrame
     await try_create_test_stream(nats_js, dataset.input_config.jetstream.subscription)
-    _num_expected_msgs = await publish_dataframe_messages(
+    num_expected_msgs = await publish_dataframe_messages(
         nats_js, test_data, js_config.subscription
     )
 
@@ -84,6 +84,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     uploaded_df = pl.concat([df for _, df in uploaded_dfs])
 
     assert not uploaded_df.is_empty()
+    assert len(test_data) == num_expected_msgs
     assert len(uploaded_df) == len(test_data)
 
     diff_df, missing_cols = compare_dataframes(

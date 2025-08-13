@@ -51,10 +51,10 @@ def test_find_files(fixture_with_tmpdir):
     df = find_files(search_spec_df)
 
     assert not df.is_empty()
-    assert ["path", "created_at"] == df.columns
-    assert df["created_at"].unique()[0] == t + timedelta(hours=8)
-    assert df.filter(pl.col("path").str.ends_with("bin")).shape[0] > 0
-    assert df.filter(pl.col("path").str.ends_with("log")).shape[0] > 0
+    assert ["__path", "__created_at"] == df.columns
+    assert df["__created_at"].unique()[0] == t + timedelta(hours=8)
+    assert df.filter(pl.col("__path").str.ends_with("bin")).shape[0] > 0
+    assert df.filter(pl.col("__path").str.ends_with("log")).shape[0] > 0
 
 
 def test_loader(fixture_with_table):

@@ -1,12 +1,20 @@
-from typing import Any, List
+from typing import Any, Dict, List
 import polars as pl
+from datetime import datetime
 
 
-def custom_load_json(payload: Any, args: List[Any]) -> pl.DataFrame:
+def custom_load_json(payload: Any, ts: datetime, args: Dict[str, Any]) -> pl.DataFrame:
     assert isinstance(payload, dict)
-    assert args[0] == 42
-    assert args[1] == {"test_param_1": 42, "test_param_2": "42"}
-    df = pl.from_dict(payload)
+    assert isinstance(args, dict)
+    assert isinstance(args["msg_counter"], int)
+
+    audit_log_id = f"audit_log_id_{args['msg_counter']}"
+    args["msg_counter"] += 1
+
+    df = pl.from_dict(payload).with_columns(
+        __created_at=pl.lit(ts), __path=pl.lit(audit_log_id)
+    )
+
     return df
 
 

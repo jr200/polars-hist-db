@@ -17,7 +17,12 @@ from sqlalchemy.dialects import mysql
 
 from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
-from polars_hist_db.config import PolarsHistDbConfig, TableConfig, TableConfigs, DatasetConfig
+from polars_hist_db.config import (
+    PolarsHistDbConfig,
+    TableConfig,
+    TableConfigs,
+    DatasetConfig,
+)
 from polars_hist_db.core import (
     AuditOps,
     DataframeOps,

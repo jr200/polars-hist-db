@@ -49,6 +49,3 @@ class PolarsHistDbConfig:
         )
 
         return config
-
-
-

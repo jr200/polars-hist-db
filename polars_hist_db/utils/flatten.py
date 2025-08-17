@@ -4,12 +4,12 @@
 import polars as pl
 
 
-def prefix_field(field):
+def prefix_field(field: str) -> pl.Expr:
     """Prefix struct fields with parent column name"""
     return pl.col(field).name.prefix_fields(f"{field}.")
 
 
-def flatten(df):
+def flatten(df: pl.DataFrame) -> pl.DataFrame:
     """Flatten one level of struct and prefix flattened fields
     with parent column name, and explode list columns
     """
@@ -23,10 +23,11 @@ def flatten(df):
     if len(list_cols) > 0:
         df = df.explode(list_cols)
 
-    return df.with_columns(*map(prefix_field, struct_cols)).unnest(*struct_cols)
+    result = df.with_columns(*map(prefix_field, struct_cols)).unnest(*struct_cols)
+    return result
 
 
-def recursive_flatten(df):
+def recursive_flatten(df: pl.DataFrame) -> pl.DataFrame:
     """Recursively flatten list and struct columns"""
     while any(type(dtype) in (pl.Struct, pl.List) for dtype in df.dtypes):
         df = flatten(df)

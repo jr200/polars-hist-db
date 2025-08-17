@@ -10,6 +10,7 @@ def get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):
     except (KeyError, TypeError):
         return None
 
+
 def load_yaml(filename: str) -> Any:
     def _expand_env_vars(value: Any) -> Any:
         if isinstance(value, str):

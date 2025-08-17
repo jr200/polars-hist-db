@@ -129,7 +129,9 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                     for msg in msgs:
                         df = load_df_from_msg(msg, msg_ts, self.config.payload_ingest)
                         msg_audits.extend(
-                            list(df.select("__path", "__created_at").unique().iter_rows())
+                            list(
+                                df.select("__path", "__created_at").unique().iter_rows()
+                            )
                         )
                         all_dfs.append(df)
 

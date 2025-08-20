@@ -91,6 +91,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
             js_sub_cfg = self.config.jetstream.subscription
 
+            LOGGER.info(
+                f"Consumer[{js_sub_cfg.durable}] subscribing to {js_sub_cfg.subject} on {js_sub_cfg.stream}"
+            )
+
             sub = await js.pull_subscribe(
                 subject=js_sub_cfg.subject,
                 durable=js_sub_cfg.durable,

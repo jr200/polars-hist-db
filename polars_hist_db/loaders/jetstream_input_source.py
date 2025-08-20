@@ -141,11 +141,15 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     df = pl.concat(all_dfs)
 
+                    num_items_received = len(df)
+
                     df = self._search_and_filter_files(
                         df, table_schema, table_name, engine
                     ).drop("__path", "__created_at")
 
                     df = apply_transformations(df, self.column_definitions)
+                    LOGGER.info(f"{js_sub_cfg.subject} processing [{len(df)}/{num_items_received}] items...")
+
                     partitions = self._apply_time_partitioning(df, msg_ts)
 
                     async def commit_fn(connection: Connection) -> bool:

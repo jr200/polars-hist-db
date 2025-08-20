@@ -184,6 +184,9 @@ class AuditOps:
             .with_columns(pl.col("data_source").cast(pl.Utf8))
         )
 
+        if existing_entries.is_empty():
+            return data_source_items
+
         data_source_items = self._filter_unprocessed_items(
             data_source_items, existing_entries, data_source_col_name
         )

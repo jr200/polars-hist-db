@@ -70,7 +70,7 @@ async def _run_dataset(
     engine: Engine,
     debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
 ):
-    LOGGER.info(f"starting ingest for {dataset.name}")
+    LOGGER.info(f"starting {input_config.type} ingest for {dataset.name}")
 
     _create_delta_table(engine, tables, dataset)
 

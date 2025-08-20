@@ -31,5 +31,6 @@ async def make_nats_client(
     options["disconnected_cb"] = disconnected_cb
     # options["discovered_server_cb"] = discovered_server_cb
 
+    LOGGER.info(f"Connecting to NATS servers: {nats_servers}")
     await nc.connect(nats_servers, **options)
     return nc

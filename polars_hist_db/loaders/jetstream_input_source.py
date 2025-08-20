@@ -142,13 +142,25 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                     df = pl.concat(all_dfs)
 
                     num_items_received = len(df)
+                    received_items_ts = (
+                        df
+                        .select(
+                            pl.concat_list(pl.min("__created_at"), pl.max("__created_at"))
+                            .explode()
+                            .sort()
+                            .unique()
+                            .dt.strftime("%Y-%m-%d %H:%M:%S")
+                        )
+                        .get_column("__created_at")
+                        .to_list()
+                    )
 
                     df = self._search_and_filter_files(
                         df, table_schema, table_name, engine
                     ).drop("__path", "__created_at")
 
                     df = apply_transformations(df, self.column_definitions)
-                    LOGGER.info(f"{js_sub_cfg.subject} processing [{len(df)}/{num_items_received}] items...")
+                    LOGGER.info(f"got [{len(df)}/{num_items_received}] {js_sub_cfg.subject}@t={received_items_ts}...")
 
                     partitions = self._apply_time_partitioning(df, msg_ts)
 

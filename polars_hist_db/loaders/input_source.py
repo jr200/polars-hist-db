@@ -143,8 +143,8 @@ class InputSource(ABC, Generic[TConfig]):
 
         aops = AuditOps(table_schema)
         with engine.begin() as connection:
-            filtered_items_df = aops.filter_unprocessed_items(
-                upload_candidates_df, "__path", table_name, connection
+            filtered_items_df = aops.filter_items(
+                upload_candidates_df, "__path", "__created_at", table_name, connection
             ).sort("__created_at")
 
             if self.dataset.scrape_limit > 0:

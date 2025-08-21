@@ -178,20 +178,20 @@ class AuditOps:
             .order_by(audit_tbl.c["data_source_ts"])
         )
 
-        existing_entries = (
+        existing_tbl_entries = (
             DataframeOps(connection)
             .from_selectable(target_table_logs_sql, schema_overrides={"data_source_ts": pl.Datetime("us", "UTC")})
             .with_columns(pl.col("data_source").cast(pl.Utf8))
         )
 
-        if existing_entries.is_empty():
+        if existing_tbl_entries.is_empty():
             return data_source_items
 
         data_source_items = self._filter_unprocessed_items(
-            data_source_items, existing_entries, data_source_col_name
+            data_source_items, existing_tbl_entries, data_source_col_name
         )
         data_source_items = self._filter_historic_items(
-            data_source_items, existing_entries, data_source_ts_col_name
+            data_source_items, existing_tbl_entries, data_source_ts_col_name
         )
 
         return data_source_items

@@ -22,6 +22,7 @@ datasets:
       row_finality: disabled
     pipeline:
       - table: simple_nontemporal
+        schema: test
         type: primary
         columns:
           - { source: id, target: id }

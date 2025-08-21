@@ -19,7 +19,7 @@ def scrape_primary_item(
     pipeline = dataset.pipeline
     delta_table_schema = dataset.delta_table_schema
     delta_table_name = dataset.name
-    main_table_config = tables[pipeline.get_main_table_name()]
+    main_table_config = tables[pipeline.get_main_table_name()[1]]
     LOGGER.debug("(item %d) scraping item %s", pipeline_id, main_table_config.name)
 
     upload_items = pipeline.extract_items(pipeline_id)

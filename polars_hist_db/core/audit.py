@@ -161,42 +161,81 @@ class AuditOps:
                 "uploading from data_sources with earlier timestamps is not supported"
             )
 
-    def filter_unprocessed_items(
+    def filter_items(
         self,
         data_source_items: pl.DataFrame,
         data_source_col_name: str,
+        data_source_ts_col_name: str,
         target_table_name: str,
         connection: Connection,
     ) -> pl.DataFrame:
         audit_tbl = self.create(connection)
 
+        # get the set of datasource items already processed
         target_table_logs_sql = (
-            select(audit_tbl.c["data_source"])
+            select(audit_tbl.c["data_source"], audit_tbl.c["data_source_ts"])
             .where(audit_tbl.c["table_name"] == target_table_name)
             .order_by(audit_tbl.c["data_source_ts"])
         )
 
-        data_source_universe = (
+        existing_tbl_entries = (
             DataframeOps(connection)
-            .from_selectable(target_table_logs_sql)
+            .from_selectable(
+                target_table_logs_sql,
+                schema_overrides={"data_source_ts": pl.Datetime("us", "UTC")},
+            )
             .with_columns(pl.col("data_source").cast(pl.Utf8))
-            .get_column("data_source")
+        )
+
+        if existing_tbl_entries.is_empty():
+            return data_source_items
+
+        data_source_items = self._filter_unprocessed_items(
+            data_source_items, existing_tbl_entries, data_source_col_name
+        )
+        data_source_items = self._filter_historic_items(
+            data_source_items, existing_tbl_entries, data_source_ts_col_name
+        )
+
+        return data_source_items
+
+    def _filter_historic_items(
+        self,
+        candidate_items: pl.DataFrame,
+        existing_entries: pl.DataFrame,
+        data_source_ts_col_name: str,
+    ) -> pl.DataFrame:
+        most_recently_processed_ts = existing_entries["data_source_ts"].max()
+        new_items_only = candidate_items.filter(
+            pl.col(data_source_ts_col_name) >= most_recently_processed_ts
+        )
+        return new_items_only
+
+    def _filter_unprocessed_items(
+        self,
+        candidate_items: pl.DataFrame,
+        existing_entries: pl.DataFrame,
+        data_source_col_name: str,
+    ) -> pl.DataFrame:
+        existing_datasources = (
+            existing_entries.get_column("data_source")
             .unique(maintain_order=True)
             .to_list()
         )
 
-        already_processed = pl.col(data_source_col_name).is_in(data_source_universe)
-        unprocessed_data_source_items = data_source_items.filter(
-            already_processed.not_()
-        ).unique(maintain_order=True)
+        # remove items that are already processed (in the audit table)
+        already_processed = pl.col(data_source_col_name).is_in(existing_datasources)
+        unprocessed_items = candidate_items.filter(already_processed.not_()).unique(
+            maintain_order=True
+        )
 
         LOGGER.debug(
             "found %d (of %d) unprocessed data source items",
-            len(unprocessed_data_source_items),
-            len(data_source_items),
+            len(unprocessed_items),
+            len(candidate_items),
         )
 
-        return unprocessed_data_source_items
+        return unprocessed_items
 
     def add_entry(
         self,
@@ -206,6 +245,11 @@ class AuditOps:
         connection: Connection,
         data_source_timestamp: datetime,
     ) -> bool:
+        if data_source_timestamp.tzinfo is None:
+            raise Exception(
+                "Developer Error: data_source_timestamp must be timezone aware"
+            )
+
         self.create(connection)
 
         new_item = {

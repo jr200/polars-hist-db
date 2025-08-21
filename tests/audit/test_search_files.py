@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytest
 import polars as pl
+import pytz
 
 from polars_hist_db.core import AuditOps
 from polars_hist_db.loaders import find_files
@@ -22,8 +23,7 @@ def fixture_with_table():
 
 
 def test_find_files(fixture_with_tmpdir):
-    source_tz_name = "US/Pacific"
-    target_tz_name = "UTC"
+    source_tz = pytz.timezone("US/Pacific")
 
     root_path = fixture_with_tmpdir.name
     t = datetime.fromisoformat("2023-01-01T12:00:01")
@@ -35,8 +35,7 @@ def test_find_files(fixture_with_tmpdir):
                 "file_include": ["*.log", "*.bin"],
                 "timestamp": {
                     "method": "manual",
-                    "source_tz": source_tz_name,
-                    "target_tz": target_tz_name,
+                    "source_tz": str(source_tz),
                     "datetime": t,
                 },
                 "is_enabled": True,
@@ -52,7 +51,7 @@ def test_find_files(fixture_with_tmpdir):
 
     assert not df.is_empty()
     assert ["__path", "__created_at"] == df.columns
-    assert df["__created_at"].unique()[0] == t + timedelta(hours=8)
+    assert df["__created_at"].first() == source_tz.localize(t).astimezone(pytz.utc)
     assert df.filter(pl.col("__path").str.ends_with("bin")).shape[0] > 0
     assert df.filter(pl.col("__path").str.ends_with("log")).shape[0] > 0
 

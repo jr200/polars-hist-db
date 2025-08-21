@@ -4,7 +4,6 @@ import logging
 from .init_helpers import initialise_logging, parse_args
 from ..core import AuditOps, make_engine, TableConfigOps
 from ..config import PolarsHistDbConfig
-from ..utils.clock import Clock
 
 LOGGER = logging.getLogger(__name__)
 
@@ -21,9 +20,6 @@ async def start_drop_dataset_tables(config: PolarsHistDbConfig, dataset_name: st
     with engine.begin() as connection:
         TableConfigOps(connection).drop_all(config.tables)
         AuditOps(config.tables.schemas()[0]).drop(connection)
-
-    _timings = Clock()
-    _timings._df.write_clipboard()
 
 
 def main():

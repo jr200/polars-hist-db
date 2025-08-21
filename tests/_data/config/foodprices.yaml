@@ -32,8 +32,8 @@ table_configs:
       - product_id
       - um_id
     foreign_keys:
-      - { name: product_id, references: { table: product_info, column: id } }
-      - { name: um_id, references: { table: unit_info, column: id } }
+      - { name: product_id, references: { schema: test, table: product_info, column: id } }
+      - { name: um_id, references: { schema: test, table: unit_info, column: id } }
     columns:
       - { name: product_id, data_type: INT, nullable: false }
       - { name: um_id, data_type: INT, nullable: false }
@@ -84,16 +84,19 @@ datasets:
 
     pipeline:
       - table: unit_info
+        schema: test
         columns:
           - { source: UmId, target: id }
           - { source: UmName, target: name }
 
       - table: product_info
+        schema: test
         columns:
           - { source: ProductId, target: id }
           - { source: ProductName, target: name }
 
       - table: food_prices
+        schema: test
         type: primary
         columns:
           - { source: ProductId, target: product_id }
@@ -117,7 +120,6 @@ datasets:
           is_enabled: true
           timestamp:
             source_tz: Europe/London
-            target_tz: UTC
             method: mtime
     time_partition:
       column: time
@@ -132,16 +134,19 @@ datasets:
 
     pipeline:
       - table: unit_info
+        schema: test
         columns:
           - { source: UmId, target: id }
           - { source: UmName, target: name }
 
       - table: product_info
+        schema: test
         columns:
           - { source: ProductId, target: id }
           - { source: ProductName, target: name }
 
       - table: food_prices
+        schema: test
         type: primary
         columns:
           - { source: ProductId, target: product_id }

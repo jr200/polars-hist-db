@@ -85,7 +85,7 @@ class InputSource(ABC, Generic[TConfig]):
         self, df: pl.DataFrame, payload_time: datetime
     ) -> List[Tuple[datetime, pl.DataFrame]]:
         pipeline = self.dataset.pipeline
-        main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()]
+        main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()[1]]
         tbl_to_header_map = pipeline.get_header_map(main_table_config.name)
         header_keys = [
             tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys
@@ -143,8 +143,8 @@ class InputSource(ABC, Generic[TConfig]):
 
         aops = AuditOps(table_schema)
         with engine.begin() as connection:
-            filtered_items_df = aops.filter_unprocessed_items(
-                upload_candidates_df, "__path", table_name, connection
+            filtered_items_df = aops.filter_items(
+                upload_candidates_df, "__path", "__created_at", table_name, connection
             ).sort("__created_at")
 
             if self.dataset.scrape_limit > 0:

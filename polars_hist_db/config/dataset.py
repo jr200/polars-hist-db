@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Literal, Optional, Sequence
+from typing import Dict, List, Literal, Optional, Sequence, Tuple
 
 import polars as pl
 import logging
@@ -80,7 +80,7 @@ class Pipeline:
         )
         merged_cols = pl.concat([pipeline_cols, tmp_cols])
         all_dfs = self._merge_with_table_config(
-            merged_cols, ["table", "source", "target"], all_tables
+            merged_cols, ["schema", "table", "source", "target"], all_tables
         )
 
         schema_keys = IngestionColumnConfig.df_schema().keys()
@@ -195,12 +195,19 @@ class Pipeline:
 
         return df
 
-    def get_main_table_name(self) -> str:
+    def get_main_table_name(self) -> Tuple[str, str]:
         if self.items.is_empty():
             raise ValueError("missing pipeline")
 
-        table_name: str = self.items.filter(type="primary")[0, "table"]
-        return table_name
+        primary_item = (
+            self.items.filter(type="primary").select("table", "schema").unique()
+        )
+        if len(primary_item) != 1:
+            raise ValueError("invalid pipeline, required exactly one primary table")
+
+        table_name: str = primary_item[0, "table"]
+        table_schema: str = primary_item[0, "schema"]
+        return table_schema, table_name
 
     def get_table_names(self) -> List[str]:
         return self.items["table"].unique(maintain_order=True).to_list()

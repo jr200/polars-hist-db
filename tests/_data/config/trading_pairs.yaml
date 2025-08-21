@@ -38,14 +38,17 @@ table_configs:
     foreign_keys:
     - name: base_currency_id
       references:
+        schema: test
         table: cryptocurrencies
         column: id
     - name: quote_currency_id
       references:
+        schema: test
         table: cryptocurrencies
         column: id
     - name: exchange_id
       references:
+        schema: test
         table: exchanges
         column: id
 

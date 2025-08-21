@@ -66,6 +66,7 @@ datasets:
       row_finality: manual
     pipeline:
       - table: exchanges
+        schema: test
         columns:
           - { source: id, target: id }
           - { source: name, target: name }
@@ -74,6 +75,7 @@ datasets:
           - { source: created_at, target: created_at }
 
       - table: cryptocurrencies
+        schema: test
         columns:
           - { source: id, target: id }
           - { source: symbol, target: symbol }
@@ -83,6 +85,7 @@ datasets:
           - { source: created_at, target: created_at }
 
       - table: trading_pairs
+        schema: test
         type: primary
         columns:
           - { source: id, target: id }

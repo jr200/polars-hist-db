@@ -85,6 +85,7 @@ class TableConfigOps:
                 fk_spec = {
                     "name": col_name,
                     "references": {
+                        "schema": fk.column.table.schema,
                         "table": fk.column.table.name,
                         "column": ref_column.name,
                     },
@@ -196,7 +197,7 @@ class TableConfigOps:
                     fk.references.table.name,
                     metadata,
                     autoload_with=self.connection,
-                    schema=tbo.table_schema,
+                    schema=fk.references.schema,
                 )
 
                 fkc = ForeignKeyConstraint(

@@ -116,11 +116,16 @@ class TableConfig:
             found = False
 
             assert isinstance(ref.table, str)
+            assert isinstance(ref.schema, str)
+            search_table_schema = ref.schema
             search_table_name = ref.table
             for ref_config in ref_configs:
-                if ref_config.name == search_table_name:
+                if (
+                    ref_config.name == search_table_name
+                    and ref_config.schema == search_table_schema
+                ):
                     foreign_key.references = ForeignKeyConfig.References(
-                        table=ref_config, column=ref.column
+                        schema=ref_config.schema, table=ref_config, column=ref.column
                     )
                     found = True
                     break
@@ -223,6 +228,7 @@ class TableConfig:
 class ForeignKeyConfig:
     @dataclass
     class References:
+        schema: str
         table: TableConfig
         column: str
 

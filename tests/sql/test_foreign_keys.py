@@ -57,6 +57,7 @@ def test_foreign_keys(fixture_with_linked_tables):
         read_fk = read_fks[ex_fk_name]
 
         assert read_fk.name == ex_fk_name
+        assert read_fk.references.schema == ex_fk.references.schema
         assert read_fk.references.table == ex_fk.references.table.name
         assert read_fk.references.column == ex_fk.references.column
 

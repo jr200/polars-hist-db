@@ -88,6 +88,7 @@ def _infer_input_columns_from_tables(
         for column in table_config.columns:
             dc = IngestionColumnConfig(
                 column_type="data",
+                schema=table_config.schema,
                 table=table_config.name,
                 ingestion_data_type=column.data_type,
                 target_data_type=column.data_type,

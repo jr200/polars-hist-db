@@ -23,8 +23,10 @@ def flatten(df: pl.DataFrame) -> pl.DataFrame:
     if len(list_cols) > 0:
         df = df.explode(list_cols)
 
-    result = df.with_columns(*map(prefix_field, struct_cols)).unnest(*struct_cols)
-    return result
+    if len(struct_cols) > 0:
+        df = df.with_columns(*map(prefix_field, struct_cols)).unnest(*struct_cols)
+
+    return df
 
 
 def recursive_flatten(df: pl.DataFrame) -> pl.DataFrame:

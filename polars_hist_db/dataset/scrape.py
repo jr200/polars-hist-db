@@ -44,7 +44,7 @@ async def try_run_pipeline_as_transaction(
     num_retries: int = 3,
     seconds_between_retries: float = 60,
 ):
-    main_table_config: TableConfig = tables[dataset.pipeline.get_main_table_name()]
+    main_table_config: TableConfig = tables[dataset.pipeline.get_main_table_name()[1]]
     tbl_to_header_map = dataset.pipeline.get_header_map(main_table_config.name)
     header_keys = [tbl_to_header_map.get(k, k) for k in main_table_config.primary_keys]
 

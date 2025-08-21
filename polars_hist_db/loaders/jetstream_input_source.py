@@ -91,6 +91,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
             js_sub_cfg = self.config.jetstream.subscription
 
+            LOGGER.info(
+                f"Consumer[{js_sub_cfg.durable}] subscribing to {js_sub_cfg.subject} on {js_sub_cfg.stream}"
+            )
+
             sub = await js.pull_subscribe(
                 subject=js_sub_cfg.subject,
                 durable=js_sub_cfg.durable,
@@ -105,8 +109,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
             run_until = self.config.run_until
             pipeline = self.dataset.pipeline
-            table_name = pipeline.get_main_table_name()
-            table_schema = self.tables.schemas()[0]
+            table_schema, table_name = pipeline.get_main_table_name()
             aops = AuditOps(table_schema)
 
             while (run_until == "empty" and remaining_msgs != 0) or (
@@ -137,22 +140,50 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     df = pl.concat(all_dfs)
 
+                    num_items_received = len(df)
+                    received_items_ts = (
+                        df.select(
+                            pl.concat_list(
+                                pl.min("__created_at"), pl.max("__created_at")
+                            )
+                            .explode()
+                            .sort()
+                            .unique()
+                            .dt.strftime("%Y-%m-%d %H:%M:%S")
+                        )
+                        .get_column("__created_at")
+                        .to_list()
+                    )
+
                     df = self._search_and_filter_files(
                         df, table_schema, table_name, engine
-                    ).drop("__path", "__created_at")
+                    )
 
-                    df = apply_transformations(df, self.column_definitions)
+                    audit_entries = df["__path"].unique().to_list()
+
+                    df = df.drop("__path", "__created_at").pipe(
+                        apply_transformations, self.column_definitions
+                    )
+                    LOGGER.info(
+                        f"got [{len(df)}/{num_items_received}] {js_sub_cfg.subject}@t={received_items_ts}..."
+                    )
+
                     partitions = self._apply_time_partitioning(df, msg_ts)
 
-                    async def commit_fn(connection: Connection) -> bool:
+                    async def commit_fn(
+                        audit_entries: List[str], connection: Connection
+                    ) -> bool:
                         for msg, (audit_log_id, created_at) in zip(msgs, msg_audits):
-                            result: bool = aops.add_entry(
-                                "nats-jetstream",
-                                audit_log_id,
-                                table_name,
-                                connection,
-                                created_at,
-                            )
+                            if audit_log_id in audit_entries:
+                                result: bool = aops.add_entry(
+                                    "nats-jetstream",
+                                    audit_log_id,
+                                    table_name,
+                                    connection,
+                                    created_at,
+                                )
+                            else:
+                                result = True
 
                             if result:
                                 await msg.ack()
@@ -170,7 +201,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                         return True
 
-                    yield partitions, commit_fn
+                    yield (
+                        partitions,
+                        lambda connection: commit_fn(audit_entries, connection),
+                    )
 
                 except TimeoutError:
                     if run_until == "empty":

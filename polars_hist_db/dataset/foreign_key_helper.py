@@ -59,7 +59,9 @@ def _prepare_population_set(
     """Prepare population set to deduce foreign keys."""
     src_tbo = TableOps(table_schema, src_table_name, connection)
     src_tbl = src_tbo.get_table_metadata()
-    parent_tbo = TableOps(table_schema, parent_table_config.name, connection)
+    parent_tbo = TableOps(
+        parent_table_config.schema, parent_table_config.name, connection
+    )
     parent_tbl = parent_tbo.get_table_metadata()
 
     src_primary_keys = [src_tbl.c[k] for k in src_tbl.primary_key.columns.keys()]
@@ -88,7 +90,7 @@ def _prepare_population_set(
 
 
 def deduce_foreign_keys(
-    table_schema: str,
+    src_table_schema: str,
     src_table_name: str,
     parent_table_config: TableConfig,
     col_info: pl.DataFrame,
@@ -106,7 +108,7 @@ def deduce_foreign_keys(
     src_parent_col_map = dict(col_info.select("source", "target").iter_rows())
 
     population_set_df = _prepare_population_set(
-        table_schema, src_table_name, parent_table_config, col_info, connection
+        src_table_schema, src_table_name, parent_table_config, col_info, connection
     )
 
     new_items_columns = list(_get_value_columns(col_info).keys())
@@ -128,27 +130,29 @@ def deduce_foreign_keys(
             new_items_to_insert_in_parent, missing_values_map
         )
         LOGGER.debug(
-            "Creating %d new entries in %s",
+            "Creating %d new entries in %s.%s",
             len(new_items_to_insert_in_parent),
+            parent_table_config.schema,
             parent_table_config.name,
         )
 
         dfo = DataframeOps(connection)
         dfo.table_insert(
             new_items_to_insert_in_parent,
-            table_schema,
+            parent_table_config.schema,
             parent_table_config.name,
             prefill_nulls_with_default=False,
             uniqueness_col_set=(),
         )
 
     implied_df = _prepare_population_set(
-        table_schema, src_table_name, parent_table_config, col_info, connection
+        src_table_schema, src_table_name, parent_table_config, col_info, connection
     )
     implied_df = implied_df.rename(
         {v: k for k, v in src_parent_col_map.items() if v in implied_df.columns}
     )
 
+    # update the source table with any new rows
     if not implied_df.is_empty():
         implied_df = implied_df.select(
             set(src_parent_col_map.keys()) | set(src_implied_col_names)
@@ -163,7 +167,7 @@ def deduce_foreign_keys(
         dfo = DataframeOps(connection)
         dfo.table_update(
             implied_df,
-            table_schema,
+            src_table_schema,
             src_table_name,
             primary_keys_override=new_items_columns,
         )

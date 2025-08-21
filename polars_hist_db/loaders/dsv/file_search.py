@@ -30,7 +30,7 @@ def _parse_time(path, pattern: str, src_tz: TzInfo, target_tz: TzInfo) -> dateti
             d.get("u", 0),
         )
     )
-    target_dt: datetime = src_dt.astimezone(target_tz).replace(tzinfo=None)
+    target_dt: datetime = src_dt.astimezone(target_tz)
     return target_dt
 
 
@@ -66,13 +66,13 @@ def _find_files_with_timestamps(
 
     return_schema: Mapping[str, pl.PolarsDataType] = {
         "__path": pl.Utf8,
-        "__created_at": pl.Datetime("us"),
+        "__created_at": pl.Datetime("us", "UTC"),
     }
 
     if not is_enabled:
         return pl.DataFrame(schema=return_schema)
 
-    target_tz = pytz.timezone(timestamp.get("target_tz", "UTC"))
+    target_tz = pytz.utc
     source_tz = pytz.timezone(timestamp.get("source_tz", str(target_tz)))
     tz_method = timestamp.get("method")
 
@@ -105,11 +105,11 @@ def _find_files_with_timestamps(
             separator=os.sep,
         ),
         mtime=pl.col("entry").map_elements(
-            lambda x: x.st_mtime.replace(tzinfo=None)
+            lambda x: (x.st_mtime
             if isinstance(x.st_mtime, datetime)
-            else datetime.fromtimestamp(x.st_mtime),
+            else source_tz.localize(datetime.fromtimestamp(x.st_mtime))).astimezone(target_tz),
             skip_nulls=True,
-            return_dtype=pl.Datetime,
+            return_dtype=pl.Datetime("us", "UTC"),
         ),
     ).with_columns(
         __path=pl.col("__path").map_elements(
@@ -123,7 +123,7 @@ def _find_files_with_timestamps(
             __created_at=pl.col("__path").map_elements(
                 lambda x: _parse_time(x, datetime_regex, source_tz, target_tz),
                 skip_nulls=True,
-                return_dtype=pl.Datetime,
+                return_dtype=pl.Datetime("us", "UTC"),
             )
         )
 
@@ -131,20 +131,11 @@ def _find_files_with_timestamps(
         dt_value = (
             source_tz.localize(timestamp["datetime"])
             .astimezone(target_tz)
-            .replace(tzinfo=None)
         )
         df = df.with_columns(__created_at=pl.lit(dt_value))
 
     elif tz_method == "mtime":
-        df = df.with_columns(
-            __created_at=pl.col("mtime").map_elements(
-                lambda x: (
-                    source_tz.localize(x).astimezone(target_tz).replace(tzinfo=None)
-                ),
-                skip_nulls=True,
-                return_dtype=pl.Datetime,
-            )
-        )
+        df = df.with_columns(__created_at=pl.col("mtime"))
 
     else:
         raise ValueError(f"unknown tz_method: '{tz_method}'")

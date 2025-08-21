@@ -106,7 +106,6 @@ This is a set of data sources and pipelines, describing `where` to look for new 
         is_enabled: true
         timestamp:
             source_tz: Europe/London
-            target_tz: UTC
             method: mtime
        - ...
 

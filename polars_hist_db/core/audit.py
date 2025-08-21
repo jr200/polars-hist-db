@@ -180,7 +180,10 @@ class AuditOps:
 
         existing_tbl_entries = (
             DataframeOps(connection)
-            .from_selectable(target_table_logs_sql, schema_overrides={"data_source_ts": pl.Datetime("us", "UTC")})
+            .from_selectable(
+                target_table_logs_sql,
+                schema_overrides={"data_source_ts": pl.Datetime("us", "UTC")},
+            )
             .with_columns(pl.col("data_source").cast(pl.Utf8))
         )
 
@@ -200,17 +203,19 @@ class AuditOps:
         self,
         candidate_items: pl.DataFrame,
         existing_entries: pl.DataFrame,
-        data_source_ts_col_name: str
+        data_source_ts_col_name: str,
     ) -> pl.DataFrame:
         most_recently_processed_ts = existing_entries["data_source_ts"].max()
-        new_items_only = candidate_items.filter(pl.col(data_source_ts_col_name) >= most_recently_processed_ts)
+        new_items_only = candidate_items.filter(
+            pl.col(data_source_ts_col_name) >= most_recently_processed_ts
+        )
         return new_items_only
 
     def _filter_unprocessed_items(
         self,
         candidate_items: pl.DataFrame,
         existing_entries: pl.DataFrame,
-        data_source_col_name: str
+        data_source_col_name: str,
     ) -> pl.DataFrame:
         existing_datasources = (
             existing_entries.get_column("data_source")
@@ -218,12 +223,11 @@ class AuditOps:
             .to_list()
         )
 
-
         # remove items that are already processed (in the audit table)
         already_processed = pl.col(data_source_col_name).is_in(existing_datasources)
-        unprocessed_items = candidate_items.filter(
-            already_processed.not_()
-        ).unique(maintain_order=True)
+        unprocessed_items = candidate_items.filter(already_processed.not_()).unique(
+            maintain_order=True
+        )
 
         LOGGER.debug(
             "found %d (of %d) unprocessed data source items",
@@ -242,7 +246,9 @@ class AuditOps:
         data_source_timestamp: datetime,
     ) -> bool:
         if data_source_timestamp.tzinfo is None:
-            raise Exception("Developer Error: data_source_timestamp must be timezone aware")
+            raise Exception(
+                "Developer Error: data_source_timestamp must be timezone aware"
+            )
 
         self.create(connection)
 

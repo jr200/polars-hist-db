@@ -28,7 +28,6 @@ datasets:
           is_enabled: true
           timestamp:
             source_tz: Europe/London
-            target_tz: UTC          
             method: manual
             datetime: 2025-01-01T00:00:00
     delta_config:

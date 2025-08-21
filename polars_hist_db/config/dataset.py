@@ -199,7 +199,9 @@ class Pipeline:
         if self.items.is_empty():
             raise ValueError("missing pipeline")
 
-        primary_item = self.items.filter(type="primary").select("table", "schema").unique()
+        primary_item = (
+            self.items.filter(type="primary").select("table", "schema").unique()
+        )
         if len(primary_item) != 1:
             raise ValueError("invalid pipeline, required exactly one primary table")
 

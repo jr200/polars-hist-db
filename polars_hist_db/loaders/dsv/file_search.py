@@ -105,9 +105,11 @@ def _find_files_with_timestamps(
             separator=os.sep,
         ),
         mtime=pl.col("entry").map_elements(
-            lambda x: (x.st_mtime
-            if isinstance(x.st_mtime, datetime)
-            else source_tz.localize(datetime.fromtimestamp(x.st_mtime))).astimezone(target_tz),
+            lambda x: (
+                x.st_mtime
+                if isinstance(x.st_mtime, datetime)
+                else source_tz.localize(datetime.fromtimestamp(x.st_mtime))
+            ).astimezone(target_tz),
             skip_nulls=True,
             return_dtype=pl.Datetime("us", "UTC"),
         ),
@@ -128,10 +130,7 @@ def _find_files_with_timestamps(
         )
 
     elif tz_method == "manual":
-        dt_value = (
-            source_tz.localize(timestamp["datetime"])
-            .astimezone(target_tz)
-        )
+        dt_value = source_tz.localize(timestamp["datetime"]).astimezone(target_tz)
         df = df.with_columns(__created_at=pl.lit(dt_value))
 
     elif tz_method == "mtime":

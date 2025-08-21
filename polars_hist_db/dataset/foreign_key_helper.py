@@ -59,7 +59,9 @@ def _prepare_population_set(
     """Prepare population set to deduce foreign keys."""
     src_tbo = TableOps(table_schema, src_table_name, connection)
     src_tbl = src_tbo.get_table_metadata()
-    parent_tbo = TableOps(parent_table_config.schema, parent_table_config.name, connection)
+    parent_tbo = TableOps(
+        parent_table_config.schema, parent_table_config.name, connection
+    )
     parent_tbl = parent_tbo.get_table_metadata()
 
     src_primary_keys = [src_tbl.c[k] for k in src_tbl.primary_key.columns.keys()]

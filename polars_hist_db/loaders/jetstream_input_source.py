@@ -142,9 +142,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     num_items_received = len(df)
                     received_items_ts = (
-                        df
-                        .select(
-                            pl.concat_list(pl.min("__created_at"), pl.max("__created_at"))
+                        df.select(
+                            pl.concat_list(
+                                pl.min("__created_at"), pl.max("__created_at")
+                            )
                             .explode()
                             .sort()
                             .unique()
@@ -160,12 +161,18 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     audit_entries = df["__path"].unique().to_list()
 
-                    df = df.drop("__path", "__created_at").pipe(apply_transformations, self.column_definitions)
-                    LOGGER.info(f"got [{len(df)}/{num_items_received}] {js_sub_cfg.subject}@t={received_items_ts}...")
+                    df = df.drop("__path", "__created_at").pipe(
+                        apply_transformations, self.column_definitions
+                    )
+                    LOGGER.info(
+                        f"got [{len(df)}/{num_items_received}] {js_sub_cfg.subject}@t={received_items_ts}..."
+                    )
 
                     partitions = self._apply_time_partitioning(df, msg_ts)
 
-                    async def commit_fn(audit_entries: List[str], connection: Connection) -> bool:
+                    async def commit_fn(
+                        audit_entries: List[str], connection: Connection
+                    ) -> bool:
                         for msg, (audit_log_id, created_at) in zip(msgs, msg_audits):
                             if audit_log_id in audit_entries:
                                 result: bool = aops.add_entry(
@@ -194,7 +201,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                         return True
 
-                    yield partitions, lambda connection: commit_fn(audit_entries, connection)
+                    yield (
+                        partitions,
+                        lambda connection: commit_fn(audit_entries, connection),
+                    )
 
                 except TimeoutError:
                     if run_until == "empty":

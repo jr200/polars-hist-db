@@ -23,8 +23,10 @@ async def run_datasets(
     dataset_name: Optional[str] = None,
     debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]] = None,
 ):
+    num_datasets_processed = 0
     for dataset in config.datasets.datasets:
         if dataset_name is None or dataset.name == dataset_name:
+            num_datasets_processed += 1
             LOGGER.info("scraping dataset %s", dataset.name)
             await _run_dataset(
                 dataset.input_config,
@@ -33,6 +35,9 @@ async def run_datasets(
                 engine,
                 debug_capture_output,
             )
+
+    if num_datasets_processed == 0:
+        LOGGER.error("no datasets processed for %s", dataset_name)
 
 
 def _create_delta_table(

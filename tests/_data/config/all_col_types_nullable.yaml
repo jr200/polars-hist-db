@@ -42,6 +42,7 @@ datasets:
       row_finality: disabled
     pipeline:
       - table: all_col_types
+        schema: test
         type: primary
         columns:
           - { source: id, target: id }

@@ -37,6 +37,7 @@ datasets:
       row_finality: dropout
     pipeline:
       - table: simple_table
+        schema: test
         type: primary
         columns:
           - { source: id, target: id }

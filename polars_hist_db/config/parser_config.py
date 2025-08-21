@@ -13,6 +13,7 @@ LOGGER = logging.getLogger(__name__)
 @dataclass
 class IngestionColumnConfig:
     column_type: Literal["data", "computed", "dsv_only", "time_partition_only"]
+    schema: str
     table: str
     ingestion_data_type: str
     target_data_type: str
@@ -25,11 +26,14 @@ class IngestionColumnConfig:
     nullable: bool = True
     required: bool = False
 
-    def __post_init__(self): ...
+    def __post_init__(self):
+        if self.schema is None:
+            raise ValueError("schema is required for IngestionColumnConfig")
 
     @classmethod
     def df_schema(cls) -> pl.Schema:
         schema: Dict[str, pl.DataClassType] = {
+            "schema": pl.Utf8,
             "table": pl.Utf8,
             "source": pl.Utf8,
             "target": pl.Utf8,

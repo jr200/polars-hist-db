@@ -109,8 +109,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
             run_until = self.config.run_until
             pipeline = self.dataset.pipeline
-            table_name = pipeline.get_main_table_name()
-            table_schema = self.tables.schemas()[0]
+            table_schema, table_name = pipeline.get_main_table_name()
             aops = AuditOps(table_schema)
 
             while (run_until == "empty" and remaining_msgs != 0) or (

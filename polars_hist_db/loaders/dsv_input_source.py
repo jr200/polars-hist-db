@@ -68,9 +68,7 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
             ],
             None,
         ]:
-            table_name = self.dataset.pipeline.get_main_table_name()
-            table_config = self.tables[table_name]
-            table_schema = table_config.schema
+            table_schema, table_name = self.dataset.pipeline.get_main_table_name()
 
             if self.config.has_payload():
                 assert isinstance(self.config.payload, str)

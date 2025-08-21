@@ -84,16 +84,19 @@ datasets:
 
     pipeline:
       - table: unit_info
+        schema: test
         columns:
           - { source: UmId, target: id }
           - { source: UmName, target: name }
 
       - table: product_info
+        schema: test
         columns:
           - { source: ProductId, target: id }
           - { source: ProductName, target: name }
 
       - table: food_prices
+        schema: test
         type: primary
         columns:
           - { source: ProductId, target: product_id }
@@ -131,16 +134,19 @@ datasets:
 
     pipeline:
       - table: unit_info
+        schema: test
         columns:
           - { source: UmId, target: id }
           - { source: UmName, target: name }
 
       - table: product_info
+        schema: test
         columns:
           - { source: ProductId, target: id }
           - { source: ProductName, target: name }
 
       - table: food_prices
+        schema: test
         type: primary
         columns:
           - { source: ProductId, target: product_id }

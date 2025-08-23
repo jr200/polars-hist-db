@@ -79,6 +79,10 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
                 )
 
                 async def commit_fn(connection: Connection) -> bool:
+                    # payload was send directly to the pipeline, rather than a filepath
+                    # difficult generate an audit id in this case
+                    # for now, these messages are not audited - but might need to require
+                    # an audit_id field to be provided
                     return True
 
                 yield partitions, commit_fn

@@ -83,9 +83,7 @@ def test_latest_entry_asof(fixture_with_table):
 
     aops = AuditOps(table_schema)
     with engine.connect() as connection:
-        empty_audit_df = aops.get_latest_entry_asof(
-            table_name, "dsv", connection, datetime.min
-        )
+        empty_audit_df = aops.get_latest_entry(connection)
         assert empty_audit_df.is_empty()
 
         audit_df_schema = empty_audit_df.schema
@@ -112,14 +110,14 @@ def test_latest_entry_asof(fixture_with_table):
         # for row in cursor:
         #     print(row)
 
-        audit_df = aops.get_latest_entry_asof(table_name, "dsv", connection, ts[2])
+        audit_df = aops.get_latest_entry(connection, target_table_name=table_name, data_source_type="dsv", asof_timestamp=ts[2])
         assert len(audit_df) == 1
         assert audit_df["data_source_ts"].first().astimezone(pytz.utc) == ts[2]
 
-        audit_df = aops.get_latest_entry_asof(table_name, "dsv", connection, ts[3])
+        audit_df = aops.get_latest_entry(connection, target_table_name=table_name, data_source_type="dsv", asof_timestamp=ts[3])
         assert len(audit_df) == 1
         assert audit_df["data_source_ts"].first().astimezone(pytz.utc) == ts[3]
 
-        audit_df = aops.get_latest_entry_asof(table_name, "dsv", connection, ts[4])
+        audit_df = aops.get_latest_entry(connection, target_table_name=table_name, data_source_type="dsv", asof_timestamp=ts[4])
         assert len(audit_df) == 1
         assert audit_df["data_source_ts"].first().astimezone(pytz.utc) == ts[4]

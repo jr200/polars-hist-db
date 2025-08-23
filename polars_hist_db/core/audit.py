@@ -268,11 +268,12 @@ class AuditOps:
         did_insert = result.rowcount == 1
         return did_insert
 
-    def get_latest_entry(
+    def get_latest_entry_asof(
         self,
         target_table_name: str,
         data_source_type: InputDataSourceType,
         connection: Connection,
+        asof_timestamp: datetime,
     ) -> pl.DataFrame:
         tbl = self.create(connection)
         latest_log_sql = (
@@ -282,10 +283,11 @@ class AuditOps:
                     *[
                         tbl.c["data_source_type"] == data_source_type,
                         tbl.c["table_name"] == target_table_name,
+                        tbl.c["data_source_ts"] <= asof_timestamp,
                     ]
                 )
             )
-            .order_by(tbl.c["data_source_ts"])
+            .order_by(tbl.c["data_source_ts"].desc())
             .limit(1)
         )
 

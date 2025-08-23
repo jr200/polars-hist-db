@@ -1,4 +1,5 @@
 from .audit import AuditOps
+from .audit_log_tracker import AuditLogTracker
 from .dataframe import DataframeOps
 from .db import DbOps
 from .delta_table import DeltaTableOps
@@ -9,6 +10,7 @@ from .engine import make_engine
 
 __all__ = [
     "AuditOps",
+    "AuditLogTracker",
     "DataframeOps",
     "DbOps",
     "DeltaTableOps",

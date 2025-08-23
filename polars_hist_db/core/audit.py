@@ -283,15 +283,19 @@ class AuditOps:
         if data_source_type is not None:
             filters.append(tbl.c["data_source_type"] == data_source_type)
         if asof_timestamp is not None:
+            if asof_timestamp.tzinfo is None:
+                raise ValueError("asof_timestamp must be timezone aware")
             filters.append(tbl.c["data_source_ts"] <= asof_timestamp)
 
         latest_log_sql = (
-            select(tbl)
-            .where(and_(*filters))
-            .order_by(tbl.c["data_source_ts"].desc())
-            .limit(1)
+            select(tbl).where(and_(*filters)).order_by(tbl.c["data_source_ts"].desc())
         )
 
-        latest_log = DataframeOps(connection).from_selectable(latest_log_sql)
+        latest_log = (
+            DataframeOps(connection)
+            .from_selectable(latest_log_sql)
+            .group_by("table_name")
+            .first()
+        )
 
         return latest_log

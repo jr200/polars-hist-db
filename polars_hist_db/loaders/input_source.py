@@ -38,7 +38,8 @@ class InputSource(ABC, Generic[TConfig]):
         engine: Engine,
     ) -> AsyncGenerator[
         Tuple[
-            List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
+            List[Tuple[datetime, pl.DataFrame]],
+            Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
         ],
         None,
     ]:

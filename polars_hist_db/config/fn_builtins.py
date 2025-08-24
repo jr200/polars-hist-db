@@ -27,8 +27,10 @@ def parse_date(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFra
         ).alias(result_col)
     )
 
-    if result_df.null_count() != df.null_count():
-        raise ValueError(f"Inconsistent null count after parsing date for {result_col} with formats {date_formats}")
+    if result_df[result_col].null_count() != df[result_col].null_count():
+        raise ValueError(
+            f"Inconsistent null count after parsing date for {result_col} with formats {date_formats}"
+        )
 
     return result_df
 

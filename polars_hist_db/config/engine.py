@@ -38,8 +38,17 @@ def _mariadb_engine(
     else:
         url = f"mariadb+pymysql://{username}:{password}@{hostname}:{port}"
 
+    # https://github.com/sqlalchemy/sqlalchemy/issues/3146
+    # updates should return the number of rows affected, rather than the number of rows that matched
+    # the where clause
+    connect_args={"client_flag": 0}
+
     engine = create_engine(
-        url, pool_recycle=3600, use_insertmanyvalues=use_insertmanyvalues, **kwargs
+        url,
+        pool_recycle=3600,
+        use_insertmanyvalues=use_insertmanyvalues,
+        connect_args=connect_args,
+        **kwargs,
     )
 
     return engine

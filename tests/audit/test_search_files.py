@@ -76,7 +76,7 @@ def test_loader(fixture_with_table):
         aops.drop(connection)
 
 
-def test_latest_entry_asof(fixture_with_table):
+def test_latest_entry(fixture_with_table):
     engine, config = fixture_with_table
     table_name = "myapp"
     table_schema = config.tables.schemas()[0]
@@ -92,8 +92,8 @@ def test_latest_entry_asof(fixture_with_table):
         assert audit_df_schema["table_name"] == pl.Categorical
         assert audit_df_schema["data_source_type"] == pl.Categorical
         assert audit_df_schema["data_source"] == pl.Categorical
-        assert audit_df_schema["data_source_ts"] == pl.Datetime("us", None)
-        assert audit_df_schema["upload_ts"] == pl.Datetime("us", None)
+        assert audit_df_schema["data_source_ts"] == pl.Datetime("us", "UTC")
+        assert audit_df_schema["upload_ts"] == pl.Datetime("us", "UTC")
 
         ts = [
             datetime(2022, 1, 1, 3, 4, 5, tzinfo=pytz.utc) + timedelta(days=365 * i)

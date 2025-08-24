@@ -296,6 +296,8 @@ class AuditOps:
             .from_selectable(latest_log_sql)
             .group_by("table_name")
             .first()
+            .with_columns(pl.col("data_source_ts").cast(pl.Datetime("us", "UTC")))
+            .with_columns(pl.col("upload_ts").cast(pl.Datetime("us", "UTC")))
         )
 
         return latest_log

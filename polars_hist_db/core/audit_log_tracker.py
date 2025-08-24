@@ -10,6 +10,7 @@ LOGGER = logging.getLogger(__name__)
 
 TableUpdateCallback = Callable[[str, str, datetime], Awaitable[None]]
 
+
 class AuditLogTracker:
     _borg: Dict[str, Any] = {}
 
@@ -69,7 +70,9 @@ class AuditLogTracker:
                     if last_known is None or new_timestamp > last_known:
                         # Table has been updated, invoke callback
                         try:
-                            await self.table_update_callback(aops.schema, table_name, new_timestamp)
+                            await self.table_update_callback(
+                                aops.schema, table_name, new_timestamp
+                            )
                             LOGGER.debug(
                                 f"Callback invoked for table {aops.schema}.{table_name} at {new_timestamp}"
                             )

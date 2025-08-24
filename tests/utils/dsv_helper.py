@@ -15,6 +15,7 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
+from polars_hist_db.config.engine import DbEngineConfig
 from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.config import (
@@ -29,7 +30,6 @@ from polars_hist_db.core import (
     DbOps,
     TableConfigOps,
     TableOps,
-    make_engine,
 )
 from polars_hist_db.types import PolarsType, SQLAlchemyType
 
@@ -51,8 +51,7 @@ def get_dataset_data(filename: str):
 
 
 def mariadb_engine_test(**kwargs) -> Engine:
-    engine = make_engine(
-        backend="mariadb",
+    engine_config = DbEngineConfig(
         hostname="127.0.0.1",
         port=3307,
         username="root",
@@ -60,6 +59,7 @@ def mariadb_engine_test(**kwargs) -> Engine:
         **kwargs,
     )
 
+    engine = engine_config.get_engine()
     return engine
 
 

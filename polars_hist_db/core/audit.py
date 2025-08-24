@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import logging
-from typing import Literal
+from typing import Literal, Optional
 
 import polars as pl
 from sqlalchemy import and_, Connection, delete, select, Table
@@ -268,29 +268,36 @@ class AuditOps:
         did_insert = result.rowcount == 1
         return did_insert
 
-    def get_latest_entry_asof(
+    def get_latest_entry(
         self,
-        target_table_name: str,
-        data_source_type: InputDataSourceType,
         connection: Connection,
-        asof_timestamp: datetime,
+        asof_timestamp: Optional[datetime] = None,
+        target_table_name: Optional[str] = None,
+        data_source_type: Optional[InputDataSourceType] = None,
     ) -> pl.DataFrame:
         tbl = self.create(connection)
+
+        filters = []
+        if target_table_name is not None:
+            filters.append(tbl.c["table_name"] == target_table_name)
+        if data_source_type is not None:
+            filters.append(tbl.c["data_source_type"] == data_source_type)
+        if asof_timestamp is not None:
+            if asof_timestamp.tzinfo is None:
+                raise ValueError("asof_timestamp must be timezone aware")
+            filters.append(tbl.c["data_source_ts"] <= asof_timestamp)
+
         latest_log_sql = (
-            select(tbl)
-            .where(
-                and_(
-                    *[
-                        tbl.c["data_source_type"] == data_source_type,
-                        tbl.c["table_name"] == target_table_name,
-                        tbl.c["data_source_ts"] <= asof_timestamp,
-                    ]
-                )
-            )
-            .order_by(tbl.c["data_source_ts"].desc())
-            .limit(1)
+            select(tbl).where(and_(*filters)).order_by(tbl.c["data_source_ts"].desc())
         )
 
-        latest_log = DataframeOps(connection).from_selectable(latest_log_sql)
+        latest_log = (
+            DataframeOps(connection)
+            .from_selectable(latest_log_sql)
+            .group_by("table_name")
+            .first()
+            .with_columns(pl.col("data_source_ts").cast(pl.Datetime("us", "UTC")))
+            .with_columns(pl.col("upload_ts").cast(pl.Datetime("us", "UTC")))
+        )
 
         return latest_log

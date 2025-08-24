@@ -1,3 +1,4 @@
+test: test-up run-tests test-down
 
 test-up:
 	docker compose -f infra/compose-mariadb.yml up -d
@@ -15,5 +16,5 @@ check:
 	ruff format
 	mypy .
 
-test:
+run-tests:
 	pytest tests/

@@ -6,7 +6,6 @@ from .delta_table import DeltaTableOps
 from .table import TableOps
 from .table_config import TableConfigOps
 from .timehint import TimeHint
-from .engine import make_engine
 
 __all__ = [
     "AuditOps",
@@ -17,5 +16,4 @@ __all__ = [
     "TableConfigOps",
     "TableOps",
     "TimeHint",
-    "make_engine",
 ]

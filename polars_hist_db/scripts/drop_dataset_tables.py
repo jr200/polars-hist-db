@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from .init_helpers import initialise_logging, parse_args
-from ..core import AuditOps, make_engine, TableConfigOps
+from ..core import AuditOps, TableConfigOps
 from ..config import PolarsHistDbConfig
 
 LOGGER = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ async def start_drop_dataset_tables(config: PolarsHistDbConfig, dataset_name: st
 
     LOGGER.warning(f"Dropping tables: [{', '.join(tables_to_drop)}]")
 
-    engine = make_engine(**config.db_config.to_dict())
+    engine = config.db_config.get_engine()
     with engine.begin() as connection:
         TableConfigOps(connection).drop_all(config.tables)
         AuditOps(config.tables.schemas()[0]).drop(connection)

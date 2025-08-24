@@ -78,14 +78,14 @@ dev = ["backports.zoneinfo ; python_version < \"3.9\"", "freezegun (>=1.0,<2.0)"
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.4"
+version = "4.13.5"
 description = "Screen-scraping library"
 optional = false
 python-versions = ">=3.7.0"
 groups = ["dev"]
 files = [
-    {file = "beautifulsoup4-4.13.4-py3-none-any.whl", hash = "sha256:9bbbb14bfde9d79f38b8cd5f8c7c85f4b8f2523190ebed90e950a8dea4cb1c4b"},
-    {file = "beautifulsoup4-4.13.4.tar.gz", hash = "sha256:dbb3c4e1ceae6aefebdaf2423247260cd062430a410e38c66f2baa50a8437195"},
+    {file = "beautifulsoup4-4.13.5-py3-none-any.whl", hash = "sha256:642085eaa22233aceadff9c69651bc51e8bf3f874fb6d7104ece2beb24b47c4a"},
+    {file = "beautifulsoup4-4.13.5.tar.gz", hash = "sha256:5e70131382930e7c3de33450a2f54a63d5e4b19386eab43a5b34d594268f3695"},
 ]
 
 [package.dependencies]
@@ -1736,14 +1736,14 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pymysql"
-version = "1.1.1"
+version = "1.1.2"
 description = "Pure Python MySQL Driver"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "PyMySQL-1.1.1-py3-none-any.whl", hash = "sha256:4de15da4c61dc132f4fb9ab763063e693d521a80fd0e87943b9a453dd4c19d6c"},
-    {file = "pymysql-1.1.1.tar.gz", hash = "sha256:e127611aaf2b417403c60bf4dc570124aeb4a57f5f37b8e95ae399a42f904cd0"},
+    {file = "pymysql-1.1.2-py3-none-any.whl", hash = "sha256:e6b1d89711dd51f8f74b1631fe08f039e7d76cf67a42a323d3178f0f25762ed9"},
+    {file = "pymysql-1.1.2.tar.gz", hash = "sha256:4961d3e165614ae65014e361811a724e2044ad3ea3739de9903ae7c21f539f03"},
 ]
 
 [package.extras]
@@ -2841,4 +2841,4 @@ sqlachemy = ["polars"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "55857c4031e11892834b68a2c3a1fa86b86d797f7752fd854d6d2151fd32bc00"
+content-hash = "047d59452c462623431bd36d28892d8c954d99e55dea8d7504dceda4c1c2126f"

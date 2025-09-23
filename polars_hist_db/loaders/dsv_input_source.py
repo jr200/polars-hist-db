@@ -57,14 +57,15 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
         self, engine: Engine
     ) -> AsyncGenerator[
         Tuple[
-            List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
+            List[Tuple[datetime, pl.DataFrame]],
+            Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
         ],
         None,
     ]:
         async def _generator() -> AsyncGenerator[
             Tuple[
                 List[Tuple[datetime, pl.DataFrame]],
-                Callable[[Connection], Awaitable[bool]],
+                Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
             ],
             None,
         ]:
@@ -78,7 +79,9 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
                     bytes(self.config.payload, "UTF8"), self.config.payload_time
                 )
 
-                async def commit_fn(connection: Connection) -> bool:
+                async def commit_fn(
+                    connection: Connection, modified_tables: List[Tuple[str, str]]
+                ) -> bool:
                     # payload was send directly to the pipeline, rather than a filepath
                     # difficult generate an audit id in this case
                     # for now, these messages are not audited - but might need to require
@@ -110,25 +113,28 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
 
                 partitions = self._process_payload(Path(csv_file), file_time)
 
-                async def commit_fn(connection: Connection) -> bool:
-                    aops = AuditOps(table_schema)
-                    path = Path(csv_file).absolute()
-                    result: bool = aops.add_entry(
-                        "dsv",
-                        path.as_posix(),
-                        table_name,
-                        connection,
-                        file_time,
-                    )
-
-                    if not result:
-                        LOGGER.error(
-                            "audit for [%s.%s - %s]: FAILED",
-                            table_schema,
-                            table_name,
-                            path.name,
+                async def commit_fn(
+                    connection: Connection, modified_tables: List[Tuple[str, str]]
+                ) -> bool:
+                    for modified_schema, modified_table in modified_tables:
+                        aops = AuditOps(modified_schema)
+                        path = Path(csv_file).absolute()
+                        result: bool = aops.add_entry(
+                            "dsv",
+                            path.as_posix(),
+                            modified_table,
+                            connection,
+                            file_time,
                         )
-                        raise NonRetryableException("Failed to update audit log")
+
+                        if not result:
+                            LOGGER.error(
+                                "audit for [%s.%s - %s]: FAILED",
+                                modified_schema,
+                                modified_table,
+                                path.name,
+                            )
+                            raise NonRetryableException("Failed to update audit log")
 
                     return result
 

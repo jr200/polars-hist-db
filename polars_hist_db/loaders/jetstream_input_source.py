@@ -74,14 +74,15 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
         self, engine: Engine
     ) -> AsyncGenerator[
         Tuple[
-            List[Tuple[datetime, pl.DataFrame]], Callable[[Connection], Awaitable[bool]]
+            List[Tuple[datetime, pl.DataFrame]],
+            Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
         ],
         None,
     ]:
         async def _generator() -> AsyncGenerator[
             Tuple[
                 List[Tuple[datetime, pl.DataFrame]],
-                Callable[[Connection], Awaitable[bool]],
+                Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
             ],
             None,
         ]:
@@ -110,7 +111,6 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             run_until = self.config.run_until
             pipeline = self.dataset.pipeline
             table_schema, table_name = pipeline.get_main_table_name()
-            aops = AuditOps(table_schema)
 
             while (run_until == "empty" and remaining_msgs != 0) or (
                 run_until == "forever"
@@ -171,19 +171,22 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                     partitions = self._apply_time_partitioning(df, msg_ts)
 
                     async def commit_fn(
-                        audit_entries: List[str], connection: Connection
+                        audit_entries: List[str],
+                        connection: Connection,
+                        modified_tables: List[Tuple[str, str]],
                     ) -> bool:
                         for msg, (audit_log_id, created_at) in zip(msgs, msg_audits):
+                            result = True
                             if audit_log_id in audit_entries:
-                                result: bool = aops.add_entry(
-                                    "nats-jetstream",
-                                    audit_log_id,
-                                    table_name,
-                                    connection,
-                                    created_at,
-                                )
-                            else:
-                                result = True
+                                for modified_schema, modified_table in modified_tables:
+                                    aops = AuditOps(modified_schema)
+                                    result = result and aops.add_entry(
+                                        "nats-jetstream",
+                                        audit_log_id,
+                                        modified_table,
+                                        connection,
+                                        created_at,
+                                    )
 
                             if result:
                                 await msg.ack()
@@ -203,7 +206,9 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
                     yield (
                         partitions,
-                        lambda connection: commit_fn(audit_entries, connection),
+                        lambda connection, modified_tables: commit_fn(
+                            audit_entries, connection, modified_tables
+                        ),
                     )
 
                 except TimeoutError:

@@ -22,7 +22,7 @@ def scrape_extract_item(
     tables: TableConfigs,
     upload_time: datetime,
     connection: Connection,
-):
+) -> bool:
     pipeline = dataset.pipeline
     delta_table_name = dataset.name
 
@@ -84,4 +84,4 @@ def scrape_extract_item(
 
     LOGGER.debug("(item %d) upserted %d rows", pipeline_id, ni + nu + nd)
 
-    # TODO: trigger table mod notification
+    return (ni + nu + nd) > 0

@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from time import sleep
-from typing import Awaitable, Callable, List, Tuple
+from typing import Awaitable, Callable, List, Set, Tuple
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -19,16 +19,19 @@ LOGGER = logging.getLogger(__name__)
 def _scrape_pipeline_item(
     pipeline_id: int,
     dataset: DatasetConfig,
+    target_schema: str,
     target_table: str,
     tables: TableConfigs,
     upload_time: datetime,
     connection: Connection,
-) -> None:
+) -> bool:
     item_type = dataset.pipeline.item_type(target_table)
     if item_type == "primary":
-        scrape_primary_item(pipeline_id, dataset, tables, upload_time, connection)
+        return scrape_primary_item(
+            pipeline_id, dataset, tables, upload_time, connection
+        )
     elif item_type == "extract":
-        scrape_extract_item(
+        return scrape_extract_item(
             pipeline_id, dataset, target_table, tables, upload_time, connection
         )
     else:
@@ -40,7 +43,7 @@ async def try_run_pipeline_as_transaction(
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
-    commit_fn: Callable[[Connection], Awaitable[bool]],
+    commit_fn: Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
     num_retries: int = 3,
     seconds_between_retries: float = 60,
 ):
@@ -52,6 +55,7 @@ async def try_run_pipeline_as_transaction(
         with engine.connect() as connection:
             try:
                 with connection.begin():
+                    modified_tables: Set[Tuple[str, str]] = set()
                     for i, (ts, partition_df) in enumerate(partitions):
                         assert isinstance(ts, datetime), (
                             f"timestamp is not a datetime [{type(ts)}]"
@@ -73,20 +77,25 @@ async def try_run_pipeline_as_transaction(
                             clear_table_first=True,
                         )
 
-                        for (
-                            pipeline_id,
+                        for pipeline_id, (
+                            target_schema,
                             target_table,
                         ) in dataset.pipeline.get_pipeline_items().items():
-                            _scrape_pipeline_item(
+                            did_modify = _scrape_pipeline_item(
                                 pipeline_id,
                                 dataset,
+                                target_schema,
                                 target_table,
                                 tables,
                                 ts,
                                 connection,
                             )
 
-                    success = await commit_fn(connection)
+                            if did_modify:
+                                modified_item = (target_schema, target_table)
+                                modified_tables.add(modified_item)
+
+                    success = await commit_fn(connection, sorted(modified_tables))
                     if success:
                         return
 

@@ -212,9 +212,13 @@ class Pipeline:
     def get_table_names(self) -> List[str]:
         return self.items["table"].unique(maintain_order=True).to_list()
 
-    def get_pipeline_items(self) -> Dict[int, str]:
-        pipeline_items = self.items.select("id", "table").unique(maintain_order=True)
-        result: Dict[int, str] = dict(pipeline_items.iter_rows())
+    def get_pipeline_items(self) -> Dict[int, Tuple[str, str]]:
+        pipeline_items = self.items.select("id", "schema", "table").unique(
+            maintain_order=True
+        )
+        result: Dict[int, Tuple[str, str]] = {
+            id: (schema, table) for (id, schema, table) in pipeline_items.iter_rows()
+        }
         return result
 
 

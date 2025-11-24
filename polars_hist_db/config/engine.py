@@ -4,11 +4,13 @@ from typing import Any, Dict, Optional
 from sqlalchemy import Engine
 from sqlalchemy import create_engine
 
+
 @dataclass
 class SslConfig:
     ssl_ca: str
     ssl_cert: Optional[str] = None
     ssl_key: Optional[str] = None
+
 
 @dataclass
 class DbEngineConfig:
@@ -56,7 +58,7 @@ def _mariadb_engine(
 
     if ssl_config is not None:
         ssl_params = {k: v for k, v in ssl_config.items() if v is not None}
-        ssl_params["__fake_param"] = '_unused_'
+        ssl_params["__fake_param"] = "_unused_"
         connect_args["ssl"] = ssl_params
 
     engine = create_engine(

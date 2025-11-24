@@ -41,14 +41,14 @@ class TableColumnConfig:
 
     @classmethod
     def df_schema(cls) -> pl.Schema:
-        schema: Dict[str, pl.DataTypeClass] = {
-            "table": pl.Utf8,
-            "name": pl.Utf8,
-            "data_type": pl.Utf8,
-            "default_value": pl.Utf8,
-            "autoincrement": pl.Boolean,
-            "nullable": pl.Boolean,
-            "unique_constraint": pl.List(pl.Utf8),
+        schema: Dict[str, pl.DataType] = {
+            "table": pl.Utf8(),
+            "name": pl.Utf8(),
+            "data_type": pl.Utf8(),
+            "default_value": pl.Utf8(),
+            "autoincrement": pl.Boolean(),
+            "nullable": pl.Boolean(),
+            "unique_constraint": pl.List(pl.Utf8()),
         }
 
         return pl.Schema(schema)

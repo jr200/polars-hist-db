@@ -64,8 +64,8 @@ def _find_files_with_timestamps(
 ) -> pl.DataFrame:
     LOGGER.info("searching files %s in %s", file_include, root_path)
 
-    return_schema: Mapping[str, pl.PolarsDataType] = {
-        "__path": pl.Utf8,
+    return_schema: Mapping[str, pl.DataType] = {
+        "__path": pl.Utf8(),
         "__created_at": pl.Datetime("us", "UTC"),
     }
 

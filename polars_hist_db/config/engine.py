@@ -27,6 +27,7 @@ class DbEngineConfig:
     max_overflow: int = 2
 
     def __post_init__(self):
+        self.port = int(self.port)
         if isinstance(self.ssl_config, dict):
             ssl_dict = self.ssl_config
             self.ssl_config = SslConfig(

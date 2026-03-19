@@ -1,7 +1,7 @@
 db:
   backend: mariadb
   hostname: 127.0.0.1
-  port: 3307
+  port: ${MARIADB_PORT}
   username: root
   password: admin
 
@@ -55,7 +55,7 @@ datasets:
           test_param_1: "__unused__"
       nats:
         servers:
-        - nats://127.0.0.1:4112
+        - nats://127.0.0.1:${NATS_PORT}
         options:
           name: turkey_test_pubsub
       jetstream:

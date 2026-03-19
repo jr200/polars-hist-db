@@ -53,7 +53,7 @@ def get_dataset_data(filename: str):
 def mariadb_engine_test(**kwargs) -> Engine:
     engine_config = DbEngineConfig(
         hostname="127.0.0.1",
-        port=3307,
+        port=int(os.environ.get("MARIADB_PORT", "13307")),
         username="root",
         password="admin",
         **kwargs,

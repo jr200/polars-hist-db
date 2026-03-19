@@ -11,7 +11,7 @@ async def make_nats_client(
     nc = nats.NATS()
 
     async def error_cb(e):
-        LOGGER.error("Error:", e)
+        LOGGER.error("Error: %s", e)
 
     async def closed_cb():
         LOGGER.info("Connection to NATS is closed.")

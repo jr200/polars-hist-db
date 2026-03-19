@@ -1,22 +1,22 @@
 [project]
 name = "polars-hist-db"
-version = "0.8.26"
+version = "0.8.27"
 description = "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
 authors = [{ name = "jr200", email = "jayshan+git@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 
 dependencies = [
-    "nats-py>=2.12.0",
+    "nats-py>=2.14.0",
     "pandas>=2.3.3",
-    "polars[sqlalchemy]>=1.35.2",
-    "pyarrow>=22.0.0",
+    "polars[sqlalchemy]>=1.39.2",
+    "pyarrow>=23.0.1",
     "pymysql>=1.1.2",
-    "pytz>=2025.2",
+    "pytz>=2026.1.post1",
     "pyyaml>=6.0.3",
     "scandir-rs==2.8.0",
-    "sql-metadata>=2.18.0",
-    "sqlalchemy[asyncio]>=2.0.44",
+    "sql-metadata>=2.20.0",
+    "sqlalchemy[asyncio]>=2.0.48",
 ]
 
 [project.optional-dependencies]

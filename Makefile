@@ -1,13 +1,16 @@
+NATS_PORT ?= 14222
+MARIADB_PORT ?= 13307
+
 test: test-up run-tests test-down
 
 test-up:
-	docker compose -f infra/compose-mariadb.yml up -d
+	MARIADB_PORT=$(MARIADB_PORT) docker compose -f infra/compose-mariadb.yml up -d
 
 test-down:
-	docker compose -f infra/compose-mariadb.yml down
+	MARIADB_PORT=$(MARIADB_PORT) docker compose -f infra/compose-mariadb.yml down
 
 cov:
-	uv run coverage run -m pytest
+	NATS_PORT=$(NATS_PORT) MARIADB_PORT=$(MARIADB_PORT) uv run coverage run -m pytest
 	uv run coverage report -m
 	uv run coverage html
 
@@ -17,4 +20,4 @@ check:
 	uv run mypy .
 
 run-tests:
-	uv run pytest tests/
+	NATS_PORT=$(NATS_PORT) MARIADB_PORT=$(MARIADB_PORT) uv run pytest tests/

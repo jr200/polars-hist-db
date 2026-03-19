@@ -288,7 +288,7 @@ class AuditOps:
             filters.append(tbl.c["data_source_ts"] <= asof_timestamp)
 
         latest_log_sql = (
-            select(tbl).where(and_(*filters)).order_by(tbl.c["data_source_ts"].desc())
+            select(tbl).where(and_(True, *filters)).order_by(tbl.c["data_source_ts"].desc())
         )
 
         latest_log = (

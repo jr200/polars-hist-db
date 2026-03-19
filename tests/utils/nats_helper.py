@@ -14,6 +14,8 @@ from tests.utils.dsv_helper import _tests_dir
 
 LOGGER = logging.getLogger(__name__)
 
+NATS_PORT = os.environ.get("NATS_PORT", "14222")
+
 
 async def publish_dataframe_messages(
     js: JetStreamContext,
@@ -48,7 +50,7 @@ def create_nats_server():
     # Start NATS server with JetStream enabled
     conf_file = os.path.join(_tests_dir(), "nats-server.conf")
     server = subprocess.Popen(
-        ["nats-server", "-c", conf_file],
+        ["nats-server", "-c", conf_file, "-p", NATS_PORT],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         preexec_fn=os.setsid,  # This ensures we can kill the entire process group
@@ -97,7 +99,7 @@ async def create_nats_core_client():
     nc = NATS()
 
     try:
-        await nc.connect("nats://localhost:4112")
+        await nc.connect(f"nats://localhost:{NATS_PORT}")
         yield nc
     finally:
         await nc.close()

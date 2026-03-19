@@ -1,9 +1,9 @@
-name: build-python-wheel-pure
+name: build-uv-python-wheel-pure
 
 on:
   repository_dispatch:
     types:
-      - dispatch-build-python-wheel-pure
+      - dispatch-build-uv-python-wheel-pure
 
   workflow_dispatch:
     inputs:
@@ -47,7 +47,7 @@ jobs:
           cat <<EOF > old_payload.json
           ${{ toJson(github.event.client_payload) }}
           EOF
-          
+
           cat old_payload.json | jq '. + {"pywheel_run_id": "${{ github.run_id }}"}' > new_payload.json
           echo "payload=$(cat new_payload.json | jq -c '.')" >> $GITHUB_OUTPUT
 
@@ -56,5 +56,5 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: dispatch-build-sphinx-docs
+          event-type: dispatch-build-quarto-docs
           client-payload: ${{ steps.prepare_payload.outputs.payload }}

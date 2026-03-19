@@ -1,8 +1,15 @@
 from unittest.mock import patch, MagicMock
-from polars_hist_db.config.engine import DbEngineConfig, SslConfig
+import pytest
+from polars_hist_db.config.engine import DbEngineConfig, SslConfig, _engine_cache
 
 
 class TestDbEngineConfig:
+    @pytest.fixture(autouse=True)
+    def clear_engine_cache(self):
+        _engine_cache.clear()
+        yield
+        _engine_cache.clear()
+
     def test_basic_config(self):
         config = DbEngineConfig(hostname="localhost")
         assert config.hostname == "localhost"

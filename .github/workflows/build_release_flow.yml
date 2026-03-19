@@ -15,7 +15,7 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: dispatch-build-python-wheel-pure
+          event-type: dispatch-build-uv-python-wheel-pure
           client-payload: |-
             {
               "ref": "${{ github.ref }}",

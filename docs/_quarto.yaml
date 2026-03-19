@@ -1,0 +1,55 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Polars Hist DB"
+  description: "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
+  repo-url: https://github.com/jr200/polars-hist-db
+  repo-actions: [source, issue]
+  navbar:
+    title: "Polars Hist DB"
+    left:
+    - href: index.qmd
+      text: Overview
+    - href: configuration.qmd
+      text: Configuration
+    - href: api.qmd
+      text: API Reference
+    right:
+    - text: GitHub
+      icon: github
+      href: https://github.com/jr200/polars-hist-db
+
+  sidebar:
+    style: floating
+    background: light
+    contents:
+    - section: index.qmd
+      contents:
+      - configuration.qmd
+      - api.qmd
+      - examples.qmd
+
+  page-footer:
+    left: "[polars-hist-db](https://github.com/jr200/polars-hist-db)"
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    grid:
+      sidebar-width: 240px
+      body-width: 1200px
+      margin-width: 260px
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+    link-external-newwindow: true
+    number-sections: false
+
+highlight-style: a11y
+
+execute:
+  enabled: false

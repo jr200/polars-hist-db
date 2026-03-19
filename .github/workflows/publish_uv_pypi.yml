@@ -1,9 +1,9 @@
-name: publish-pypi
+name: publish-uv-pypi
 
 on:
   repository_dispatch:
     types:
-      - dispatch-publish-pypi
+      - dispatch-publish-uv-pypi
 
   workflow_dispatch:
     inputs:
@@ -40,25 +40,3 @@ jobs:
       publish-args: ${{ fromJson(needs.configure.outputs.context).publish-args }}
     secrets:
       pypi_api_token: ${{ secrets.PYPI_API_TOKEN }}
-
-
-  spawn-workflow:
-    needs: main
-    runs-on: ubuntu-latest
-    steps:
-      - id: prepare_payload
-        run: |
-          cat <<EOF > old_payload.json
-          ${{ toJson(github.event.client_payload) }}
-          EOF
-          
-          cat old_payload.json | jq '. + {"pypi_run_id": "${{ github.run_id }}"}' > new_payload.json
-          echo "payload=$(cat new_payload.json | jq -c '.')" >> $GITHUB_OUTPUT
-
-      - name: dispatch-next-workflow
-        uses: peter-evans/repository-dispatch@v3
-        if: github.event_name != 'workflow_dispatch'
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: dispatch-publish-release
-          client-payload: ${{ steps.prepare_payload.outputs.payload }}

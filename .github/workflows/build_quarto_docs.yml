@@ -1,9 +1,9 @@
-name: build-sphinx-docs
+name: build-quarto-docs
 
 on:
   repository_dispatch:
     types:
-      - dispatch-build-sphinx-docs
+      - dispatch-build-quarto-docs
 
   workflow_dispatch:
     inputs:
@@ -12,7 +12,7 @@ on:
         required: false
         type: string
         default: dummy
-      
+
 
 jobs:
   configure:
@@ -23,7 +23,7 @@ jobs:
 
   main:
     needs: configure
-    uses: jr200/github-action-templates/.github/workflows/build_uv_sphinx_docs.yml@main
+    uses: jr200/github-action-templates/.github/workflows/build_quarto_docs.yml@main
 
   spawn-workflow:
     needs: main
@@ -34,8 +34,8 @@ jobs:
           cat <<EOF > old_payload.json
           ${{ toJson(github.event.client_payload) }}
           EOF
-          
-          cat old_payload.json | jq '. + {"sphinx_run_id": "${{ github.run_id }}"}' > new_payload.json
+
+          cat old_payload.json | jq '. + {"quarto_run_id": "${{ github.run_id }}"}' > new_payload.json
           echo "payload=$(cat new_payload.json | jq -c '.')" >> $GITHUB_OUTPUT
 
       - name: dispatch-next-workflow
@@ -43,6 +43,5 @@ jobs:
         if: github.event_name != 'workflow_dispatch'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: dispatch-publish-pypi
+          event-type: dispatch-publish-uv-pypi
           client-payload: ${{ steps.prepare_payload.outputs.payload }}
-

@@ -10,7 +10,7 @@ services:
     volumes:
       - test_mariadb_vol:/var/lib/mysql
     ports:
-      - "127.0.0.1:3307:3306"
+      - "127.0.0.1:${MARIADB_PORT:-13307}:3306"
 
 volumes:
   test_mariadb_vol: {}

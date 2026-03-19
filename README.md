@@ -1,72 +1,37 @@
 # polars-hist-db
 
-This library is for scraping data from CSV style files, temporally, into MariaDB.
+A Python library for building bitemporal data pipelines with [Polars](https://pola.rs/) and [MariaDB](https://mariadb.com/).
 
-Main features are:
-- Uploading data from strongly-typed Polars DataFrames.
-- Querying data into Polars DataFrames, with column types inferred from the database schema.
-- A scrape specification that:
-    - Defines pipelines for typing, enriching, and normalizing data before uploading.
-    - Allows construction of the 'as-of' time from file attributes or as a function of the input columns.
-    - Catalogs the history of scrape inputs to prevent duplication.
-    - Supports per-file transactional scraping (either the processing for a file succeeds, or the transaction is rolled back).
+It ingests data from DSV files or [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) subjects, tracks history using MariaDB's system-versioned tables, and exposes everything as strongly-typed Polars DataFrames.
 
-## Development Setup
+### Features
 
-1. Install NATS server
+- **Typed uploads** — push Polars DataFrames into MariaDB with automatic type mapping between Polars, SQL, and SQLAlchemy.
+- **Typed queries** — read tables back into DataFrames with column types inferred from the database schema. Temporal query hints (`asof`, `span`, `all`) let you slice history without writing SQL.
+- **YAML-driven pipelines** — define scrape specifications that handle column typing, enrichment via custom transform functions, normalization across tables, and foreign-key deduction.
+- **Deduplication** — an audit log tracks what has already been ingested so re-runs skip previously processed files or messages.
+- **Transactional ingestion** — each file or message is processed in its own transaction; failures roll back cleanly without affecting other items.
+- **Dual input sources** — crawl directories for DSV files, or consume messages from NATS JetStream with configurable fetch/subscription strategies.
+- **Delta upserts** — staging tables detect changed rows, handle duplicates (`take_first`, `take_last`, `error`), and optionally mark disappeared rows as dropped.
+
+Full documentation: [jr200.github.io/polars-hist-db](https://jr200.github.io/polars-hist-db)
+
+## Quick Start
+
 ```bash
-brew install nats-server
+uv sync
+make test
 ```
 
-1. Create a virtual environment:
+## Development
+
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+make check       # ruff + mypy
+make docs        # render and preview quarto docs
+make bump PART=patch
+make release
 ```
-
-2. Install development dependencies:
-```bash
-poetry install --with dev
-```
-
-3. Run tests:
-```bash
-poetry run pytest
-```
-
-4. Make docs. The documentation will be generated in the ``docs/_build/html`` directory:
-```bash
-cd docs && poetry run make html
-```
-
-## Code Style
-
-This project follows the following code style guidelines:
-
-* Use type hints for all function parameters and return values
-* Follow PEP 8 style guide
-* Use Google-style docstrings
-* Keep functions focused and single-purpose
-* Write comprehensive tests for new features
-
-Run ``make check`` to check the code style.
-
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
 
 ## License
 
-This project is licensed under the terms specified in the LICENSE file.
-
-## References
-
-- [Polars Documentation](https://docs.pola.rs/api/python/stable/reference/index.html)
-- [SQLAlchemy Core Documentation](https://docs.sqlalchemy.org/en/20/core/index.html)
-- [MariaDB Bitemporal Tables](https://mariadb.com/kb/en/bitemporal-tables)
-
+This project is licensed under the [MIT](LICENSE) license.

@@ -1,0 +1,8 @@
+---
+title: "Examples"
+---
+
+This section contains example notebooks demonstrating how to use polars-hist-db.
+
+- [Basic Example](examples/basic_example.ipynb)
+- [Dataset Example](examples/dataset_example.ipynb)

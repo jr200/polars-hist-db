@@ -23,7 +23,7 @@ jobs:
 
   main:
     needs: configure
-    uses: jr200/github-action-templates/.github/workflows/build_sphinx_docs.yml@main
+    uses: jr200/github-action-templates/.github/workflows/build_uv_sphinx_docs.yml@main
 
   spawn-workflow:
     needs: main

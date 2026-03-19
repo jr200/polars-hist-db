@@ -1,5 +1,5 @@
-from dataclasses import dataclass, asdict
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Union
 
 from sqlalchemy import Engine
 from sqlalchemy import create_engine
@@ -12,6 +12,9 @@ class SslConfig:
     ssl_key: Optional[str] = None
 
 
+_engine_cache: Dict[int, Engine] = {}
+
+
 @dataclass
 class DbEngineConfig:
     hostname: str
@@ -19,14 +22,48 @@ class DbEngineConfig:
     port: int = 3306
     username: Optional[str] = None
     password: Optional[str] = None
-    ssl_config: Optional[Dict[str, Any]] = None
+    ssl_config: Union[Dict[str, Any], SslConfig, None] = None
+    pool_size: int = 3
+    max_overflow: int = 2
 
     def __post_init__(self):
         if isinstance(self.ssl_config, dict):
-            self.ssl_config = SslConfig(**self.ssl_config)
+            ssl_dict = self.ssl_config
+            self.ssl_config = SslConfig(
+                ssl_ca=ssl_dict["ssl_ca"],
+                ssl_cert=ssl_dict.get("ssl_cert"),
+                ssl_key=ssl_dict.get("ssl_key"),
+            )
 
     def get_engine(self) -> Engine:
-        return _make_engine(**asdict(self))
+        key = id(self)
+        if key not in _engine_cache:
+            kwargs = {
+                "backend": self.backend,
+                "hostname": self.hostname,
+                "port": self.port,
+                "username": self.username,
+                "password": self.password,
+                "ssl_config": self.ssl_config,
+                "pool_size": self.pool_size,
+                "max_overflow": self.max_overflow,
+            }
+            # Convert SslConfig back to dict for the engine builder
+            if isinstance(kwargs["ssl_config"], SslConfig):
+                sc = kwargs["ssl_config"]
+                kwargs["ssl_config"] = {
+                    "ssl_ca": sc.ssl_ca,
+                    "ssl_cert": sc.ssl_cert,
+                    "ssl_key": sc.ssl_key,
+                }
+            _engine_cache[key] = _make_engine(**kwargs)
+        return _engine_cache[key]
+
+    def dispose(self) -> None:
+        key = id(self)
+        if key in _engine_cache:
+            _engine_cache[key].dispose()
+            del _engine_cache[key]
 
 
 def _make_engine(**kwargs) -> Engine:

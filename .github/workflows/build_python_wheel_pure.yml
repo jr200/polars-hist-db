@@ -32,7 +32,7 @@ jobs:
 
   main:
     needs: configure
-    uses: jr200/github-action-templates/.github/workflows/build_python_wheel_pure.yml@main
+    uses: jr200/github-action-templates/.github/workflows/build_uv_python_wheel_pure.yml@main
     with:
       checkout-ref: ${{ fromJson(needs.configure.outputs.context).checkout-ref }}
       artifact_glob: ${{ fromJson(needs.configure.outputs.context).artifact_glob }}

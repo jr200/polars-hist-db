@@ -1,54 +1,54 @@
-[tool.poetry]
+[project]
 name = "polars-hist-db"
-version = "0.8.25"
+version = "0.8.26"
 description = "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
-authors = ["jr200 <jayshan+git@gmail.com>"]
-repository = "https://github.com/jr200/polars-hist-db"
+authors = [{ name = "jr200", email = "jayshan+git@gmail.com" }]
 readme = "README.md"
-packages = [
-    { include = "polars_hist_db" }
+requires-python = ">=3.12,<4.0"
+
+dependencies = [
+    "nats-py>=2.12.0",
+    "pandas>=2.3.3",
+    "polars[sqlalchemy]>=1.35.2",
+    "pyarrow>=22.0.0",
+    "pymysql>=1.1.2",
+    "pytz>=2025.2",
+    "pyyaml>=6.0.3",
+    "scandir-rs==2.8.0",
+    "sql-metadata>=2.18.0",
+    "sqlalchemy[asyncio]>=2.0.44",
 ]
 
-[tool.poetry.scripts]
+[project.optional-dependencies]
+sqlalchemy = ["polars[sqlalchemy]"]
+nats = ["nats-py"]
+
+[project.scripts]
 scrape-dataset = "polars_hist_db.scripts.scrape_dataset:main"
 drop-dataset-tables = "polars_hist_db.scripts.drop_dataset_tables:main"
 
+[project.urls]
+Repository = "https://github.com/jr200/polars-hist-db"
 
-[tool.poetry.dependencies]
-python = ">=3.12,<4.0"
-nats-py = "^2.12.0"
-pandas = "^2.3.3"
-polars = { version="^1.35.2", extras=["sqlachemy"] }
-pyarrow = "^22.0.0"
-pymysql = "^1.1.2"
-pytz = "^2025.2"
-pyyaml = "^6.0.3"
-scandir-rs = "2.8.0"
-sql-metadata = "^2.18.0"
-sqlalchemy = { version = "^2.0.44", extras = ["asyncio"] }
-
-[tool.poetry.extras]
-sqlachemy = ["polars"]
-nats = ["nats-py"]
-
-[tool.poetry.group.dev.dependencies]
-coverage = "^7.12.0"
-ipykernel = "^7.1.0"
-mypy = "^1.18.2"
-myst-parser = "^4.0.1"
-nbsphinx-link = "^1.3.1"
-pytest = "^9.0.1"
-pytest-asyncio = "^1.3.0"
-ruff = "^0.11.9"
-sphinx = "^8.2.3"
-sphinx-autodoc-typehints = "^3.2.0"
-sphinx-copybutton = "^0.5.2"
-sphinx-rtd-theme = "^3.0.2"
-types-python-dateutil = "^2.9.0.20250822"
-types-pytz = "^2025.2.0.20250326"
-types-pyyaml = "^6.0.12.20250822"
-pyarrow-stubs = "^20.0.0.20251107"
-
+[dependency-groups]
+dev = [
+    "coverage>=7.12.0",
+    "ipykernel>=7.1.0",
+    "mypy>=1.18.2",
+    "myst-parser>=4.0.1",
+    "nbsphinx-link>=1.3.1",
+    "pytest>=9.0.1",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.11.9",
+    "sphinx>=8.2.3",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-rtd-theme>=3.0.2",
+    "types-python-dateutil>=2.9.0.20250822",
+    "types-pytz>=2025.2.0.20250326",
+    "types-pyyaml>=6.0.12.20250822",
+    "pyarrow-stubs>=20.0.0.20251107",
+]
 
 [tool.setuptools.package-data]
 "polars_hist_db" = ["py.typed"]
@@ -66,5 +66,5 @@ testpaths = [
 ]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

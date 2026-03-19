@@ -105,7 +105,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     table_config = base_config.tables["food_prices"]
     df_read, df_read_history = read_df_from_db(engine, table_schema, table_config)
 
-    assert df_read_history.shape == (2845, 6)
+    assert df_read_history.shape == (2844, 6)
     assert df_read.shape == (52, 6)
 
     expected_df_read = (

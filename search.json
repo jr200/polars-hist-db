@@ -1,0 +1,289 @@
+[
+  {
+    "objectID": "api.html",
+    "href": "api.html",
+    "title": "API Reference",
+    "section": "",
+    "text": "Top-level package. Enables Polars string cache on import.\n\nenable_debug_mode() — enables debug mode for Polars dataframe display",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#polars_hist_db",
+    "href": "api.html#polars_hist_db",
+    "title": "API Reference",
+    "section": "",
+    "text": "Top-level package. Enables Polars string cache on import.\n\nenable_debug_mode() — enables debug mode for Polars dataframe display",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#configuration-polars_hist_db.config",
+    "href": "api.html#configuration-polars_hist_db.config",
+    "title": "API Reference",
+    "section": "Configuration (polars_hist_db.config)",
+    "text": "Configuration (polars_hist_db.config)\nObjects to access the configuration structure instantiated from YAML.\n\nPolarsHistDbConfig\nRoot configuration object.\nPolarsHistDbConfig.from_yaml(\n    filename: str,\n    table_configs_path: str = \"table_configs\",\n    datasets_path: str = \"datasets\",\n    db_config_path: str = \"db\",\n) -&gt; PolarsHistDbConfig\n\n\n\nAttribute\nType\nDescription\n\n\n\n\ntables\nTableConfigs\nCollection of table configurations\n\n\ndb_config\nDbEngineConfig\nDatabase connection settings\n\n\ndatasets\nDatasetsConfig\nDataset definitions\n\n\n\n\n\nDbEngineConfig\nDatabase connection and engine settings.\n\n\n\nField\nType\nDefault\nDescription\n\n\n\n\nhostname\nstr\n—\nDatabase host\n\n\nbackend\nstr\n\"mariadb\"\nDatabase backend\n\n\nport\nint\n3306\nConnection port\n\n\nusername\nstr\n—\nDatabase user\n\n\npassword\nstr\n—\nDatabase password\n\n\nssl_config\nSslConfig\nNone\nOptional SSL configuration\n\n\npool_size\nint\n3\nConnection pool size\n\n\nmax_overflow\nint\n2\nMax overflow connections\n\n\n\n\nget_engine() -&gt; Engine — returns a cached SQLAlchemy engine\ndispose() — disposes the cached engine\n\n\n\nTableConfig\nDefines a single database table.\n\n\n\n\n\n\n\n\n\nField\nType\nDefault\nDescription\n\n\n\n\nname\nstr\n—\nTable name\n\n\nschema\nstr\n—\nDatabase schema\n\n\ncolumns\nList[TableColumnConfig]\n—\nColumn definitions\n\n\nprimary_keys\nList[str]\n—\nPrimary key columns\n\n\nforeign_keys\nList[ForeignKeyConfig]\n[]\nForeign key constraints\n\n\nis_temporal\nbool\nFalse\nWhether table uses system versioning\n\n\nforbid_drop_table\nbool\nFalse\nPrevent table drops\n\n\n\n\nfrom_yaml(file_path: str) -&gt; TableConfig\nfrom_dataframe(df, table_schema, table_name, primary_keys, default_categorical_length) -&gt; TableConfig\ncolumns_df() -&gt; pl.DataFrame\ntable_names() -&gt; List[str]\ndtypes() -&gt; Mapping[str, pl.DataType]\nbuild_sqlalchemy_columns(is_delta_table: bool) -&gt; List[Column]\nto_df() -&gt; pl.DataFrame\n\n\n\nTableColumnConfig\nDefines a single column.\n\n\n\nField\nType\nDefault\nDescription\n\n\n\n\ntable\nstr\n—\nOwning table name\n\n\nname\nstr\n—\nColumn name\n\n\ndata_type\nstr\n—\nSQL data type\n\n\ndefault_value\nstr\nNone\nDefault value\n\n\nautoincrement\nbool\nFalse\nAuto-increment\n\n\nnullable\nbool\nTrue\nAllow nulls\n\n\nunique_constraint\nList[str]\n[]\nUnique constraints\n\n\n\n\n\nTableConfigs\nCollection of TableConfig objects.\n\n__getitem__(name: str) -&gt; TableConfig — lookup by table name\nnames() -&gt; List[str]\nschemas() -&gt; List[str]\nfrom_yamls(*file_path: str) -&gt; TableConfigs\n\n\n\nDatasetConfig\nDefines a data source and its ingestion pipeline.\n\n\n\n\n\n\n\n\n\nField\nType\nDefault\nDescription\n\n\n\n\nname\nstr\n—\nDataset name\n\n\ndelta_table_schema\nstr\n—\nTarget schema\n\n\ninput_config\nInputConfig\n—\nInput source configuration\n\n\npipeline\nPipeline\n—\nIngestion pipeline definition\n\n\nscrape_limit\nint\n-1\nMax items to scrape (-1 = unlimited)\n\n\ntime_partition\nTimePartition\nNone\nOptional time partitioning\n\n\nnull_values\nSequence[str]\nNone\nStrings treated as null\n\n\ndelta_config\nDeltaConfig\n—\nDelta/upsert behaviour\n\n\n\n\n\nDeltaConfig\nControls temporal upsert behaviour.\n\n\n\n\n\n\n\n\n\nField\nType\nDefault\nDescription\n\n\n\n\ndrop_unchanged_rows\nbool\nFalse\nSkip rows that haven’t changed\n\n\non_duplicate_key\nLiteral[\"error\", \"take_last\", \"take_first\"]\n\"error\"\nDuplicate handling strategy\n\n\nprefill_nulls_with_default\nbool\nFalse\nFill nulls with defaults\n\n\nrow_finality\nLiteral[\"disabled\", \"dropout\", \"manual\"]\n\"disabled\"\nHandling of disappeared rows\n\n\nis_temporary_table\nbool\nTrue\nUse temporary staging table\n\n\n\n\n\nTransformFnRegistry\nSingleton registry for column transformation functions.\n\nregister_function(name: str, fn: TransformFnSignature, allow_overwrite: bool = False)\ndelete_function(name: str)\ncall_function(name: str, df: pl.DataFrame, result_col: str, args: List[Any]) -&gt; pl.DataFrame\nlist_functions() -&gt; List[str]\n\nBuilt-in transforms: null_if_gte, apply_type_casts, combine_columns, map_to_true, parse_date\nTransformFnSignature = Callable[[pl.DataFrame, str, List[Any]], pl.DataFrame]\n\n\nIngestFnRegistry\nSingleton registry for ingestion functions.\n\nregister_function(name: str, fn: IngestFnSignature, allow_overwrite: bool = False)\ndelete_function(name: str)\ncall_function(payload: Any, ts: datetime, name: str, args: Dict[str, Any]) -&gt; pl.DataFrame\nlist_functions() -&gt; List[str]\n\nIngestFnSignature = Callable[[Any, datetime, Dict[str, Any]], pl.DataFrame]\n\n\nInput Sources\nInput configuration is polymorphic via InputConfig.from_dict(config).\nDsvCrawlerInputConfig — file-based ingestion via search paths.\nJetStreamInputConfig — NATS JetStream ingestion with fields:\n\njetstream: JetStreamConfig\nnats: NatsConfig\npayload_ingest: JetstreamIngestConfig\nrun_until: Literal[\"empty\", \"forever\"]",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#core-operations-polars_hist_db.core",
+    "href": "api.html#core-operations-polars_hist_db.core",
+    "title": "API Reference",
+    "section": "Core Operations (polars_hist_db.core)",
+    "text": "Core Operations (polars_hist_db.core)\n\nDbOps\nLow-level database operations.\nDbOps(connection: Connection)\n\ndb_create(table_schema: str) — create schema if not exists\nexecute_sqlalchemy(description, statement, parameters=None, disable_foreign_key_checks=False, disable_keys=None) -&gt; CursorResult\nget_all_variables(filter: str = None) -&gt; pl.DataFrame\nget_system_versioning_time() -&gt; datetime\nset_system_versioning_time(t: datetime | None)\nenable_engine_logging(level: int) — static\n\n\n\nTableOps\nTable-level metadata and operations.\nTableOps(table_schema: str, table_name: str, connection: Connection)\n\nenable_system_versioning(partition_interval: str = \"1 YEAR\")\nget_table_metadata(autoload_metadata: bool = True) -&gt; Table\nrow_count() -&gt; int\nget_column_intersection(column_selection: Sequence[str] | None) -&gt; ColumnCollection\nhas_all_columns(search_col_names: Sequence[str]) -&gt; bool\nget_primary_keys(tbl, remap={}, include_temporal=False) -&gt; Sequence[Column]\nis_temporal_table() -&gt; bool\ntable_exists() -&gt; bool\n\n\n\nDataframeOps\nDataFrame ↔︎ database transfer operations.\nDataframeOps(connection: Connection)\n\nfrom_table(table_schema, table_name, time_hint=None) -&gt; pl.DataFrame\nfrom_selectable(query, schema_overrides=None) -&gt; pl.DataFrame\nfrom_raw_sql(query: str, schema_overrides=None) -&gt; pl.DataFrame\ntable_create(table_schema, table_name, df, primary_keys, tbl_for_types=None, is_temporary_table=False)\ntable_insert(df, table_schema, table_name, uniqueness_col_set, prefill_nulls_with_default, clear_table_first=False) -&gt; int\ntable_update(df, table_schema, table_name, primary_keys_override=None)\ntable_upsert_temporal(df, table_schema, table_name, delta_config, update_time=None, src_tgt_colname_map={})\ntable_query(table_schema, table_name, query_df, column_selection, time_hint=TimeHint(mode=\"none\")) -&gt; pl.DataFrame\ntable_delete_rows(df, table_schema, table_name) -&gt; int\ntable_delete_rows_temporal(df, table_schema, table_name, update_time=None) -&gt; int\nfill_nulls_with_defaults(df, default_values) -&gt; pl.DataFrame — static\n\n\n\nDeltaTableOps\nManages staging (delta) tables for temporal upserts.\nDeltaTableOps(table_schema: str, table_name: str, delta_config: DeltaConfig, connection: Connection)\n\ntable_config(column_definitions: List[TableColumnConfig]) -&gt; TableConfig\nupsert(target_table, update_time=None, is_main_table=True, source_columns=None, src_tgt_colname_map={}) -&gt; Tuple[int, int, int]\n\n\n\nTableConfigOps\nCreates and introspects database tables from configuration.\nTableConfigOps(connection: Connection)\n\ncreate_all(tcs: TableConfigs)\ncreate(table_config, column_selection=None, is_delta_table=False, is_temporary_table=False) -&gt; Table\nfrom_table(table_schema: str, table_name: str) -&gt; TableConfig\n\n\n\nTimeHint\nConstructs temporal query hints for system-versioned tables.\n\n\n\n\n\n\n\n\n\nField\nType\nDefault\nDescription\n\n\n\n\nmode\nLiteral[\"none\", \"all\", \"asof\", \"span\"]\n\"none\"\nQuery mode\n\n\nall\nbool\nFalse\nInclude all historical rows\n\n\nasof_utc\ndatetime\nNone\nPoint-in-time query\n\n\nhistory_span\ntimedelta\nNone\nHistory window\n\n\n\n\nbuild() -&gt; str | None — build SQL time hint clause\napply(query: Select, tbl) -&gt; Select — apply hint to a query\n\n\n\nAuditOps\nTracks data source ingestion for deduplication.\nAuditOps(schema: str)\n\ncreate(connection) -&gt; Table\ndrop(connection)\npurge(target_table_name, connection) -&gt; int\npurge_after_timestamp(target_table_name, timestamp, interval, connection) -&gt; int\nprevalidate_new_items(target_table_name, new_data_source_items, connection)\nfilter_items(data_source_items, data_source_col_name, data_source_ts_col_name, target_table_name, connection) -&gt; pl.DataFrame\nget_latest_entry(connection, asof_timestamp=None) -&gt; pl.DataFrame\nrecord_entry(target_table_name, data_source, data_source_type, data_source_ts, connection)\n\n\n\nAuditLogTracker\nSingleton that tracks table update timestamps.\n\nupdate_last_known_update(table_key: str, timestamp: datetime)\nset_table_update_callback(cb: TableUpdateCallback)\nclear_updates()\nasync check_for_updates(epoch_ms, schemas, connection)",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#dataset-polars_hist_db.dataset",
+    "href": "api.html#dataset-polars_hist_db.dataset",
+    "title": "API Reference",
+    "section": "Dataset (polars_hist_db.dataset)",
+    "text": "Dataset (polars_hist_db.dataset)\nasync run_datasets(\n    config: PolarsHistDbConfig,\n    engine: Engine,\n    dataset_name: str | None = None,\n    debug_capture_output: List[Tuple[datetime, pl.DataFrame]] | None = None,\n)\nRuns the ingestion pipeline for all (or a named) dataset.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#data-loading-polars_hist_db.loaders",
+    "href": "api.html#data-loading-polars_hist_db.loaders",
+    "title": "API Reference",
+    "section": "Data Loading (polars_hist_db.loaders)",
+    "text": "Data Loading (polars_hist_db.loaders)\n\nload_typed_dsv\nload_typed_dsv(\n    file_or_bytes: Path | bytes,\n    column_configs: Sequence[IngestionColumnConfig],\n    schema_overrides: Mapping[str, pl.DataType] = {},\n    delimiter: str | None = None,\n    null_values: Sequence[str] | None = None,\n) -&gt; pl.DataFrame\nLoads a delimiter-separated file with typed columns and transformation support.\n\n\nfind_files\nfind_files(search_paths: pl.DataFrame) -&gt; pl.DataFrame\nSearches directories for matching files based on search path configuration.\n\n\nconvert_zipped_csvs_to_parquet\nconvert_zipped_csvs_to_parquet(\n    folder: str,\n    schema: Mapping[str, pl.DataType],\n    remove_original: bool,\n) -&gt; None\nConverts zipped CSV files to Parquet format.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#type-converters-polars_hist_db.types",
+    "href": "api.html#type-converters-polars_hist_db.types",
+    "title": "API Reference",
+    "section": "Type Converters (polars_hist_db.types)",
+    "text": "Type Converters (polars_hist_db.types)\n\nPolarsType\nConverts between SQL types and Polars DataType.\n\nfrom_sql(sql_type: str) -&gt; pl.DataType\nfrom_table(tbl: Table) -&gt; Mapping[str, str]\nget_dataframe_schema_from_sqltext(sql_statement, connection) -&gt; Dict[str, pl.DataType]\nget_dataframe_schema_from_selectable(selectable) -&gt; Dict[str, pl.DataType]\napply_dtype_to_column(df, col, target_type) -&gt; pl.DataFrame\napply_schema_to_dataframe(df, **schema_overrides) -&gt; pl.DataFrame\ncast_str_to_cat(df, ignore_cols=None) -&gt; pl.DataFrame\n\n\n\nSQLType\nConverts Polars types to SQL type strings.\n\nfrom_polars(pl_dtype: pl.DataType, default_varchar_length: int = 255) -&gt; str\n\n\n\nSQLAlchemyType\nConverts SQL type strings to SQLAlchemy types.\n\nfrom_sql(sql_type: str) -&gt; TypeEngine",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#utilities-polars_hist_db.utils",
+    "href": "api.html#utilities-polars_hist_db.utils",
+    "title": "API Reference",
+    "section": "Utilities (polars_hist_db.utils)",
+    "text": "Utilities (polars_hist_db.utils)\n\nClock — singleton for tracking operation timings and ETAs\ncompare_dataframes(lhs, rhs, on, cmp_cols=None, suffixes=(\"_lhs\", \"_rhs\", \"_diff\")) — diff two dataframes\nto_ipc_b64(df, compression=None) -&gt; bytes — serialize a dataframe to base64 IPC\nfrom_ipc_b64(payload, use_zlib=False) -&gt; pl.DataFrame — deserialize from base64 IPC\nrecursive_flatten(df) -&gt; pl.DataFrame — recursively flatten struct columns\nNonRetryableException — exception that should not be retried",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "api.html#cli-scripts",
+    "href": "api.html#cli-scripts",
+    "title": "API Reference",
+    "section": "CLI Scripts",
+    "text": "CLI Scripts\n\nscrape-dataset\nscrape-dataset --config &lt;config.yaml&gt; --dataset &lt;name&gt;\nRuns the ingestion pipeline for a dataset.\n\n\ndrop-dataset-tables\ndrop-dataset-tables --config &lt;config.yaml&gt; --dataset &lt;name&gt;\nDrops all tables associated with a dataset.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "API Reference"
+    ]
+  },
+  {
+    "objectID": "examples/dataset_example.html",
+    "href": "examples/dataset_example.html",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "",
+    "text": "This example assumes you have the test database up and running locally. From the root of the project run the command: make infra-up.\nfrom datetime import datetime\nimport logging\nfrom typing import Any, List\n\nimport polars as pl\n\nfrom polars_hist_db.config import Config\nfrom polars_hist_db.core import (\n    AuditOps,\n    DataframeOps,\n    TableConfigOps,\n    TimeHint,\n    make_engine,\n)\nfrom polars_hist_db.dataset import run_datasets\nfrom polars_hist_db.loaders import FunctionRegistry"
+  },
+  {
+    "objectID": "examples/dataset_example.html#initialise-configuration-and-logging",
+    "href": "examples/dataset_example.html#initialise-configuration-and-logging",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "Initialise Configuration and Logging",
+    "text": "Initialise Configuration and Logging\nThis example uses configuration and data used in the test suite.\n\nconfig_path = \"../tests/_testdata_dataset_configs/dataset_foodprices.yaml\"\ndata_path = \"../tests/_testdata_dataset_configs/foodprices_data.csv\"\n\nlogging.basicConfig(level=logging.INFO)\n\nconfig = Config.from_yaml(config_path)\n\n(Optionally) Print the config file to the console\n\nwith open(config_path, \"r\") as f:\n    print(f.read())"
+  },
+  {
+    "objectID": "examples/dataset_example.html#create-a-sqlalchemy-engine-to-connect-to-the-database",
+    "href": "examples/dataset_example.html#create-a-sqlalchemy-engine-to-connect-to-the-database",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "Create a SQLAlchemy Engine to connect to the database",
+    "text": "Create a SQLAlchemy Engine to connect to the database\n\nengine = make_engine(\n    backend=\"mariadb\",\n    hostname=\"127.0.0.1\",\n    port=3306,\n    username=\"root\",\n    password=\"admin\",\n)"
+  },
+  {
+    "objectID": "examples/dataset_example.html#register-a-custom-parser-function",
+    "href": "examples/dataset_example.html#register-a-custom-parser-function",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "Register a custom parser function",
+    "text": "Register a custom parser function\nThe food prices from the data soruce are given in Turkish TRY.\nFor some reason, the team only cares about the USD price. As per the dataset config, a yearly TRYUSD fx-rate is applied to the price column at scrape time, creating a derived price_usd column of type DECIMAL(10,4) in the database.\n\nregistry = FunctionRegistry()\n\n\ndef custom_try_to_usd(df: pl.DataFrame, args: List[Any]) -&gt; pl.DataFrame:\n    usdtry_fx_rates = pl.from_dict(\n        {\n            \"Year\": [\n                2010,\n                2011,\n                2012,\n                2013,\n                2014,\n                2015,\n                2016,\n                2017,\n                2018,\n                2019,\n                2020,\n                2021,\n                2022,\n                2023,\n            ],\n            \"fx_usdtry\": [\n                1.507,\n                1.674,\n                1.802,\n                1.915,\n                2.188,\n                2.724,\n                3.020,\n                3.646,\n                4.830,\n                5.680,\n                7.004,\n                8.886,\n                16.566,\n                23.085,\n            ],\n        }\n    )\n\n    col_result = args[0]\n    col_try = args[1]\n    col_year = args[2]\n    df = (\n        df.join(usdtry_fx_rates, left_on=col_year, right_on=\"Year\", how=\"left\")\n        .with_columns((pl.col(col_try) * 1 / pl.col(\"fx_usdtry\")).alias(col_result))\n        .drop(\"fx_usdtry\")\n    )\n\n    return df\n\n\nregistry.delete_function(\"try_to_usd\")\nregistry.register_function(\"try_to_usd\", custom_try_to_usd)\n\nprint(\"loaded functions\", registry.list_functions())"
+  },
+  {
+    "objectID": "examples/dataset_example.html#run-the-dataset",
+    "href": "examples/dataset_example.html#run-the-dataset",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "Run the dataset",
+    "text": "Run the dataset\nThis scrapes any new files into to the database.\n(Try running the function a second time…)\n\nrun_datasets(config, engine)"
+  },
+  {
+    "objectID": "examples/dataset_example.html#querying-the-temporal-tables",
+    "href": "examples/dataset_example.html#querying-the-temporal-tables",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "Querying the temporal tables",
+    "text": "Querying the temporal tables\nQuery the latest food prices.\n\nwith engine.begin() as connection:\n    latest_food_prices_df = DataframeOps(connection).from_table(\"test\", \"food_prices\")\n\nQuery all the food prices.\n\nwith engine.begin() as connection:\n    time_hint = TimeHint(mode=\"all\")\n    all_food_prices = DataframeOps(connection).from_table(\n        \"test\", \"food_prices\", time_hint\n    )\n\n\nall_food_prices\n\nQuery the food prices at a specific point in time. In this case 1-Jan-2015.\n\nwith engine.begin() as connection:\n    time_hint = TimeHint(mode=\"asof\", asof_utc=datetime(2015, 1, 1))\n    food_prices_at_2015_date = DataframeOps(connection).from_table(\n        \"test\", \"food_prices\", time_hint\n    )\n\n\nfood_prices_at_2015_date"
+  },
+  {
+    "objectID": "examples/dataset_example.html#delete-the-data-associated-with-the-dataset",
+    "href": "examples/dataset_example.html#delete-the-data-associated-with-the-dataset",
+    "title": "Turkish Food Prices Dataset Example",
+    "section": "Delete the data associated with the dataset",
+    "text": "Delete the data associated with the dataset\nReset the example. Subsequent attempts to upload the same data (or past data) into the database will fail.\n\nwith engine.begin() as connection:\n    TableConfigOps(connection).drop_all(config.tables)\n    AuditOps(config.tables.schemas()[0]).drop(connection)"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Polars Hist DB",
+    "section": "",
+    "text": "A Python library for building bitemporal data pipelines with Polars and MariaDB.\nIt ingests data from DSV files or NATS JetStream subjects, tracks history using MariaDB’s system-versioned tables, and exposes everything as strongly-typed Polars DataFrames.\n\n\n\nTyped uploads — push Polars DataFrames into MariaDB with automatic type mapping between Polars, SQL, and SQLAlchemy.\nTyped queries — read tables back into DataFrames with column types inferred from the database schema. Temporal query hints (asof, span, all) let you slice history without writing SQL.\nYAML-driven pipelines — define scrape specifications that handle column typing, enrichment via custom transform functions, normalization across tables, and foreign-key deduction.\nDeduplication — an audit log tracks what has already been ingested so re-runs skip previously processed files or messages.\nTransactional ingestion — each file or message is processed in its own transaction; failures roll back cleanly without affecting other items.\nDual input sources — crawl directories for DSV files, or consume messages from NATS JetStream with configurable fetch/subscription strategies.\nDelta upserts — staging tables detect changed rows, handle duplicates (take_first, take_last, error), and optionally mark disappeared rows as dropped.\n\nFull documentation: jr200.github.io/polars-hist-db\n\n\n\nuv sync\nmake test\n\n\n\nmake check       # ruff + mypy\nmake docs        # render and preview quarto docs\nmake bump PART=patch\nmake release\n\n\n\nThis project is licensed under the MIT license.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB"
+    ]
+  },
+  {
+    "objectID": "index.html#quick-start",
+    "href": "index.html#quick-start",
+    "title": "Polars Hist DB",
+    "section": "",
+    "text": "uv sync\nmake test",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB"
+    ]
+  },
+  {
+    "objectID": "index.html#development",
+    "href": "index.html#development",
+    "title": "Polars Hist DB",
+    "section": "",
+    "text": "make check       # ruff + mypy\nmake docs        # render and preview quarto docs\nmake bump PART=patch\nmake release",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB"
+    ]
+  },
+  {
+    "objectID": "index.html#license",
+    "href": "index.html#license",
+    "title": "Polars Hist DB",
+    "section": "",
+    "text": "This project is licensed under the MIT license.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB"
+    ]
+  },
+  {
+    "objectID": "examples.html",
+    "href": "examples.html",
+    "title": "Examples",
+    "section": "",
+    "text": "This section contains example notebooks demonstrating how to use polars-hist-db.\n\nBasic Example\nDataset Example",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "Examples"
+    ]
+  },
+  {
+    "objectID": "configuration.html",
+    "href": "configuration.html",
+    "title": "Configuration",
+    "section": "",
+    "text": "The components of a configuration file are:",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "Configuration"
+    ]
+  },
+  {
+    "objectID": "configuration.html#db",
+    "href": "configuration.html#db",
+    "title": "Configuration",
+    "section": "db",
+    "text": "db\nConnection details for the target database. Example:\ndb:\n  backend: mariadb\n  hostname: 127.0.0.1\n  port: 3306\n  username: root\n  password: admin",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "Configuration"
+    ]
+  },
+  {
+    "objectID": "configuration.html#table_configs",
+    "href": "configuration.html#table_configs",
+    "title": "Configuration",
+    "section": "table_configs",
+    "text": "table_configs\nA collection of tables that will be managed by this configuration. Example:\ntable_configs:\n- schema: test\n  name: simple_table\n  columns:\n  - id\n  - another_id\n  - [ col_double, col_varchar ]\n  primary_keys:\n  - id\n  foreign_keys:\n  - name: another_id\n    references:\n      table: another_table\n      column: id\n  is_temporal: true\n  delta_config:\n    drop_unchanged_rows: true\n    on_duplicate_key: take_last\n    prefill_nulls_with_default: false\n    row_finality: dropout\nThe main section defines usual properties of the table, including the name of the table, the column names, plus any primary and foreign keys.\nA flag is_temporal indicates whether the table uses system versioning. Uploading of temporal data is done in two parts. First the data is staged to a temporary table, allowing some computations to be done before modifying the target table. Specifically:\n\nrows can be dropped from the staged table if they have not changed, meaning the as-of date of the associated data would not be modified.\nsometimes within a single batch of data, multiple versions of the same row may be present. The primary_key defines how rows are tested for ‘equality’ and the on_duplicate_key option controls how duplicates are handled.\nthe row_finality option controls what happens when a row is no longer present in the data-batch.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "Configuration"
+    ]
+  },
+  {
+    "objectID": "configuration.html#column_definitions",
+    "href": "configuration.html#column_definitions",
+    "title": "Configuration",
+    "section": "column_definitions",
+    "text": "column_definitions\nA set of typed column definitions referenced by table_configs and datasets section of the files.\ncolumn_definitions:\n- { name: rating, data_type: INT, header: Rating, nullable: false, default_value: 0 }\n- {\n    name: price_usd,\n    data_type: 'DECIMAL(10,4)',\n    transforms: {\n        try_to_usd: [ 'Price', 'Year' ]\n    }\n  }\n- { name: month, data_type: VARCHAR(2), header: Month }\n- { name: year, data_type: INT, header: Year }\nEach column definition defines a column to be created in the staging table. This is either a mapping from a column in the source data file (called header when the name is different), or a derived column according to some user-defined transformation. An example of how to define a transformation is the price_usd column above, with full details given in the example notebook.",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "Configuration"
+    ]
+  },
+  {
+    "objectID": "configuration.html#datasets",
+    "href": "configuration.html#datasets",
+    "title": "Configuration",
+    "section": "datasets",
+    "text": "datasets\nThis is a set of data sources and pipelines, describing where to look for new data, and how to process it into the defined tables. Example:\ndatasets:\n- name: turkey_food_prices\n  delta_table_schema: test\n  scrape_limit: ~\n  search_paths:\n  - root_path: ../_testdata_dataset_data\n    file_include: ['turkey_food_prices.csv']\n    is_enabled: true\n    timestamp:\n        source_tz: Europe/London\n        method: mtime\n   - ...\n\n  pipeline:\n  - table: unit_info\n    columns:\n    - id&lt;um_id!\n    - name&lt;um_name!\n\n  - table: food_prices\n    type: primary\n    columns:\n    - product_id!\n    - um_id!\n    - price!\n    - price_usd!\nThe search_paths section defines where to find the data. The example above uses the timestamp.method of mtime to set the as-of date of the data.\nThe pipeline section contains a sequence of tasks that are run in order. The example above demonstrates two tasks:\nTask 1: Unit Info Table\nThis task populates the unit_info table:\n\nReads um_id and um_name columns from the staging table\nRenames them using &lt; operator:\n\num_id to id\num_name to name\n\nBoth columns are required (marked with !)\n\nTask 2: Food Prices Table\nThis task populates the food_prices table:\n\nReads product_id, um_id, price, and price_usd columns\nMaps directly to matching column names (no renaming needed)\nAll columns are required (marked with !)\nTable is marked as type: primary for system versioning\nNote: Currently only one primary task is allowed per pipeline",
+    "crumbs": [
+      "Overview",
+      "Polars Hist DB",
+      "Configuration"
+    ]
+  },
+  {
+    "objectID": "examples/basic_example.html",
+    "href": "examples/basic_example.html",
+    "title": "Basic Usage Example",
+    "section": "",
+    "text": "This example shows how to make an engine, and run a basic query.\n\nimport polars as pl\nfrom sqlalchemy import select, text\n\nfrom polars_hist_db.core import DataframeOps, TableOps, make_engine\n\n\nengine = make_engine(\n    backend=\"mariadb\",\n    hostname=\"127.0.0.1\",\n    port=3306,\n    username=\"root\",\n    password=\"admin\",\n)\n\n\nwith engine.begin() as connection:\n    tbl = TableOps(\"information_schema\", \"users\", connection).get_table_metadata()\n    query = select(tbl).limit(5)\n    df = DataframeOps(connection).from_selectable(\n        query, {\"PASSWORD_EXPIRATION_TIME\": pl.String}\n    )\n\nprint(df)\n\nshape: (5, 3)\n┌───────────────────────────┬─────────────────┬──────────────────────────┐\n│ USER                      ┆ PASSWORD_ERRORS ┆ PASSWORD_EXPIRATION_TIME │\n│ ---                       ┆ ---             ┆ ---                      │\n│ cat                       ┆ i64             ┆ str                      │\n╞═══════════════════════════╪═════════════════╪══════════════════════════╡\n│ 'admin'@'%'               ┆ 1               ┆ null                     │\n│ 'healthcheck'@'localhost' ┆ 0               ┆ null                     │\n│ 'healthcheck'@'::1'       ┆ 0               ┆ null                     │\n│ 'healthcheck'@'127.0.0.1' ┆ 0               ┆ null                     │\n│ 'mariadb.sys'@'localhost' ┆ 0               ┆ 0000-00-00 00:00:00      │\n└───────────────────────────┴─────────────────┴──────────────────────────┘\n\n\nAn equivalent command using only SQLAlchemy and Polars is below. Note type types of the columns.\n\nwith engine.begin() as connection:\n    res = connection.execute(text(\"select * from information_schema.users limit 5\"))\n    rows = res.fetchall()\n    df = pl.from_records(rows)\n\nprint(df)\n\nshape: (5, 3)\n┌───────────────────────────┬─────────────────┬──────────────────────────┐\n│ USER                      ┆ PASSWORD_ERRORS ┆ PASSWORD_EXPIRATION_TIME │\n│ ---                       ┆ ---             ┆ ---                      │\n│ str                       ┆ i64             ┆ str                      │\n╞═══════════════════════════╪═════════════════╪══════════════════════════╡\n│ 'admin'@'%'               ┆ 1               ┆ null                     │\n│ 'healthcheck'@'localhost' ┆ 0               ┆ null                     │\n│ 'healthcheck'@'::1'       ┆ 0               ┆ null                     │\n│ 'healthcheck'@'127.0.0.1' ┆ 0               ┆ null                     │\n│ 'mariadb.sys'@'localhost' ┆ 0               ┆ 0000-00-00 00:00:00      │\n└───────────────────────────┴─────────────────┴──────────────────────────┘"
+  },
+  {
+    "objectID": "examples/scratch.html",
+    "href": "examples/scratch.html",
+    "title": "Polars Hist DB",
+    "section": "",
+    "text": "import polars as pl\nfrom sqlalchemy import select, text\n\nfrom polars_hist_db.core import DataframeOps, TableOps, make_engine\n\n\nengine = make_engine(\n    backend=\"mariadb\",\n    hostname=\"127.0.0.1\",\n    port=3306,\n    username=\"root\",\n    password=\"admin\",\n)\n\n\nwith engine.begin() as connection:\n    res = connection.execute(text(\"select * from information_schema.users\"))\n    rows = res.fetchall()\n\npl.from_records(rows)\n\n\nwith engine.begin() as connection:\n    tbl = TableOps(\"information_schema\", \"users\", connection).get_table_metadata()\n    query = select(tbl).limit(5)\n    df = DataframeOps(connection).from_selectable(\n        query, {\"PASSWORD_EXPIRATION_TIME\": pl.String}\n    )\n\n\nprint(df)"
+  }
+]

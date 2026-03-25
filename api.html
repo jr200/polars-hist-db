@@ -1,156 +1,1535 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="./">
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API Reference &mdash; Polars Hist DB 0.3.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
-      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
 
-  
-      <script src="_static/jquery.js?v=5d32c60e"></script>
-      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e259d695"></script>
-      <script src="_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="_static/clipboard.min.js?v=a7894cd8"></script>
-      <script src="_static/copybutton.js?v=f281be69"></script>
-      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Turkish Food Prices Dataset Example" href="examples/dataset_example.html" /> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>API Reference – Polars Hist DB</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-975e726794ce811e14261b5ab5acfd7c.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-3ff4805f19b0085abba01199065d0a21.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-975e726794ce811e14261b5ab5acfd7c.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-2c36bbfce53f1956e603474fb553de04.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-0fed5b6f2aa4df13d4def28b77c6b35e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-2c36bbfce53f1956e603474fb553de04.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
 </head>
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+<body class="nav-sidebar floating nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
 
-          
-          
-          <a href="index.html" class="icon icon-home">
-            Polars Hist DB
-          </a>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Polars Hist DB</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="./index.html" aria-current="page"> 
+<span class="menu-text">Overview</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./configuration.html"> 
+<span class="menu-text">Configuration</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./api.html"> 
+<span class="menu-text">API Reference</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="https://github.com/jr200/polars-hist-db"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text">GitHub</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
 </div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="readme.html">README</a></li>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#configuration-management">Configuration Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#core-operations">Core Operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dataset-management">Dataset Management</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#data-loading">Data Loading</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#type-helpers">Type Helpers</a></li>
-</ul>
-</li>
-</ul>
-
-        </div>
-      </div>
+      </div> <!-- /container-fluid -->
     </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">Polars Hist DB</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-          <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">API Reference</li>
-      <li class="wy-breadcrumbs-aside">
-            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
-      </li>
-  </ul>
-  <hr/>
-</div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
-  <section id="api-reference">
-<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading"></a></h1>
-<section id="configuration-management">
-<h2>Configuration Management<a class="headerlink" href="#configuration-management" title="Link to this heading"></a></h2>
-<p>This section contains objects to access the configuration structure instantiated from YAML.</p>
-</section>
-<section id="core-operations">
-<h2>Core Operations<a class="headerlink" href="#core-operations" title="Link to this heading"></a></h2>
-<p>The core module contains the operations that interface between polars and the database. It provides:</p>
-<ul class="simple">
-<li><p>Database operations (DbOps)</p></li>
-<li><p>Table operations and management (TableOps, DeltaTableOps)</p></li>
-<li><p>Dataframe operations (DataframeOps)</p></li>
-<li><p>Audit fo data inputs functionality (AuditOps)</p></li>
-<li><p>Table configuration operations (TableConfigOps)</p></li>
-</ul>
-<p>Some helpers for:
-* Constructing time-based hints at query time
-* Database engine creation utilities</p>
-</section>
-<section id="dataset-management">
-<h2>Dataset Management<a class="headerlink" href="#dataset-management" title="Link to this heading"></a></h2>
-<p>The dataset module is used to execute the scrape.</p>
-</section>
-<section id="data-loading">
-<h2>Data Loading<a class="headerlink" href="#data-loading" title="Link to this heading"></a></h2>
-<p>The loaders provide advanced utilities for processing files. It includes:</p>
-<ul class="simple">
-<li><p>DSV (Delimiter-Separated Values) file loading with type support</p></li>
-<li><p>Fast file search capabilities</p></li>
-<li><p>ZIP file processing tools for converting zipped CSVs to Parquet format</p></li>
-</ul>
-</section>
-<section id="type-helpers">
-<h2>Type Helpers<a class="headerlink" href="#type-helpers" title="Link to this heading"></a></h2>
-<p>This module contains some helpers to map between SQL Types, SQLAlchemy Types, and Polars Types.</p>
-</section>
-</section>
-
-
-           </div>
-          </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="examples/dataset_example.html" class="btn btn-neutral float-left" title="Turkish Food Prices Dataset Example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Polars Hist DB</a></li><li class="breadcrumb-item"><a href="./api.html">API Reference</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
     </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2025, jr200.</p>
-  </div>
-
-  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
-    provided by <a href="https://readthedocs.org">Read the Docs</a>.
-   
-
-</footer>
-        </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Polars Hist DB</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
       </div>
-    </section>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./configuration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Configuration</span></a>
   </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./api.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">API Reference</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./examples.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Examples</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#polars_hist_db" id="toc-polars_hist_db" class="nav-link active" data-scroll-target="#polars_hist_db">polars_hist_db</a></li>
+  <li><a href="#configuration-polars_hist_db.config" id="toc-configuration-polars_hist_db.config" class="nav-link" data-scroll-target="#configuration-polars_hist_db.config">Configuration (<code>polars_hist_db.config</code>)</a>
+  <ul class="collapse">
+  <li><a href="#polarshistdbconfig" id="toc-polarshistdbconfig" class="nav-link" data-scroll-target="#polarshistdbconfig">PolarsHistDbConfig</a></li>
+  <li><a href="#dbengineconfig" id="toc-dbengineconfig" class="nav-link" data-scroll-target="#dbengineconfig">DbEngineConfig</a></li>
+  <li><a href="#tableconfig" id="toc-tableconfig" class="nav-link" data-scroll-target="#tableconfig">TableConfig</a></li>
+  <li><a href="#tablecolumnconfig" id="toc-tablecolumnconfig" class="nav-link" data-scroll-target="#tablecolumnconfig">TableColumnConfig</a></li>
+  <li><a href="#tableconfigs" id="toc-tableconfigs" class="nav-link" data-scroll-target="#tableconfigs">TableConfigs</a></li>
+  <li><a href="#datasetconfig" id="toc-datasetconfig" class="nav-link" data-scroll-target="#datasetconfig">DatasetConfig</a></li>
+  <li><a href="#deltaconfig" id="toc-deltaconfig" class="nav-link" data-scroll-target="#deltaconfig">DeltaConfig</a></li>
+  <li><a href="#transformfnregistry" id="toc-transformfnregistry" class="nav-link" data-scroll-target="#transformfnregistry">TransformFnRegistry</a></li>
+  <li><a href="#ingestfnregistry" id="toc-ingestfnregistry" class="nav-link" data-scroll-target="#ingestfnregistry">IngestFnRegistry</a></li>
+  <li><a href="#input-sources" id="toc-input-sources" class="nav-link" data-scroll-target="#input-sources">Input Sources</a></li>
+  </ul></li>
+  <li><a href="#core-operations-polars_hist_db.core" id="toc-core-operations-polars_hist_db.core" class="nav-link" data-scroll-target="#core-operations-polars_hist_db.core">Core Operations (<code>polars_hist_db.core</code>)</a>
+  <ul class="collapse">
+  <li><a href="#dbops" id="toc-dbops" class="nav-link" data-scroll-target="#dbops">DbOps</a></li>
+  <li><a href="#tableops" id="toc-tableops" class="nav-link" data-scroll-target="#tableops">TableOps</a></li>
+  <li><a href="#dataframeops" id="toc-dataframeops" class="nav-link" data-scroll-target="#dataframeops">DataframeOps</a></li>
+  <li><a href="#deltatableops" id="toc-deltatableops" class="nav-link" data-scroll-target="#deltatableops">DeltaTableOps</a></li>
+  <li><a href="#tableconfigops" id="toc-tableconfigops" class="nav-link" data-scroll-target="#tableconfigops">TableConfigOps</a></li>
+  <li><a href="#timehint" id="toc-timehint" class="nav-link" data-scroll-target="#timehint">TimeHint</a></li>
+  <li><a href="#auditops" id="toc-auditops" class="nav-link" data-scroll-target="#auditops">AuditOps</a></li>
+  <li><a href="#auditlogtracker" id="toc-auditlogtracker" class="nav-link" data-scroll-target="#auditlogtracker">AuditLogTracker</a></li>
+  </ul></li>
+  <li><a href="#dataset-polars_hist_db.dataset" id="toc-dataset-polars_hist_db.dataset" class="nav-link" data-scroll-target="#dataset-polars_hist_db.dataset">Dataset (<code>polars_hist_db.dataset</code>)</a></li>
+  <li><a href="#data-loading-polars_hist_db.loaders" id="toc-data-loading-polars_hist_db.loaders" class="nav-link" data-scroll-target="#data-loading-polars_hist_db.loaders">Data Loading (<code>polars_hist_db.loaders</code>)</a>
+  <ul class="collapse">
+  <li><a href="#load_typed_dsv" id="toc-load_typed_dsv" class="nav-link" data-scroll-target="#load_typed_dsv">load_typed_dsv</a></li>
+  <li><a href="#find_files" id="toc-find_files" class="nav-link" data-scroll-target="#find_files">find_files</a></li>
+  <li><a href="#convert_zipped_csvs_to_parquet" id="toc-convert_zipped_csvs_to_parquet" class="nav-link" data-scroll-target="#convert_zipped_csvs_to_parquet">convert_zipped_csvs_to_parquet</a></li>
+  </ul></li>
+  <li><a href="#type-converters-polars_hist_db.types" id="toc-type-converters-polars_hist_db.types" class="nav-link" data-scroll-target="#type-converters-polars_hist_db.types">Type Converters (<code>polars_hist_db.types</code>)</a>
+  <ul class="collapse">
+  <li><a href="#polarstype" id="toc-polarstype" class="nav-link" data-scroll-target="#polarstype">PolarsType</a></li>
+  <li><a href="#sqltype" id="toc-sqltype" class="nav-link" data-scroll-target="#sqltype">SQLType</a></li>
+  <li><a href="#sqlalchemytype" id="toc-sqlalchemytype" class="nav-link" data-scroll-target="#sqlalchemytype">SQLAlchemyType</a></li>
+  </ul></li>
+  <li><a href="#utilities-polars_hist_db.utils" id="toc-utilities-polars_hist_db.utils" class="nav-link" data-scroll-target="#utilities-polars_hist_db.utils">Utilities (<code>polars_hist_db.utils</code>)</a></li>
+  <li><a href="#cli-scripts" id="toc-cli-scripts" class="nav-link" data-scroll-target="#cli-scripts">CLI Scripts</a>
+  <ul class="collapse">
+  <li><a href="#scrape-dataset" id="toc-scrape-dataset" class="nav-link" data-scroll-target="#scrape-dataset">scrape-dataset</a></li>
+  <li><a href="#drop-dataset-tables" id="toc-drop-dataset-tables" class="nav-link" data-scroll-target="#drop-dataset-tables">drop-dataset-tables</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/jr200/polars-hist-db/blob/main/api.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jr200/polars-hist-db/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
 
-</body>
-</html>
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Polars Hist DB</a></li><li class="breadcrumb-item"><a href="./api.html">API Reference</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">API Reference</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="polars_hist_db" class="level2">
+<h2 class="anchored" data-anchor-id="polars_hist_db">polars_hist_db</h2>
+<p>Top-level package. Enables Polars string cache on import.</p>
+<ul>
+<li><code>enable_debug_mode()</code> — enables debug mode for Polars dataframe display</li>
+</ul>
+</section>
+<section id="configuration-polars_hist_db.config" class="level2">
+<h2 class="anchored" data-anchor-id="configuration-polars_hist_db.config">Configuration (<code>polars_hist_db.config</code>)</h2>
+<p>Objects to access the configuration structure instantiated from YAML.</p>
+<section id="polarshistdbconfig" class="level3">
+<h3 class="anchored" data-anchor-id="polarshistdbconfig">PolarsHistDbConfig</h3>
+<p>Root configuration object.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PolarsHistDbConfig.from_yaml(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    filename: <span class="bu">str</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    table_configs_path: <span class="bu">str</span> <span class="op">=</span> <span class="st">"table_configs"</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    datasets_path: <span class="bu">str</span> <span class="op">=</span> <span class="st">"datasets"</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    db_config_path: <span class="bu">str</span> <span class="op">=</span> <span class="st">"db"</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> PolarsHistDbConfig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Attribute</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>tables</code></td>
+<td><code>TableConfigs</code></td>
+<td>Collection of table configurations</td>
+</tr>
+<tr class="even">
+<td><code>db_config</code></td>
+<td><code>DbEngineConfig</code></td>
+<td>Database connection settings</td>
+</tr>
+<tr class="odd">
+<td><code>datasets</code></td>
+<td><code>DatasetsConfig</code></td>
+<td>Dataset definitions</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="dbengineconfig" class="level3">
+<h3 class="anchored" data-anchor-id="dbengineconfig">DbEngineConfig</h3>
+<p>Database connection and engine settings.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>hostname</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Database host</td>
+</tr>
+<tr class="even">
+<td><code>backend</code></td>
+<td><code>str</code></td>
+<td><code>"mariadb"</code></td>
+<td>Database backend</td>
+</tr>
+<tr class="odd">
+<td><code>port</code></td>
+<td><code>int</code></td>
+<td><code>3306</code></td>
+<td>Connection port</td>
+</tr>
+<tr class="even">
+<td><code>username</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Database user</td>
+</tr>
+<tr class="odd">
+<td><code>password</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Database password</td>
+</tr>
+<tr class="even">
+<td><code>ssl_config</code></td>
+<td><code>SslConfig</code></td>
+<td><code>None</code></td>
+<td>Optional SSL configuration</td>
+</tr>
+<tr class="odd">
+<td><code>pool_size</code></td>
+<td><code>int</code></td>
+<td><code>3</code></td>
+<td>Connection pool size</td>
+</tr>
+<tr class="even">
+<td><code>max_overflow</code></td>
+<td><code>int</code></td>
+<td><code>2</code></td>
+<td>Max overflow connections</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>get_engine() -&gt; Engine</code> — returns a cached SQLAlchemy engine</li>
+<li><code>dispose()</code> — disposes the cached engine</li>
+</ul>
+</section>
+<section id="tableconfig" class="level3">
+<h3 class="anchored" data-anchor-id="tableconfig">TableConfig</h3>
+<p>Defines a single database table.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 25%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Table name</td>
+</tr>
+<tr class="even">
+<td><code>schema</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Database schema</td>
+</tr>
+<tr class="odd">
+<td><code>columns</code></td>
+<td><code>List[TableColumnConfig]</code></td>
+<td>—</td>
+<td>Column definitions</td>
+</tr>
+<tr class="even">
+<td><code>primary_keys</code></td>
+<td><code>List[str]</code></td>
+<td>—</td>
+<td>Primary key columns</td>
+</tr>
+<tr class="odd">
+<td><code>foreign_keys</code></td>
+<td><code>List[ForeignKeyConfig]</code></td>
+<td><code>[]</code></td>
+<td>Foreign key constraints</td>
+</tr>
+<tr class="even">
+<td><code>is_temporal</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>Whether table uses system versioning</td>
+</tr>
+<tr class="odd">
+<td><code>forbid_drop_table</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>Prevent table drops</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>from_yaml(file_path: str) -&gt; TableConfig</code></li>
+<li><code>from_dataframe(df, table_schema, table_name, primary_keys, default_categorical_length) -&gt; TableConfig</code></li>
+<li><code>columns_df() -&gt; pl.DataFrame</code></li>
+<li><code>table_names() -&gt; List[str]</code></li>
+<li><code>dtypes() -&gt; Mapping[str, pl.DataType]</code></li>
+<li><code>build_sqlalchemy_columns(is_delta_table: bool) -&gt; List[Column]</code></li>
+<li><code>to_df() -&gt; pl.DataFrame</code></li>
+</ul>
+</section>
+<section id="tablecolumnconfig" class="level3">
+<h3 class="anchored" data-anchor-id="tablecolumnconfig">TableColumnConfig</h3>
+<p>Defines a single column.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>table</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Owning table name</td>
+</tr>
+<tr class="even">
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Column name</td>
+</tr>
+<tr class="odd">
+<td><code>data_type</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>SQL data type</td>
+</tr>
+<tr class="even">
+<td><code>default_value</code></td>
+<td><code>str</code></td>
+<td><code>None</code></td>
+<td>Default value</td>
+</tr>
+<tr class="odd">
+<td><code>autoincrement</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>Auto-increment</td>
+</tr>
+<tr class="even">
+<td><code>nullable</code></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td>Allow nulls</td>
+</tr>
+<tr class="odd">
+<td><code>unique_constraint</code></td>
+<td><code>List[str]</code></td>
+<td><code>[]</code></td>
+<td>Unique constraints</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="tableconfigs" class="level3">
+<h3 class="anchored" data-anchor-id="tableconfigs">TableConfigs</h3>
+<p>Collection of <code>TableConfig</code> objects.</p>
+<ul>
+<li><code>__getitem__(name: str) -&gt; TableConfig</code> — lookup by table name</li>
+<li><code>names() -&gt; List[str]</code></li>
+<li><code>schemas() -&gt; List[str]</code></li>
+<li><code>from_yamls(*file_path: str) -&gt; TableConfigs</code></li>
+</ul>
+</section>
+<section id="datasetconfig" class="level3">
+<h3 class="anchored" data-anchor-id="datasetconfig">DatasetConfig</h3>
+<p>Defines a data source and its ingestion pipeline.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 25%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Dataset name</td>
+</tr>
+<tr class="even">
+<td><code>delta_table_schema</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Target schema</td>
+</tr>
+<tr class="odd">
+<td><code>input_config</code></td>
+<td><code>InputConfig</code></td>
+<td>—</td>
+<td>Input source configuration</td>
+</tr>
+<tr class="even">
+<td><code>pipeline</code></td>
+<td><code>Pipeline</code></td>
+<td>—</td>
+<td>Ingestion pipeline definition</td>
+</tr>
+<tr class="odd">
+<td><code>scrape_limit</code></td>
+<td><code>int</code></td>
+<td><code>-1</code></td>
+<td>Max items to scrape (-1 = unlimited)</td>
+</tr>
+<tr class="even">
+<td><code>time_partition</code></td>
+<td><code>TimePartition</code></td>
+<td><code>None</code></td>
+<td>Optional time partitioning</td>
+</tr>
+<tr class="odd">
+<td><code>null_values</code></td>
+<td><code>Sequence[str]</code></td>
+<td><code>None</code></td>
+<td>Strings treated as null</td>
+</tr>
+<tr class="even">
+<td><code>delta_config</code></td>
+<td><code>DeltaConfig</code></td>
+<td>—</td>
+<td>Delta/upsert behaviour</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="deltaconfig" class="level3">
+<h3 class="anchored" data-anchor-id="deltaconfig">DeltaConfig</h3>
+<p>Controls temporal upsert behaviour.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 25%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>drop_unchanged_rows</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>Skip rows that haven’t changed</td>
+</tr>
+<tr class="even">
+<td><code>on_duplicate_key</code></td>
+<td><code>Literal["error", "take_last", "take_first"]</code></td>
+<td><code>"error"</code></td>
+<td>Duplicate handling strategy</td>
+</tr>
+<tr class="odd">
+<td><code>prefill_nulls_with_default</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>Fill nulls with defaults</td>
+</tr>
+<tr class="even">
+<td><code>row_finality</code></td>
+<td><code>Literal["disabled", "dropout", "manual"]</code></td>
+<td><code>"disabled"</code></td>
+<td>Handling of disappeared rows</td>
+</tr>
+<tr class="odd">
+<td><code>is_temporary_table</code></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td>Use temporary staging table</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="transformfnregistry" class="level3">
+<h3 class="anchored" data-anchor-id="transformfnregistry">TransformFnRegistry</h3>
+<p>Singleton registry for column transformation functions.</p>
+<ul>
+<li><code>register_function(name: str, fn: TransformFnSignature, allow_overwrite: bool = False)</code></li>
+<li><code>delete_function(name: str)</code></li>
+<li><code>call_function(name: str, df: pl.DataFrame, result_col: str, args: List[Any]) -&gt; pl.DataFrame</code></li>
+<li><code>list_functions() -&gt; List[str]</code></li>
+</ul>
+<p>Built-in transforms: <code>null_if_gte</code>, <code>apply_type_casts</code>, <code>combine_columns</code>, <code>map_to_true</code>, <code>parse_date</code></p>
+<p><code>TransformFnSignature = Callable[[pl.DataFrame, str, List[Any]], pl.DataFrame]</code></p>
+</section>
+<section id="ingestfnregistry" class="level3">
+<h3 class="anchored" data-anchor-id="ingestfnregistry">IngestFnRegistry</h3>
+<p>Singleton registry for ingestion functions.</p>
+<ul>
+<li><code>register_function(name: str, fn: IngestFnSignature, allow_overwrite: bool = False)</code></li>
+<li><code>delete_function(name: str)</code></li>
+<li><code>call_function(payload: Any, ts: datetime, name: str, args: Dict[str, Any]) -&gt; pl.DataFrame</code></li>
+<li><code>list_functions() -&gt; List[str]</code></li>
+</ul>
+<p><code>IngestFnSignature = Callable[[Any, datetime, Dict[str, Any]], pl.DataFrame]</code></p>
+</section>
+<section id="input-sources" class="level3">
+<h3 class="anchored" data-anchor-id="input-sources">Input Sources</h3>
+<p>Input configuration is polymorphic via <code>InputConfig.from_dict(config)</code>.</p>
+<p><strong><code>DsvCrawlerInputConfig</code></strong> — file-based ingestion via search paths.</p>
+<p><strong><code>JetStreamInputConfig</code></strong> — NATS JetStream ingestion with fields:</p>
+<ul>
+<li><code>jetstream: JetStreamConfig</code></li>
+<li><code>nats: NatsConfig</code></li>
+<li><code>payload_ingest: JetstreamIngestConfig</code></li>
+<li><code>run_until: Literal["empty", "forever"]</code></li>
+</ul>
+</section>
+</section>
+<section id="core-operations-polars_hist_db.core" class="level2">
+<h2 class="anchored" data-anchor-id="core-operations-polars_hist_db.core">Core Operations (<code>polars_hist_db.core</code>)</h2>
+<section id="dbops" class="level3">
+<h3 class="anchored" data-anchor-id="dbops">DbOps</h3>
+<p>Low-level database operations.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>DbOps(connection: Connection)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>db_create(table_schema: str)</code> — create schema if not exists</li>
+<li><code>execute_sqlalchemy(description, statement, parameters=None, disable_foreign_key_checks=False, disable_keys=None) -&gt; CursorResult</code></li>
+<li><code>get_all_variables(filter: str = None) -&gt; pl.DataFrame</code></li>
+<li><code>get_system_versioning_time() -&gt; datetime</code></li>
+<li><code>set_system_versioning_time(t: datetime | None)</code></li>
+<li><code>enable_engine_logging(level: int)</code> — static</li>
+</ul>
+</section>
+<section id="tableops" class="level3">
+<h3 class="anchored" data-anchor-id="tableops">TableOps</h3>
+<p>Table-level metadata and operations.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>TableOps(table_schema: <span class="bu">str</span>, table_name: <span class="bu">str</span>, connection: Connection)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>enable_system_versioning(partition_interval: str = "1 YEAR")</code></li>
+<li><code>get_table_metadata(autoload_metadata: bool = True) -&gt; Table</code></li>
+<li><code>row_count() -&gt; int</code></li>
+<li><code>get_column_intersection(column_selection: Sequence[str] | None) -&gt; ColumnCollection</code></li>
+<li><code>has_all_columns(search_col_names: Sequence[str]) -&gt; bool</code></li>
+<li><code>get_primary_keys(tbl, remap={}, include_temporal=False) -&gt; Sequence[Column]</code></li>
+<li><code>is_temporal_table() -&gt; bool</code></li>
+<li><code>table_exists() -&gt; bool</code></li>
+</ul>
+</section>
+<section id="dataframeops" class="level3">
+<h3 class="anchored" data-anchor-id="dataframeops">DataframeOps</h3>
+<p>DataFrame ↔︎ database transfer operations.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DataframeOps(connection: Connection)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>from_table(table_schema, table_name, time_hint=None) -&gt; pl.DataFrame</code></li>
+<li><code>from_selectable(query, schema_overrides=None) -&gt; pl.DataFrame</code></li>
+<li><code>from_raw_sql(query: str, schema_overrides=None) -&gt; pl.DataFrame</code></li>
+<li><code>table_create(table_schema, table_name, df, primary_keys, tbl_for_types=None, is_temporary_table=False)</code></li>
+<li><code>table_insert(df, table_schema, table_name, uniqueness_col_set, prefill_nulls_with_default, clear_table_first=False) -&gt; int</code></li>
+<li><code>table_update(df, table_schema, table_name, primary_keys_override=None)</code></li>
+<li><code>table_upsert_temporal(df, table_schema, table_name, delta_config, update_time=None, src_tgt_colname_map={})</code></li>
+<li><code>table_query(table_schema, table_name, query_df, column_selection, time_hint=TimeHint(mode="none")) -&gt; pl.DataFrame</code></li>
+<li><code>table_delete_rows(df, table_schema, table_name) -&gt; int</code></li>
+<li><code>table_delete_rows_temporal(df, table_schema, table_name, update_time=None) -&gt; int</code></li>
+<li><code>fill_nulls_with_defaults(df, default_values) -&gt; pl.DataFrame</code> — static</li>
+</ul>
+</section>
+<section id="deltatableops" class="level3">
+<h3 class="anchored" data-anchor-id="deltatableops">DeltaTableOps</h3>
+<p>Manages staging (delta) tables for temporal upserts.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>DeltaTableOps(table_schema: <span class="bu">str</span>, table_name: <span class="bu">str</span>, delta_config: DeltaConfig, connection: Connection)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>table_config(column_definitions: List[TableColumnConfig]) -&gt; TableConfig</code></li>
+<li><code>upsert(target_table, update_time=None, is_main_table=True, source_columns=None, src_tgt_colname_map={}) -&gt; Tuple[int, int, int]</code></li>
+</ul>
+</section>
+<section id="tableconfigops" class="level3">
+<h3 class="anchored" data-anchor-id="tableconfigops">TableConfigOps</h3>
+<p>Creates and introspects database tables from configuration.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>TableConfigOps(connection: Connection)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>create_all(tcs: TableConfigs)</code></li>
+<li><code>create(table_config, column_selection=None, is_delta_table=False, is_temporary_table=False) -&gt; Table</code></li>
+<li><code>from_table(table_schema: str, table_name: str) -&gt; TableConfig</code></li>
+</ul>
+</section>
+<section id="timehint" class="level3">
+<h3 class="anchored" data-anchor-id="timehint">TimeHint</h3>
+<p>Constructs temporal query hints for system-versioned tables.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 25%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>mode</code></td>
+<td><code>Literal["none", "all", "asof", "span"]</code></td>
+<td><code>"none"</code></td>
+<td>Query mode</td>
+</tr>
+<tr class="even">
+<td><code>all</code></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>Include all historical rows</td>
+</tr>
+<tr class="odd">
+<td><code>asof_utc</code></td>
+<td><code>datetime</code></td>
+<td><code>None</code></td>
+<td>Point-in-time query</td>
+</tr>
+<tr class="even">
+<td><code>history_span</code></td>
+<td><code>timedelta</code></td>
+<td><code>None</code></td>
+<td>History window</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>build() -&gt; str | None</code> — build SQL time hint clause</li>
+<li><code>apply(query: Select, tbl) -&gt; Select</code> — apply hint to a query</li>
+</ul>
+</section>
+<section id="auditops" class="level3">
+<h3 class="anchored" data-anchor-id="auditops">AuditOps</h3>
+<p>Tracks data source ingestion for deduplication.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>AuditOps(schema: <span class="bu">str</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><code>create(connection) -&gt; Table</code></li>
+<li><code>drop(connection)</code></li>
+<li><code>purge(target_table_name, connection) -&gt; int</code></li>
+<li><code>purge_after_timestamp(target_table_name, timestamp, interval, connection) -&gt; int</code></li>
+<li><code>prevalidate_new_items(target_table_name, new_data_source_items, connection)</code></li>
+<li><code>filter_items(data_source_items, data_source_col_name, data_source_ts_col_name, target_table_name, connection) -&gt; pl.DataFrame</code></li>
+<li><code>get_latest_entry(connection, asof_timestamp=None) -&gt; pl.DataFrame</code></li>
+<li><code>record_entry(target_table_name, data_source, data_source_type, data_source_ts, connection)</code></li>
+</ul>
+</section>
+<section id="auditlogtracker" class="level3">
+<h3 class="anchored" data-anchor-id="auditlogtracker">AuditLogTracker</h3>
+<p>Singleton that tracks table update timestamps.</p>
+<ul>
+<li><code>update_last_known_update(table_key: str, timestamp: datetime)</code></li>
+<li><code>set_table_update_callback(cb: TableUpdateCallback)</code></li>
+<li><code>clear_updates()</code></li>
+<li><code>async check_for_updates(epoch_ms, schemas, connection)</code></li>
+</ul>
+</section>
+</section>
+<section id="dataset-polars_hist_db.dataset" class="level2">
+<h2 class="anchored" data-anchor-id="dataset-polars_hist_db.dataset">Dataset (<code>polars_hist_db.dataset</code>)</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> run_datasets(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    config: PolarsHistDbConfig,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    engine: Engine,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    dataset_name: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    debug_capture_output: List[Tuple[datetime, pl.DataFrame]] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Runs the ingestion pipeline for all (or a named) dataset.</p>
+</section>
+<section id="data-loading-polars_hist_db.loaders" class="level2">
+<h2 class="anchored" data-anchor-id="data-loading-polars_hist_db.loaders">Data Loading (<code>polars_hist_db.loaders</code>)</h2>
+<section id="load_typed_dsv" class="level3">
+<h3 class="anchored" data-anchor-id="load_typed_dsv">load_typed_dsv</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>load_typed_dsv(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    file_or_bytes: Path <span class="op">|</span> <span class="bu">bytes</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    column_configs: Sequence[IngestionColumnConfig],</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    schema_overrides: Mapping[<span class="bu">str</span>, pl.DataType] <span class="op">=</span> {},</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    delimiter: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    null_values: Sequence[<span class="bu">str</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> pl.DataFrame</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Loads a delimiter-separated file with typed columns and transformation support.</p>
+</section>
+<section id="find_files" class="level3">
+<h3 class="anchored" data-anchor-id="find_files">find_files</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>find_files(search_paths: pl.DataFrame) <span class="op">-&gt;</span> pl.DataFrame</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Searches directories for matching files based on search path configuration.</p>
+</section>
+<section id="convert_zipped_csvs_to_parquet" class="level3">
+<h3 class="anchored" data-anchor-id="convert_zipped_csvs_to_parquet">convert_zipped_csvs_to_parquet</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>convert_zipped_csvs_to_parquet(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    folder: <span class="bu">str</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    schema: Mapping[<span class="bu">str</span>, pl.DataType],</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    remove_original: <span class="bu">bool</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> <span class="va">None</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Converts zipped CSV files to Parquet format.</p>
+</section>
+</section>
+<section id="type-converters-polars_hist_db.types" class="level2">
+<h2 class="anchored" data-anchor-id="type-converters-polars_hist_db.types">Type Converters (<code>polars_hist_db.types</code>)</h2>
+<section id="polarstype" class="level3">
+<h3 class="anchored" data-anchor-id="polarstype">PolarsType</h3>
+<p>Converts between SQL types and Polars <code>DataType</code>.</p>
+<ul>
+<li><code>from_sql(sql_type: str) -&gt; pl.DataType</code></li>
+<li><code>from_table(tbl: Table) -&gt; Mapping[str, str]</code></li>
+<li><code>get_dataframe_schema_from_sqltext(sql_statement, connection) -&gt; Dict[str, pl.DataType]</code></li>
+<li><code>get_dataframe_schema_from_selectable(selectable) -&gt; Dict[str, pl.DataType]</code></li>
+<li><code>apply_dtype_to_column(df, col, target_type) -&gt; pl.DataFrame</code></li>
+<li><code>apply_schema_to_dataframe(df, **schema_overrides) -&gt; pl.DataFrame</code></li>
+<li><code>cast_str_to_cat(df, ignore_cols=None) -&gt; pl.DataFrame</code></li>
+</ul>
+</section>
+<section id="sqltype" class="level3">
+<h3 class="anchored" data-anchor-id="sqltype">SQLType</h3>
+<p>Converts Polars types to SQL type strings.</p>
+<ul>
+<li><code>from_polars(pl_dtype: pl.DataType, default_varchar_length: int = 255) -&gt; str</code></li>
+</ul>
+</section>
+<section id="sqlalchemytype" class="level3">
+<h3 class="anchored" data-anchor-id="sqlalchemytype">SQLAlchemyType</h3>
+<p>Converts SQL type strings to SQLAlchemy types.</p>
+<ul>
+<li><code>from_sql(sql_type: str) -&gt; TypeEngine</code></li>
+</ul>
+</section>
+</section>
+<section id="utilities-polars_hist_db.utils" class="level2">
+<h2 class="anchored" data-anchor-id="utilities-polars_hist_db.utils">Utilities (<code>polars_hist_db.utils</code>)</h2>
+<ul>
+<li><code>Clock</code> — singleton for tracking operation timings and ETAs</li>
+<li><code>compare_dataframes(lhs, rhs, on, cmp_cols=None, suffixes=("_lhs", "_rhs", "_diff"))</code> — diff two dataframes</li>
+<li><code>to_ipc_b64(df, compression=None) -&gt; bytes</code> — serialize a dataframe to base64 IPC</li>
+<li><code>from_ipc_b64(payload, use_zlib=False) -&gt; pl.DataFrame</code> — deserialize from base64 IPC</li>
+<li><code>recursive_flatten(df) -&gt; pl.DataFrame</code> — recursively flatten struct columns</li>
+<li><code>NonRetryableException</code> — exception that should not be retried</li>
+</ul>
+</section>
+<section id="cli-scripts" class="level2">
+<h2 class="anchored" data-anchor-id="cli-scripts">CLI Scripts</h2>
+<section id="scrape-dataset" class="level3">
+<h3 class="anchored" data-anchor-id="scrape-dataset">scrape-dataset</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scrape-dataset</span> <span class="at">--config</span> <span class="op">&lt;</span>config.yaml<span class="op">&gt;</span> --dataset <span class="op">&lt;</span>name<span class="op">&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Runs the ingestion pipeline for a dataset.</p>
+</section>
+<section id="drop-dataset-tables" class="level3">
+<h3 class="anchored" data-anchor-id="drop-dataset-tables">drop-dataset-tables</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">drop-dataset-tables</span> <span class="at">--config</span> <span class="op">&lt;</span>config.yaml<span class="op">&gt;</span> --dataset <span class="op">&lt;</span>name<span class="op">&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Drops all tables associated with a dataset.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p><a href="https://github.com/jr200/polars-hist-db">polars-hist-db</a></p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/jr200/polars-hist-db/blob/main/api.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jr200/polars-hist-db/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

@@ -9,9 +9,9 @@ from sqlalchemy import Engine
 from ..loaders.input_source_factory import InputSourceFactory
 from ..utils.clock import Clock
 
-from ..config import PolarsHistDbConfig, DatasetConfig, TableConfigs
+from ..config import PolarsHistDbConfig, DatasetConfig, TableConfig, TableConfigs
 from ..config.input.input_source import InputConfig
-from ..core import DeltaTableOps, TableConfigOps, TableOps
+from ..core import TableConfigOps
 from .scrape import try_run_pipeline_as_transaction
 
 LOGGER = logging.getLogger(__name__)
@@ -40,32 +40,24 @@ async def run_datasets(
         LOGGER.error("no datasets processed for %s", dataset_name)
 
 
-def _create_delta_table(
-    engine: Engine,
-    tables: TableConfigs,
-    dataset: DatasetConfig,
-):
+def _create_config_tables(engine: Engine, tables: TableConfigs):
+    """Create permanent config tables (idempotent)."""
     with engine.begin() as connection:
         TableConfigOps(connection).create_all(tables)
 
+
+def _build_delta_table_config(
+    tables: TableConfigs, dataset: DatasetConfig
+) -> TableConfig:
+    """Build the delta table config from dataset pipeline definitions.
+
+    This only builds the config metadata — no database connection is needed.
+    The actual table creation happens inside each connection context in
+    try_run_pipeline_as_transaction, ensuring temporary tables are visible
+    to the same session that uses them.
+    """
     col_defs = dataset.pipeline.build_delta_table_column_configs(tables, dataset.name)
-
-    with engine.begin() as connection:
-        delta_table_config = DeltaTableOps(
-            dataset.delta_table_schema,
-            dataset.name,
-            dataset.delta_config,
-            connection,
-        ).table_config(col_defs)
-
-        if not TableOps(
-            delta_table_config.schema, delta_table_config.name, connection
-        ).table_exists():
-            TableConfigOps(connection).create(
-                delta_table_config,
-                is_delta_table=True,
-                is_temporary_table=dataset.delta_config.is_temporary_table,
-            )
+    return TableConfig(dataset.name, dataset.delta_table_schema, col_defs)
 
 
 async def _run_dataset(
@@ -77,7 +69,8 @@ async def _run_dataset(
 ):
     LOGGER.info(f"starting {input_config.type} ingest for {dataset.name}")
 
-    _create_delta_table(engine, tables, dataset)
+    _create_config_tables(engine, tables)
+    delta_table_config = _build_delta_table_config(tables, dataset)
 
     start_time = time.perf_counter()
 
@@ -88,7 +81,12 @@ async def _run_dataset(
                 debug_capture_output.extend(partitions)
 
             await try_run_pipeline_as_transaction(
-                partitions, dataset, tables, engine, commit_fn
+                partitions,
+                dataset,
+                tables,
+                engine,
+                commit_fn,
+                delta_table_config=delta_table_config,
             )
 
     except Exception as e:

@@ -1,13 +1,13 @@
 from datetime import datetime
 import logging
 from time import sleep
-from typing import Awaitable, Callable, List, Set, Tuple
+from typing import Awaitable, Callable, List, Optional, Set, Tuple
 
 import polars as pl
 from sqlalchemy import Connection, Engine
 
 from ..config import TableConfig, TableConfigs, DatasetConfig
-from ..core import DataframeOps
+from ..core import DataframeOps, TableConfigOps, TableOps
 from ..utils import NonRetryableException
 
 from .extract_item import scrape_extract_item
@@ -38,6 +38,26 @@ def _scrape_pipeline_item(
         raise ValueError(f"unknown item type: {item_type}")
 
 
+def _ensure_delta_table(
+    connection: Connection,
+    delta_table_config: TableConfig,
+    is_temporary_table: bool,
+):
+    """Ensure the delta table exists in the given connection.
+
+    For temporary tables this must run in the same connection that will
+    use the table, since TEMPORARY TABLEs are session-scoped.
+    """
+    if not TableOps(
+        delta_table_config.schema, delta_table_config.name, connection
+    ).table_exists():
+        TableConfigOps(connection).create(
+            delta_table_config,
+            is_delta_table=True,
+            is_temporary_table=is_temporary_table,
+        )
+
+
 async def try_run_pipeline_as_transaction(
     partitions: List[Tuple[datetime, pl.DataFrame]],
     dataset: DatasetConfig,
@@ -46,6 +66,7 @@ async def try_run_pipeline_as_transaction(
     commit_fn: Callable[[Connection, List[Tuple[str, str]]], Awaitable[bool]],
     num_retries: int = 3,
     seconds_between_retries: float = 60,
+    delta_table_config: Optional[TableConfig] = None,
 ):
     main_table_config: TableConfig = tables[dataset.pipeline.get_main_table_name()[1]]
     tbl_to_header_map = dataset.pipeline.get_header_map(main_table_config.name)
@@ -55,6 +76,12 @@ async def try_run_pipeline_as_transaction(
         with engine.connect() as connection:
             try:
                 with connection.begin():
+                    if delta_table_config is not None:
+                        _ensure_delta_table(
+                            connection,
+                            delta_table_config,
+                            dataset.delta_config.is_temporary_table,
+                        )
                     modified_tables: Set[Tuple[str, str]] = set()
                     for i, (ts, partition_df) in enumerate(partitions):
                         assert isinstance(ts, datetime), (

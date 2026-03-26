@@ -41,9 +41,9 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_expected = from_test_result(
         """
         id,double_col,varchar_col,__valid_from,__valid_to
-        1, 100.100,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
-        2,-200.200,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
-        3,        ,None,1985-01-01T00:00:01,2106-02-07T06:28:15.999999
+        1, 100.100,None,1985-01-01T00:00:01,2038-01-19T03:14:07.999999
+        2,-200.200,None,1985-01-01T00:00:01,2038-01-19T03:14:07.999999
+        3,        ,None,1985-01-01T00:00:01,2038-01-19T03:14:07.999999
     """,
         table_config.name,
         table_configs,
@@ -69,9 +69,9 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_expected = from_test_result(
         """
         id,double_col,varchar_col,__valid_from,__valid_to
-        1, 110.110,None,1986-01-01T00:00:01,2106-02-07T06:28:15.999999
-        2,-220.220,None,1986-01-01T00:00:01,2106-02-07T06:28:15.999999
-        3, 330.330,None,1986-01-01T00:00:01,2106-02-07T06:28:15.999999
+        1, 110.110,None,1986-01-01T00:00:01,2038-01-19T03:14:07.999999
+        2,-220.220,None,1986-01-01T00:00:01,2038-01-19T03:14:07.999999
+        3, 330.330,None,1986-01-01T00:00:01,2038-01-19T03:14:07.999999
     """,
         table_config.name,
         table_configs,
@@ -108,9 +108,9 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_expected = from_test_result(
         """
         id,double_col,varchar_col,__valid_from,__valid_to
-        1, 111.111,None,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
-        2,-222.222,None,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
-        3, 333.333,None,1987-01-01T00:00:01,2106-02-07T06:28:15.999999
+        1, 111.111,None,1987-01-01T00:00:01,2038-01-19T03:14:07.999999
+        2,-222.222,None,1987-01-01T00:00:01,2038-01-19T03:14:07.999999
+        3, 333.333,None,1987-01-01T00:00:01,2038-01-19T03:14:07.999999
     """,
         table_config.name,
         table_configs,
@@ -150,9 +150,9 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_expected = from_test_result(
         """
         id,double_col,varchar_col,__valid_from,__valid_to
-        1, 100.001,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
-        2,        ,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
-        3, 300.003,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
+        1, 100.001,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
+        2,        ,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
+        3, 300.003,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
     """,
         table_config.name,
         table_configs,
@@ -202,9 +202,9 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_expected = from_test_result(
         """
         id,double_col,varchar_col,__valid_from,__valid_to
-        1, 100.001,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
-        2, 202.202,None,1989-01-01T00:00:01,2106-02-07T06:28:15.999999
-        3, 300.003,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
+        1, 100.001,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
+        2, 202.202,None,1989-01-01T00:00:01,2038-01-19T03:14:07.999999
+        3, 300.003,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
     """,
         table_config.name,
         table_configs,
@@ -248,9 +248,9 @@ def test_dataframe_upsert(fixture_with_simple_table):
     df_expected = from_test_result(
         """
         id,double_col,varchar_col,__valid_from,__valid_to
-        1, 100.001,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
-        2, 234.234,None,1990-01-01T00:00:01,2106-02-07T06:28:15.999999
-        3, 300.003,None,1988-01-01T00:00:01,2106-02-07T06:28:15.999999
+        1, 100.001,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
+        2, 234.234,None,1990-01-01T00:00:01,2038-01-19T03:14:07.999999
+        3, 300.003,None,1988-01-01T00:00:01,2038-01-19T03:14:07.999999
     """,
         table_config.name,
         table_configs,

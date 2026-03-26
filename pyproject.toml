@@ -1,6 +1,6 @@
 [project]
 name = "polars-hist-db"
-version = "0.9.0"
+version = "0.9.2"
 description = "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
 authors = [{ name = "jr200", email = "jayshan+git@gmail.com" }]
 readme = "README.md"

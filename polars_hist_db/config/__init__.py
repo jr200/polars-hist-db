@@ -1,6 +1,5 @@
 from .config import PolarsHistDbConfig
 from .dataset import DatasetConfig, DatasetsConfig, IngestionColumnConfig, DeltaConfig
-from .engine import DbEngineConfig
 from .table import (
     TableColumnConfig,
     ForeignKeyConfig,
@@ -15,7 +14,6 @@ __all__ = [
     "PolarsHistDbConfig",
     "DatasetConfig",
     "DatasetsConfig",
-    "DbEngineConfig",
     "TableColumnConfig",
     "IngestionColumnConfig",
     "DeltaConfig",

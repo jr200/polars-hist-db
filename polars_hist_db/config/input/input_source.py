@@ -26,6 +26,11 @@ class InputConfig(ABC):
         elif input_type == "nats-jetstream":
             from .jetstream_config import JetStreamInputConfig
 
+            # Strip connection config — caller provides the JetStream context
+            config.pop("nats", None)
+            js_cfg = config.get("jetstream", {})
+            if isinstance(js_cfg, dict):
+                js_cfg.pop("context", None)
             return JetStreamInputConfig(**config)
         else:
             raise ValueError(f"Unsupported input type: {input_type}")

@@ -10,7 +10,7 @@ from polars_hist_db.utils.compare import compare_dataframes
 from .helpers import custom_load_json, custom_try_to_usd
 from ..utils.nats_helper import (
     create_nats_server,
-    create_nats_js_client,
+    create_nats_test_client,
     publish_dataframe_messages,
     try_create_test_stream,
 )
@@ -30,8 +30,8 @@ def nats_server():
 
 @pytest_asyncio.fixture
 async def nats_js(nats_server):
-    async for js in create_nats_js_client():
-        yield js
+    async for nc, js in create_nats_test_client():
+        yield nc, js
 
 
 @pytest.fixture
@@ -58,6 +58,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
         .unique(subset=unique_keys, maintain_order=True, keep="last")
     )
 
+    _nc, js = nats_js
     engine, base_config = fixture_with_config
     dataset_name = "turkey_food_prices_jetstream"
     dataset = base_config.datasets[dataset_name]
@@ -65,9 +66,9 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     js_config = dataset.input_config.jetstream
 
     # Publish messages from DataFrame
-    await try_create_test_stream(nats_js, dataset.input_config.jetstream.subscription)
+    await try_create_test_stream(js, dataset.input_config.jetstream.subscription)
     num_expected_msgs = await publish_dataframe_messages(
-        nats_js, test_data, js_config.subscription
+        js, test_data, js_config.subscription
     )
 
     # wait for 1 second
@@ -79,6 +80,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
         engine,
         "turkey_food_prices_jetstream",
         debug_capture_output=uploaded_dfs,
+        js=js,
     )
 
     uploaded_df = pl.concat([df for _, df in uploaded_dfs])

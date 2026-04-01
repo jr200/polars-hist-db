@@ -6,7 +6,7 @@ import nats
 
 from polars_hist_db.config.input.jetstream_config import JetStreamSubscriptionConfig
 from tests.utils.nats_helper import (
-    create_nats_js_client,
+    create_nats_test_client,
     create_nats_server,
     publish_dataframe_messages,
     try_create_test_stream,
@@ -21,7 +21,7 @@ def nats_server():
 
 @pytest_asyncio.fixture
 async def nats_js(nats_server):
-    async for js in create_nats_js_client():
+    async for _nc, js in create_nats_test_client():
         yield js
 
 

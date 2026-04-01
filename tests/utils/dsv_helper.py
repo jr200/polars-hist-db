@@ -15,7 +15,8 @@ import sqlalchemy
 from sqlalchemy import Engine, Select, select
 from sqlalchemy.dialects import mysql
 
-from polars_hist_db.config.engine import DbEngineConfig
+from sqlalchemy import create_engine
+
 from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.config import (
@@ -50,17 +51,16 @@ def get_dataset_data(filename: str):
     return os.path.join(data_dir, filename)
 
 
-def mariadb_engine_test(**kwargs) -> Engine:
-    engine_config = DbEngineConfig(
-        hostname="127.0.0.1",
-        port=int(os.environ.get("MARIADB_PORT", "13307")),
-        username="root",
-        password="admin",
-        **kwargs,
+def mariadb_engine_test() -> Engine:
+    port = int(os.environ.get("MARIADB_PORT", "13307"))
+    url = f"mariadb+pymysql://root:admin@127.0.0.1:{port}"
+    return create_engine(
+        url,
+        pool_recycle=3600,
+        pool_size=3,
+        max_overflow=2,
+        connect_args={"client_flag": 0},
     )
-
-    engine = engine_config.get_engine()
-    return engine
 
 
 def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):

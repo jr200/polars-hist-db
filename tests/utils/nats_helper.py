@@ -95,7 +95,7 @@ async def try_create_test_stream(
         pass
 
 
-async def create_nats_core_client():
+async def _create_nats_core_client():
     nc = NATS()
 
     try:
@@ -105,11 +105,11 @@ async def create_nats_core_client():
         await nc.close()
 
 
-async def create_nats_js_client():
-    async for nc in create_nats_core_client():
+async def create_nats_test_client():
+    async for nc in _create_nats_core_client():
         js = nc.jetstream()
 
         try:
-            yield js
+            yield nc, js
         finally:
             await nc.close()

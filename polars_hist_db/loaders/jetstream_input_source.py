@@ -1,18 +1,17 @@
+import asyncio
 from datetime import datetime
 import logging
-from pathlib import Path
 from typing import (
-    Any,
     AsyncGenerator,
     Awaitable,
     Callable,
     List,
-    Mapping,
     Tuple,
-    Optional,
 )
 
-import nats
+from nats.js.api import ConsumerConfig
+from nats.js.client import JetStreamContext
+from nats.js.errors import NotFoundError
 
 import polars as pl
 from sqlalchemy import Connection, Engine
@@ -21,7 +20,6 @@ from ..core.audit import AuditOps
 from ..utils.exceptions import NonRetryableException
 
 from .ingest_payload import load_df_from_msg
-from .jetstream.nats_client import make_nats_client
 
 from ..config.dataset import DatasetConfig
 from ..config.input.jetstream_config import JetStreamInputConfig
@@ -39,36 +37,14 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
         tables: TableConfigs,
         dataset: DatasetConfig,
         config: JetStreamInputConfig,
+        js: JetStreamContext,
     ):
         super().__init__(tables, dataset, config)
-        self._nats_client: Optional[nats.NATS] = None
-
-    async def _get_nats_client(self) -> nats.NATS:
-        if self._nats_client is None:
-            nats_servers = self.config.nats.servers
-            options = self.config.nats.options or dict()
-            self._nats_client = await make_nats_client(nats_servers, options)
-        return self._nats_client
-
-    @staticmethod
-    def _validate_auth(auth_config: Mapping[str, Any]):
-        creds_file = auth_config.get("user_credentials", None)
-        if not creds_file:
-            LOGGER.info("No auth provided")
-        else:
-            creds_path = Path(creds_file).resolve(strict=True)
-            LOGGER.info(f"Validating auth from {creds_path}")
-            if not creds_path.exists():
-                raise FileNotFoundError(f"Missing creds file: {creds_file}")
-
-            file_size = creds_path.stat().st_size
-            if file_size < 512:
-                raise ValueError(f"Invalid credentials file: {creds_file}. Check file.")
+        self._js = js
 
     async def cleanup(self) -> None:
-        if self._nats_client is not None:
-            await self._nats_client.close()
-            self._nats_client = None
+        # Caller owns the NATS client — do not close it here
+        pass
 
     async def next_df(
         self, engine: Engine
@@ -86,8 +62,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             ],
             None,
         ]:
-            nc = await self._get_nats_client()
-            js = nc.jetstream(**self.config.jetstream.context)
+            js = self._js
             remaining_msgs = self.dataset.scrape_limit
 
             js_sub_cfg = self.config.jetstream.subscription
@@ -96,15 +71,28 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                 f"Consumer[{js_sub_cfg.durable}] subscribing to {js_sub_cfg.subject} on {js_sub_cfg.stream}"
             )
 
-            sub = await js.pull_subscribe(
-                subject=js_sub_cfg.subject,
-                durable=js_sub_cfg.durable,
-                stream=js_sub_cfg.stream,
-                config=nats.js.api.ConsumerConfig(
-                    **js_sub_cfg.consumer_args,
-                ),
-                **js_sub_cfg.options,
-            )
+            retry_delay = 5
+            max_delay = 60
+            while True:
+                try:
+                    sub = await js.pull_subscribe(
+                        subject=js_sub_cfg.subject,
+                        durable=js_sub_cfg.durable,
+                        stream=js_sub_cfg.stream,
+                        config=ConsumerConfig(
+                            **js_sub_cfg.consumer_args,
+                        ),
+                        **js_sub_cfg.options,
+                    )
+                    break
+                except NotFoundError:
+                    LOGGER.info(
+                        "Stream %s not found, retrying in %ds...",
+                        js_sub_cfg.stream,
+                        retry_delay,
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay = min(retry_delay * 2, max_delay)
 
             total_msgs = 0
 

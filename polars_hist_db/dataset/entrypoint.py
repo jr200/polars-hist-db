@@ -3,6 +3,7 @@ import logging
 import time
 from typing import List, Optional, Tuple
 
+from nats.js.client import JetStreamContext
 import polars as pl
 from sqlalchemy import Engine
 
@@ -22,6 +23,7 @@ async def run_datasets(
     engine: Engine,
     dataset_name: Optional[str] = None,
     debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]] = None,
+    js: Optional[JetStreamContext] = None,
 ):
     num_datasets_processed = 0
     for dataset in config.datasets.datasets:
@@ -34,6 +36,7 @@ async def run_datasets(
                 config.tables,
                 engine,
                 debug_capture_output,
+                js=js,
             )
 
     if num_datasets_processed == 0:
@@ -66,6 +69,7 @@ async def _run_dataset(
     tables: TableConfigs,
     engine: Engine,
     debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
+    js: Optional[JetStreamContext] = None,
 ):
     LOGGER.info(f"starting {input_config.type} ingest for {dataset.name}")
 
@@ -74,7 +78,9 @@ async def _run_dataset(
 
     start_time = time.perf_counter()
 
-    input_source = InputSourceFactory.create_input_source(tables, dataset, input_config)
+    input_source = InputSourceFactory.create_input_source(
+        tables, dataset, input_config, js=js
+    )
     try:
         async for partitions, commit_fn in await input_source.next_df(engine):
             if debug_capture_output is not None:

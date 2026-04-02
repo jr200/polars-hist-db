@@ -1420,7 +1420,7 @@ sqlalchemy = [
 
 [[package]]
 name = "polars-hist-db"
-version = "0.10.0"
+version = "0.10.1"
 source = { editable = "." }
 dependencies = [
     { name = "nats-py" },

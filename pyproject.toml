@@ -59,6 +59,29 @@ testpaths = [
 [tool.uv.sources]
 quarto-cli = { git = "https://github.com/quarto-dev/quarto-cli", rev = "v1.9.31" }
 
+[tool.mypy]
+warn_unused_configs = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+packages = ["polars_hist_db"]
+
+[[tool.mypy.overrides]]
+module = [
+    "sql_metadata.*",
+    "scandir_rs.*",
+    "nats.*",
+    "nkeys.*",
+    "pyarrow.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_decorators = false
+
+[tool.ruff.lint]
+extend-select = ["G"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

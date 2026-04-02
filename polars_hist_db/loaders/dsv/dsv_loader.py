@@ -135,7 +135,7 @@ def _validate_expected_columns(
 
     if len(headers_no_config) > 0:
         headers_no_config_str = "],[".join(headers_no_config)
-        LOGGER.warning(f"dsv-headers skipped/unknown [{headers_no_config_str}]")
+        LOGGER.warning("dsv-headers skipped/unknown [%s]", headers_no_config_str)
         dsv_df = dsv_df.drop(headers_no_config)
 
     defined_but_missing_headers = list(set(expected_headers).difference(dsv_df.columns))

@@ -68,7 +68,10 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
             js_sub_cfg = self.config.jetstream.subscription
 
             LOGGER.info(
-                f"Consumer[{js_sub_cfg.durable}] subscribing to {js_sub_cfg.subject} on {js_sub_cfg.stream}"
+                "Consumer[%s] subscribing to %s on %s",
+                js_sub_cfg.durable,
+                js_sub_cfg.subject,
+                js_sub_cfg.stream,
             )
 
             retry_delay = 5
@@ -153,7 +156,11 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                         apply_transformations, self.column_definitions
                     )
                     LOGGER.info(
-                        f"got [{len(df)}/{num_items_received}] {js_sub_cfg.subject}@t={received_items_ts}..."
+                        "got [%d/%d] %s@t=%s...",
+                        len(df),
+                        num_items_received,
+                        js_sub_cfg.subject,
+                        received_items_ts,
                     )
 
                     partitions = self._apply_time_partitioning(df, msg_ts)
@@ -205,7 +212,9 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
                         break
                     else:
                         LOGGER.info(
-                            f"{js_sub_cfg.stream}: polling {self.config.jetstream.fetch.batch_timeout}s..."
+                            "%s: polling %ss...",
+                            js_sub_cfg.stream,
+                            self.config.jetstream.fetch.batch_timeout,
                         )
 
             LOGGER.info("Processed %d msgs", total_msgs)

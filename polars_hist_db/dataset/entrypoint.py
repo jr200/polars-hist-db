@@ -71,7 +71,7 @@ async def _run_dataset(
     debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
     js: Optional[JetStreamContext] = None,
 ):
-    LOGGER.info(f"starting {input_config.type} ingest for {dataset.name}")
+    LOGGER.info("starting %s ingest for %s", input_config.type, dataset.name)
 
     _create_config_tables(engine, tables)
     delta_table_config = _build_delta_table_config(tables, dataset)

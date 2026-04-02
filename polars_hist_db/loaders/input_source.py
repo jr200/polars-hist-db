@@ -63,12 +63,15 @@ class InputSource(ABC, Generic[TConfig]):
         )
         stale_row_count = previous_row_count - len(df)
         if stale_row_count > 0:
-            LOGGER.warn(
-                f"Removed {stale_row_count}/{previous_row_count} stale rows <= {self.previous_payload_time.isoformat()}"
+            LOGGER.warning(
+                "Removed %d/%d stale rows <= %s",
+                stale_row_count,
+                previous_row_count,
+                self.previous_payload_time.isoformat(),
             )
 
         if len(df) == 0:
-            LOGGER.warn("Empty dataframe after time partitioning")
+            LOGGER.warning("Empty dataframe after time partitioning")
         else:
             self.previous_payload_time = (
                 df.select(pl.col(bucket_col).dt.offset_by(f"-{bucket_offset}").max())

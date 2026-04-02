@@ -134,7 +134,7 @@ class Pipeline:
                 | pl.col("target_data_type").is_null(),
             ).filter(pl.col("is_missing"))
             if not missing_types.is_empty():
-                LOGGER.error(f"Missing types for dataframe {missing_types}")
+                LOGGER.error("Missing types for dataframe %s", missing_types)
                 raise ValueError(f"Missing types in {tbl_cfg.schema}.{tbl_cfg.name}")
 
             all_dfs.append(merged_tbl)

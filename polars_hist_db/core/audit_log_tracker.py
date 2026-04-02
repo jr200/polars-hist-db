@@ -74,11 +74,17 @@ class AuditLogTracker:
                                 aops.schema, table_name, new_timestamp
                             )
                             LOGGER.debug(
-                                f"Callback invoked for table {aops.schema}.{table_name} at {new_timestamp}"
+                                "Callback invoked for table %s.%s at %s",
+                                aops.schema,
+                                table_name,
+                                new_timestamp,
                             )
                         except Exception as e:
                             LOGGER.error(
-                                f"Error in table update callback for {aops.schema}.{table_name}: {e}"
+                                "Error in table update callback for %s.%s: %s",
+                                aops.schema,
+                                table_name,
+                                e,
                             )
 
                         # Update the last known timestamp

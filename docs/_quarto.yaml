@@ -5,7 +5,7 @@ project:
 website:
   title: "Polars Hist DB"
   description: "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
-  repo-url: https://github.com/jr200/polars-hist-db
+  repo-url: https://github.com/jr200-labs/polars-hist-db
   repo-actions: [source, issue]
   navbar:
     title: "Polars Hist DB"
@@ -19,7 +19,7 @@ website:
     right:
     - text: GitHub
       icon: github
-      href: https://github.com/jr200/polars-hist-db
+      href: https://github.com/jr200-labs/polars-hist-db
 
   sidebar:
     style: floating
@@ -32,7 +32,7 @@ website:
       - examples.qmd
 
   page-footer:
-    left: "[polars-hist-db](https://github.com/jr200/polars-hist-db)"
+    left: "[polars-hist-db](https://github.com/jr200-labs/polars-hist-db)"
 
 format:
   html:

@@ -1,6 +1,6 @@
 [project]
 name = "polars-hist-db"
-version = "0.10.1"
+version = "0.11.0"
 description = "(dsv,jetstream) --> dataframe <--> bitemporal-tables"
 authors = [{ name = "jr200", email = "jayshan+git@gmail.com" }]
 readme = "README.md"
@@ -24,7 +24,7 @@ sqlalchemy = ["polars[sqlalchemy]"]
 nats = ["nats-py"]
 
 [project.urls]
-Repository = "https://github.com/jr200/polars-hist-db"
+Repository = "https://github.com/jr200-labs/polars-hist-db"
 
 [dependency-groups]
 dev = [

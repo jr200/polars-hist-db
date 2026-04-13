@@ -1,7 +1,7 @@
 services:
   test-mariadb:
     # https://hub.docker.com/_/mariadb
-    image: docker.io/library/mariadb:11.4-noble
+    image: docker.io/library/mariadb:11.8-noble
     environment:
       - MYSQL_DATABASE=mariadb
       - MYSQL_ROOT_PASSWORD=admin

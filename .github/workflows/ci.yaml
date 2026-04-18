@@ -9,6 +9,6 @@ on:
 
 jobs:
   main:
-    uses: jr200-labs/github-action-templates/.github/workflows/ci_uv_python.yml@master
+    uses: jr200-labs/github-action-templates/.github/workflows/ci_uv_python.yaml@master
     with:
       run-tests: false

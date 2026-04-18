@@ -25,14 +25,14 @@ on:
 
 jobs:
   configure:
-    uses: jr200-labs/github-action-templates/.github/workflows/preconfigure.yml@master
+    uses: jr200-labs/github-action-templates/.github/workflows/preconfigure.yaml@master
     with:
       event_name: ${{ toJson(github.event_name) }}
       event: ${{ toJson(github.event) }}
 
   main:
     needs: configure
-    uses: jr200-labs/github-action-templates/.github/workflows/build_uv_python_wheel_pure.yml@master
+    uses: jr200-labs/github-action-templates/.github/workflows/build_uv_python_wheel_pure.yaml@master
     with:
       checkout-ref: ${{ fromJson(needs.configure.outputs.context).checkout-ref }}
       artifact_glob: ${{ fromJson(needs.configure.outputs.context).artifact_glob }}

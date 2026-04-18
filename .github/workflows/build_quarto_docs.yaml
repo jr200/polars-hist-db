@@ -16,14 +16,14 @@ on:
 
 jobs:
   configure:
-    uses: jr200-labs/github-action-templates/.github/workflows/preconfigure.yml@master
+    uses: jr200-labs/github-action-templates/.github/workflows/preconfigure.yaml@master
     with:
       event_name: ${{ toJson(github.event_name) }}
       event: ${{ toJson(github.event) }}
 
   main:
     needs: configure
-    uses: jr200-labs/github-action-templates/.github/workflows/build_quarto_docs.yml@master
+    uses: jr200-labs/github-action-templates/.github/workflows/build_quarto_docs.yaml@master
 
   spawn-workflow:
     needs: main

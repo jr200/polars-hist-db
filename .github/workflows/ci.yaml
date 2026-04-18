@@ -1,12 +1,14 @@
 name: ci
 
 on:
+  pull_request:
+    branches: [master]
   push:
     tags:
       - v*.*.*
 
 jobs:
   main:
-    uses: jr200/github-action-templates/.github/workflows/ci_uv_python.yml@master
+    uses: jr200-labs/github-action-templates/.github/workflows/ci_uv_python.yml@master
     with:
       run-tests: false

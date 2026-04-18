@@ -8,7 +8,7 @@ on:
       - v*.*.*
 
 jobs:
-  main:
+  ci:
     uses: jr200-labs/github-action-templates/.github/workflows/ci_uv_python.yaml@master
     with:
       run-tests: false

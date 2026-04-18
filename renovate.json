@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>jr200-labs/github-action-templates"]
+  "extends": ["github>jr200-labs/github-action-templates"],
+  "packageRules": [
+    {
+      "description": "Use semver tags for quarto-cli git dep, not commit digests",
+      "matchPackageNames": ["quarto-cli"],
+      "versioning": "semver"
+    }
+  ]
 }

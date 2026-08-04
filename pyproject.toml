@@ -40,7 +40,7 @@ dev = [
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "quarto-cli",
-    "ruff>=0.16.1",
+    "ruff>=0.15.22,<0.16",
     "types-python-dateutil>=2.9.0.20260716",
     "types-pytz>=2026.3.1.20260727",
     "types-pyyaml>=6.0.12.20260724",
@@ -95,9 +95,6 @@ disallow_untyped_decorators = false
 
 [tool.ruff]
 extend = ".shared/ruff.toml"
-
-[tool.ruff.lint]
-select = ["E4", "E7", "E9", "F"]
 
 [build-system]
 requires = ["hatchling"]

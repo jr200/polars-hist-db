@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from polars_hist_db.core.audit import AuditOps
 
 
@@ -23,7 +25,7 @@ class _MariaConnection:
 
 
 class _FakeAuditTable:
-    c = {"table_name": None}
+    c: ClassVar = {"table_name": None}
 
 
 class _Stmt:

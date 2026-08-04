@@ -1,7 +1,7 @@
 from datetime import datetime
-import pytest
 
 import polars as pl
+import pytest
 
 from polars_hist_db.core import TableOps
 from polars_hist_db.dataset import run_datasets
@@ -34,7 +34,7 @@ async def test_value_if_missing(fixture_with_defaults):
     """
 
     base_config.datasets.datasets[0].input_config.set_payload(dsv_1, ts_1)
-    uploaded_partitions = list()
+    uploaded_partitions = []
     await run_datasets(
         base_config,
         engine,
@@ -64,7 +64,7 @@ async def test_value_if_missing(fixture_with_defaults):
     """
 
     base_config.datasets.datasets[0].input_config.set_payload(dsv_2, ts_2)
-    uploaded_partitions = list()
+    uploaded_partitions = []
     await run_datasets(
         base_config,
         engine,

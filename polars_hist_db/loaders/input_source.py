@@ -1,17 +1,17 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import AsyncGenerator, Awaitable, Callable, List, Tuple, TypeVar, Generic
-from datetime import datetime
 import logging
+from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import TypeVar
 
 import polars as pl
 from sqlalchemy import Connection, Engine
 
-from ..core.audit import AuditOps
-
 from ..config.dataset import DatasetConfig
-from ..config.table import TableConfig, TableConfigs
 from ..config.input.input_source import InputConfig
+from ..config.table import TableConfig, TableConfigs
+from ..core.audit import AuditOps
 
 LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ async def _noop_after_commit() -> None:
 
 @dataclass
 class BatchFinalizer:
-    write_audit_before_commit: Callable[[Connection, List[Tuple[str, str]]], bool] = (
+    write_audit_before_commit: Callable[[Connection, list[tuple[str, str]]], bool] = (
         lambda connection, modified_tables: True
     )
     ack_after_commit: Callable[[], Awaitable[None]] = _noop_after_commit
@@ -36,7 +36,7 @@ def _file_filter_connection_context(engine: Engine):
     return engine.begin()
 
 
-class InputSource(ABC, Generic[TConfig]):
+class InputSource[TConfig: InputConfig](ABC):
     def __init__(
         self,
         tables: TableConfigs,
@@ -49,15 +49,15 @@ class InputSource(ABC, Generic[TConfig]):
         self.column_definitions = (
             self.dataset.pipeline.build_ingestion_column_definitions(self.tables)
         )
-        self.previous_payload_time: datetime = datetime.min
+        self.previous_payload_time: datetime = datetime.min.replace(tzinfo=UTC)
 
     @abstractmethod
     async def next_df(
         self,
         engine: Engine,
     ) -> AsyncGenerator[
-        Tuple[
-            List[Tuple[datetime, pl.DataFrame]],
+        tuple[
+            list[tuple[datetime, pl.DataFrame]],
             BatchFinalizer,
         ],
         None,
@@ -106,7 +106,7 @@ class InputSource(ABC, Generic[TConfig]):
 
     def _apply_time_partitioning(
         self, df: pl.DataFrame, payload_time: datetime
-    ) -> List[Tuple[datetime, pl.DataFrame]]:
+    ) -> list[tuple[datetime, pl.DataFrame]]:
         pipeline = self.dataset.pipeline
         main_table_config: TableConfig = self.tables[pipeline.get_main_table_name()[1]]
         tbl_to_header_map = pipeline.get_header_map(main_table_config.name)

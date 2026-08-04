@@ -1,8 +1,8 @@
 import json
 from datetime import datetime
-from nats.aio.msg import Msg
 
 import polars as pl
+from nats.aio.msg import Msg
 
 from ..config.input.ingest_fn_registry import IngestFnRegistry
 from ..config.input.jetstream_config import JetstreamIngestConfig

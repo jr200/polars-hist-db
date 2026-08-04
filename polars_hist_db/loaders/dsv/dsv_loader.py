@@ -1,21 +1,20 @@
 import logging
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import MappingProxyType
-from typing import Optional, Mapping, Sequence, Tuple, Union
 
 import polars as pl
 
-
 from ...config.parser_config import IngestionColumnConfig
-from ..transform import header_configs
 from ...types import PolarsType, is_polars_type
+from ..transform import header_configs
 
 LOGGER = logging.getLogger(__name__)
 
 
 def _parse_header_row(
-    input: Union[Path, bytes], known_delimiter: Optional[str]
-) -> Tuple[str, Sequence[str]]:
+    input: Path | bytes, known_delimiter: str | None
+) -> tuple[str, Sequence[str]]:
     delimiters = [known_delimiter] if known_delimiter else [",", ";", "|", ":"]
 
     failed_guess_errors = []
@@ -33,12 +32,12 @@ def _parse_header_row(
             if known_delimiter or df.shape[1] > 1:
                 return delimiter, df.columns
 
-        except Exception as e:
+        except (OSError, UnicodeError, ValueError, pl.exceptions.PolarsError) as e:
             failed_guess_errors.append(e)
             continue
 
     LOGGER.error(failed_guess_errors)
-    raise ValueError(f"couldn't infer delimiter of dsv {str(input)}")
+    raise ValueError(f"couldn't infer delimiter of dsv {input!s}")
 
 
 def _get_column_target_dtype(
@@ -52,11 +51,11 @@ def _get_column_target_dtype(
 
 
 def load_typed_dsv(
-    file_or_bytes: Union[Path, bytes],
+    file_or_bytes: Path | bytes,
     column_configs: Sequence[IngestionColumnConfig],
     schema_overrides: Mapping[str, pl.DataType] = MappingProxyType({}),
-    delimiter: Optional[str] = None,
-    null_values: Optional[Sequence[str]] = None,
+    delimiter: str | None = None,
+    null_values: Sequence[str] | None = None,
 ) -> pl.DataFrame:
     if isinstance(file_or_bytes, Path):
         LOGGER.info("loading csv from path %s", str(file_or_bytes))

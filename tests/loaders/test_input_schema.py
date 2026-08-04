@@ -1,6 +1,7 @@
+from typing import Literal
+
 import polars as pl
 import pytest
-from typing import Literal
 
 from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.loaders.transform import (

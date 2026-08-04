@@ -4,6 +4,7 @@ from datetime import datetime
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from polars_hist_db.dataset import run_datasets
 
@@ -37,7 +38,7 @@ def _stage_row_count(engine, dataset, backend_name: str) -> int:
     with engine.connect() as connection:
         try:
             result = connection.execute(text(sql)).scalar()
-        except Exception:
+        except SQLAlchemyError:
             return 0
     return int(result or 0)
 

@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from threading import get_ident
 from types import SimpleNamespace
 
@@ -49,7 +49,7 @@ def test_ingestion_worker_config_is_bounded():
 async def test_dsv_preparation_runs_off_the_event_loop():
     event_loop_thread = get_ident()
     preparation_threads = []
-    payload_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    payload_time = datetime(2026, 1, 1, tzinfo=UTC)
     source = object.__new__(DsvCrawlerInputSource)
     source.config = SimpleNamespace(
         has_payload=lambda: True,

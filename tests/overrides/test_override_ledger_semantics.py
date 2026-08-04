@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -10,7 +10,7 @@ from polars_hist_db.overrides import (
 
 
 def _utc(hour: int) -> datetime:
-    return datetime(2026, 7, 9, hour, tzinfo=timezone.utc)
+    return datetime(2026, 7, 9, hour, tzinfo=UTC)
 
 
 def test_record_classification_set_replace_and_system_close_timeline():
@@ -104,7 +104,7 @@ def test_set_rejects_naive_valid_from():
             field_path="status",
             value=OverrideTypedValue("enum", {"value": "deleted"}),
             observed_canonical_value_json={"value": "expected"},
-            valid_from=datetime(2026, 7, 9, 13),
+            valid_from=datetime.fromisoformat("2026-07-09T13:00:00"),
         )
 
 

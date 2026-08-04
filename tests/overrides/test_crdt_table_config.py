@@ -1,6 +1,6 @@
 from sqlalchemy import MetaData, Table
-from sqlalchemy.schema import CreateTable
 from sqlalchemy.dialects import mysql
+from sqlalchemy.schema import CreateTable
 
 from polars_hist_db.overrides import (
     CrdtDocumentStoreConfig,

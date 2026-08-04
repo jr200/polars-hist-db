@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date, datetime, time as datetime_time, timedelta, timezone
-from decimal import Decimal
-from hashlib import sha256
 import logging
 import math
 import struct
 import time
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
+from datetime import time as datetime_time
+from decimal import Decimal
+from hashlib import sha256
 from threading import RLock
-from typing import Callable, Literal, Mapping, Protocol, Sequence, cast
+from typing import Literal, Protocol, cast
 from uuid import UUID
 
-import pyarrow as pa
 import polars as pl
+import pyarrow as pa
 
 from polars_hist_db.config import TableConfig
-
 from polars_hist_db.observability import (
     arrow_override_sync_span,
     record_arrow_override_sync,
@@ -1473,5 +1474,5 @@ def _require_utc(value: datetime, name: str) -> None:
 
 def _datetime_us(value: datetime) -> int:
     _require_utc(value, "timestamp value")
-    delta = value - datetime(1970, 1, 1, tzinfo=timezone.utc)
+    delta = value - datetime(1970, 1, 1, tzinfo=UTC)
     return delta.days * 86_400_000_000 + delta.seconds * 1_000_000 + delta.microseconds

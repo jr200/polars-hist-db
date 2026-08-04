@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from types import SimpleNamespace
 from typing import Any
 
@@ -66,7 +66,7 @@ async def test_heartbeat_runs_while_batch_is_yielded_and_stops_after_close():
 
     class Message:
         calls = 0
-        metadata = SimpleNamespace(timestamp=datetime(2026, 7, 20, tzinfo=timezone.utc))
+        metadata = SimpleNamespace(timestamp=datetime(2026, 7, 20, tzinfo=UTC))
 
         async def in_progress(self):
             self.calls += 1

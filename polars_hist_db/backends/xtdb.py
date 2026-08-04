@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
 )
 
 import polars as pl
@@ -16,35 +15,35 @@ from ..config import (
     ValidTimeConfig,
 )
 from ..core import TimeHint
-from .config import DbEngineConfig
+from . import xtdb_arrow as _xtdb_arrow
+from . import xtdb_dataframe as _xtdb_dataframe
+from . import xtdb_delta as _xtdb_delta
+from . import xtdb_query as _xtdb_query
+from . import xtdb_schema as _xtdb_schema
+from . import xtdb_staging as _xtdb_staging
+from . import xtdb_transport as _xtdb_transport
 from .base import (
     TableHealthResult,
     bounded_table_health_query,
     execute_table_health_query,
 )
+from .config import DbEngineConfig
 from .temporal import system_time_hint_clause
-from . import xtdb_arrow as _xtdb_arrow
-from . import xtdb_delta as _xtdb_delta
-from . import xtdb_dataframe as _xtdb_dataframe
-from . import xtdb_query as _xtdb_query
-from . import xtdb_schema as _xtdb_schema
-from . import xtdb_staging as _xtdb_staging
-from . import xtdb_transport as _xtdb_transport
-from .xtdb_schema import XtdbTableConfigOps
-from .xtdb_delta import _xtdb_temporal_upsert
-from .xtdb_staging import XtdbStagingOps
 from .xtdb_dataframe import (
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
 )
+from .xtdb_delta import _xtdb_temporal_upsert
+from .xtdb_schema import XtdbTableConfigOps
+from .xtdb_staging import XtdbStagingOps
 from .xtdb_transport import (
     _close_xtdb_adbc_connection,
     _create_xtdb_adbc_connection,
     _create_xtdb_engine,
-    _xtdb_transaction_active,
-    _xtdb_buffered_transaction_scope,
     _xtdb_adbc_uri,
+    _xtdb_buffered_transaction_scope,
     _xtdb_connection_scope,
+    _xtdb_transaction_active,
 )
 
 if TYPE_CHECKING:
@@ -55,10 +54,12 @@ if TYPE_CHECKING:
         LayerCompositionStoreConfig,
         OverrideLedgerConfig,
     )
-    from ..overrides.xtdb import XtdbDocumentAccessStore
     from ..overrides.arrow import RepositoryArrowOverrideOperationStore
-    from ..overrides.xtdb import XtdbLayerCompositionStore
-    from ..overrides.xtdb import XtdbCrdtDocumentStore
+    from ..overrides.xtdb import (
+        XtdbCrdtDocumentStore,
+        XtdbDocumentAccessStore,
+        XtdbLayerCompositionStore,
+    )
 
 
 def __getattr__(name: str) -> Any:
@@ -91,7 +92,7 @@ def _load_flight_sql() -> Any:
 @dataclass(frozen=True)
 class XtdbBackend:
     name: str = "xtdb"
-    max_rows_per_insert: Optional[int] = 10_000
+    max_rows_per_insert: int | None = 10_000
 
     def create_engine(self, config: DbEngineConfig) -> Engine:
         return _create_xtdb_engine(config, create_engine)
@@ -214,11 +215,11 @@ class XtdbBackend:
         *,
         connection: Any | None = None,
         dataframe_ops: XtdbDataframeOps | XtdbAdbcDataframeOps | None = None,
-        table_config: Optional[TableConfig] = None,
-        delta_config: Optional[DeltaConfig] = None,
-        update_time: Optional[datetime] = None,
-        valid_time: Optional[ValidTimeConfig] = None,
-        dropout_close_time: Optional[datetime] = None,
+        table_config: TableConfig | None = None,
+        delta_config: DeltaConfig | None = None,
+        update_time: datetime | None = None,
+        valid_time: ValidTimeConfig | None = None,
+        dropout_close_time: datetime | None = None,
     ) -> int:
         return _xtdb_temporal_upsert(
             df,

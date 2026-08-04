@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
+from typing import Any
 from uuid import uuid4
 
 from pycrdt import Doc, Map
-from typing import Any
 
 from polars_hist_db.overrides import (
     CrdtDocument,
@@ -43,7 +43,7 @@ def test_xtdb_store_submits_one_asserted_transaction(monkeypatch):
         None,
         _operation_update(str(uuid4())),
         actor_id="user-1",
-        recorded_at=datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+        recorded_at=datetime(2026, 7, 12, 11, tzinfo=UTC),
     )
     statements: list[str] = []
     store = XtdbCrdtDocumentStore(

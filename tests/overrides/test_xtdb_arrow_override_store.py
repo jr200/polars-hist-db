@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
 import pyarrow as pa
@@ -36,7 +36,7 @@ def _committed(layer_id: UUID) -> pa.Table:
                 "value": value,
                 "supersedes_ids": [],
                 "removes_ids": [],
-                "valid_from": datetime(2026, 7, 19, tzinfo=timezone.utc),
+                "valid_from": datetime(2026, 7, 19, tzinfo=UTC),
                 "source_drift": False,
             }
         ],
@@ -49,7 +49,7 @@ def _committed(layer_id: UUID) -> pa.Table:
         layer_revision=1,
         actor_subject="subject-1",
         actor_display_name=None,
-        recorded_at=datetime(2026, 7, 19, 2, tzinfo=timezone.utc),
+        recorded_at=datetime(2026, 7, 19, 2, tzinfo=UTC),
     )
 
 
@@ -70,7 +70,7 @@ def test_xtdb_append_is_one_asserted_typed_transaction(monkeypatch) -> None:
         1,
         0,
         committed,
-        datetime(2026, 7, 19, 2, tzinfo=timezone.utc),
+        datetime(2026, 7, 19, 2, tzinfo=UTC),
         (
             RowGuard(
                 access,

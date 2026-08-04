@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import base64
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from hashlib import sha256
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from sqlalchemy import text
 
@@ -47,14 +48,6 @@ from .config import (
     build_layer_composition_table_config,
     build_override_table_config,
 )
-from .operations import CompositionRevision
-from .pagination import (
-    Page,
-    decode_cursor,
-    encode_cursor,
-    page_from_items,
-    validate_limit,
-)
 from .crdt import (
     AtomicInsert,
     AtomicUpdate,
@@ -65,6 +58,14 @@ from .crdt import (
     PreparedCrdtCommit,
     RowGuard,
     _doc,
+)
+from .operations import CompositionRevision
+from .pagination import (
+    Page,
+    decode_cursor,
+    encode_cursor,
+    page_from_items,
+    validate_limit,
 )
 from .types import (
     CrdtDocumentStoreConfig,
@@ -155,7 +156,7 @@ def _composition_revision(row: Mapping[str, object]) -> CompositionRevision:
     if isinstance(children, str):
         children = json.loads(children)
     if not isinstance(children, list):
-        raise ValueError("stored composition children are invalid")
+        raise TypeError("stored composition children are invalid")
     return CompositionRevision(
         str(row["revision_id"]),
         str(row["layer_id"]),
@@ -1043,19 +1044,7 @@ def _access_document_columns(prefix: str | None = None) -> str:
 
 
 def _access_grant_columns() -> str:
-    return ", ".join(
-        (
-            "grant_id",
-            "document_id",
-            "group_name",
-            "role",
-            "granted_by",
-            "granted_at",
-            "document_revision",
-            "revoked_by",
-            "revoked_at",
-        )
-    )
+    return "grant_id, document_id, group_name, role, granted_by, granted_at, document_revision, revoked_by, revoked_at"
 
 
 def _access_document_from_row(row: Mapping[str, object]) -> AccessDocument:
@@ -1206,7 +1195,7 @@ def _json_value(value: object) -> object:
 def _access_result_from_json(value: object, *, duplicate: bool) -> AccessMutationResult:
     parsed = json.loads(value) if isinstance(value, str) else value
     if not isinstance(parsed, Mapping):
-        raise ValueError("stored access command result is invalid")
+        raise TypeError("stored access command result is invalid")
     document = _access_document_from_row(parsed["document"])
     grants = tuple(_access_grant_from_row(grant) for grant in parsed["grants"])
     return AccessMutationResult(document, grants, accepted=False, duplicate=duplicate)
@@ -1296,7 +1285,7 @@ def _decode(value: str) -> bytes:
 def _accepted_at(prepared: PreparedCrdtCommit) -> datetime:
     if prepared.operations:
         return prepared.operations[0].recorded_at
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _generation(prepared: PreparedCrdtCommit) -> int:
@@ -1324,7 +1313,7 @@ def _bootstrap_value(data_type: str) -> object:
     if normalized.startswith(("BOOL", "BOOLEAN")):
         return False
     if normalized.startswith(("DATETIME", "TIMESTAMP")):
-        return datetime(1970, 1, 1, tzinfo=timezone.utc)
+        return datetime(1970, 1, 1, tzinfo=UTC)
     if normalized.startswith("DATE"):
         return date(1970, 1, 1)
     return ""

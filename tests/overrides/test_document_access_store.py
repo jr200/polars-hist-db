@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -10,8 +10,7 @@ from polars_hist_db.overrides import (
     InMemoryDocumentAccessStore,
 )
 
-
-TIME = datetime(2026, 7, 13, 12, tzinfo=timezone.utc)
+TIME = datetime(2026, 7, 13, 12, tzinfo=UTC)
 
 
 def test_lifecycle_is_versioned_and_preserves_grant_history():

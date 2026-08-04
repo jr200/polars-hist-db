@@ -4,13 +4,13 @@ from sqlalchemy import types as sa_types
 from sqlalchemy.dialects import mysql
 from sqlalchemy.schema import CreateTable
 
+from polars_hist_db.backends.xtdb import _xtdb_sql_literal
+from polars_hist_db.backends.xtdb_transport import _xtdb_cast_type
 from polars_hist_db.overrides import (
     ArrowOverrideStoreConfig,
     build_arrow_override_table_configs,
 )
 from polars_hist_db.types import PolarsType, SQLAlchemyType
-from polars_hist_db.backends.xtdb import _xtdb_sql_literal
-from polars_hist_db.backends.xtdb_transport import _xtdb_cast_type
 
 
 def test_arrow_store_uses_typed_columns_and_normalized_repeating_values() -> None:

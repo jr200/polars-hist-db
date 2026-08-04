@@ -1,9 +1,11 @@
-import dateutil.parser
 import logging
 import re
-from typing import Collection, Dict, List, Mapping, Optional, Tuple, Union, cast
+from collections.abc import Collection, Mapping
+from typing import cast
 
+import dateutil.parser
 import polars as pl
+import sqlalchemy
 from sql_metadata import Parser
 from sqlalchemy import (
     ClauseElement,
@@ -13,10 +15,9 @@ from sqlalchemy import (
     MetaData,
     Table,
 )
-import sqlalchemy
 from sqlalchemy.dialects import mysql
-from sqlalchemy.types import TypeEngine
 from sqlalchemy.sql.sqltypes import NullType
+from sqlalchemy.types import TypeEngine
 
 from .observability import record_database_type_contract
 from .utils.exceptions import NonRetryableException
@@ -30,7 +31,7 @@ class TypeContractError(TypeError, NonRetryableException):
 
 def is_polars_type(
     dtype: pl.DataType,
-    *candidates: Union[pl.DataType, type[pl.DataType]],
+    *candidates: pl.DataType | type[pl.DataType],
 ) -> bool:
     """Compare Polars dtypes without relying on inconsistent dtype hashing."""
     return any(dtype == candidate for candidate in candidates)
@@ -59,7 +60,7 @@ def _polars_type_family(dtype: pl.DataType) -> str:
 
 
 # This mapping is used by all three converters.
-TYPE_PRIORITY_MAP: List[Tuple[str, pl.DataType, TypeEngine]] = [
+TYPE_PRIORITY_MAP: list[tuple[str, pl.DataType, TypeEngine]] = [
     ("BIGINT", pl.Int64(), sqlalchemy.types.BIGINT()),
     ("BINARY", pl.Binary(), sqlalchemy.types.BINARY()),
     ("BIT", pl.Int32(), sqlalchemy.types.Integer()),
@@ -114,19 +115,19 @@ class _TypeConversionUtils:
     @staticmethod
     def _parse_parameterised_type(
         sql_type: str,
-    ) -> Tuple[str, List[str], Dict[str, str]]:
+    ) -> tuple[str, list[str], dict[str, str]]:
         pattern = r"^(?P<type>[A-Z]+)[(](?P<params>.*)[)]"
         sql_type = sql_type.upper()
         m = re.match(pattern, sql_type)
         if m is None:
-            return sql_type, [], dict()
+            return sql_type, [], {}
 
         type_name = m.group("type")
         params = m.group("params").lower()
         if "=" not in params:
-            return type_name, params.split(","), dict()
+            return type_name, params.split(","), {}
 
-        param_dict = dict()
+        param_dict = {}
         for param in params.split(","):
             key, value = param.split("=")
             param_dict[key.strip()] = value.strip()
@@ -201,8 +202,8 @@ class PolarsType:
     @staticmethod
     def get_dataframe_schema_from_sqltext(
         sql_statement: str, connection: Connection
-    ) -> Dict[str, pl.DataType]:
-        dtype_schema: Dict[str, pl.DataType] = {}
+    ) -> dict[str, pl.DataType]:
+        dtype_schema: dict[str, pl.DataType] = {}
         for fqtn in Parser(sql_statement).tables:
             table_schema, table_name = fqtn.split(".")
             metadata = MetaData(schema=table_schema)
@@ -213,9 +214,9 @@ class PolarsType:
 
     @staticmethod
     def get_dataframe_schema_from_selectable(
-        selectable: Union[Optional[ClauseElement], Compiled],
-    ) -> Dict[str, pl.DataType]:
-        dtype_schema: Dict[str, pl.DataType] = {}
+        selectable: ClauseElement | None | Compiled,
+    ) -> dict[str, pl.DataType]:
+        dtype_schema: dict[str, pl.DataType] = {}
         unknown_types = {}
         if isinstance(selectable, Compiled):
             selectable = selectable.statement
@@ -364,7 +365,7 @@ class PolarsType:
 
     @staticmethod
     def cast_str_to_cat(
-        df: pl.DataFrame, ignore_cols: Optional[Collection[str]] = None
+        df: pl.DataFrame, ignore_cols: Collection[str] | None = None
     ) -> pl.DataFrame:
         if ignore_cols is None:
             ignore_cols = []

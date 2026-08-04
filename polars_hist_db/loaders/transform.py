@@ -1,12 +1,11 @@
 import logging
+from collections.abc import Mapping, Sequence
 from types import MappingProxyType
-from typing import Mapping, Sequence
 
 import polars as pl
 
-
-from ..config.transform_fn_registry import TransformFnRegistry
 from ..config.parser_config import IngestionColumnConfig
+from ..config.transform_fn_registry import TransformFnRegistry
 from ..core.dataframe import DataframeOps
 from ..types import PolarsType
 from ..utils.exceptions import NonRetryableException

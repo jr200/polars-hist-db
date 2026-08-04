@@ -1,8 +1,8 @@
 from contextlib import contextmanager
-from unittest.mock import Mock
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time, timezone
 from decimal import Decimal
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -15,12 +15,12 @@ from polars_hist_db.backends.xtdb import (
     XtdbTableConfigOps,
     _execute_xtdb_dml,
     _execute_xtdb_transaction,
-    _xtdb_transaction_scope,
+    _validate_xtdb_physical_types,
     _xtdb_cast_type,
     _xtdb_declared_columns,
     _xtdb_physical_type_family,
+    _xtdb_transaction_scope,
     _xtdb_type_to_config_type,
-    _validate_xtdb_physical_types,
 )
 from polars_hist_db.backends.xtdb_arrow import (
     _prepare_xtdb_insert_dataframe,
@@ -169,7 +169,7 @@ def test_xtdb_buffered_transaction_retries_invalid_system_time_at_commit():
     connection.info = {}
     connection.connection.driver_connection = driver_connection
     connection.in_transaction.return_value = False
-    system_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    system_time = datetime(2026, 1, 1, tzinfo=UTC)
 
     with _xtdb_buffered_transaction_scope(connection, system_time):
         _execute_xtdb_dml(
@@ -268,7 +268,7 @@ def test_xtdb_temporal_upsert_passes_system_time_to_dataframe_insert():
     backend = XtdbBackend()
     ops = Mock()
     ops.table_insert.return_value = 1
-    update_time = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    update_time = datetime(2030, 1, 1, tzinfo=UTC)
     df = pl.DataFrame({"id": [1]})
 
     result = backend.temporal_upsert(
@@ -380,7 +380,7 @@ def test_xtdb_temporal_upsert_dropout_closes_missing_keys_at_valid_time(monkeypa
             {
                 "id": [1],
                 "destination": ["Alpha"],
-                "_valid_from": [datetime(2030, 1, 2, tzinfo=timezone.utc)],
+                "_valid_from": [datetime(2030, 1, 2, tzinfo=UTC)],
             }
         ),
         "test",
@@ -425,7 +425,7 @@ def test_xtdb_temporal_upsert_dropout_uses_explicit_close_time_for_empty_batches
         dataframe_ops=ops,
         table_config=table_config,
         delta_config=DeltaConfig(row_finality="dropout"),
-        dropout_close_time=datetime(2030, 1, 3, tzinfo=timezone.utc),
+        dropout_close_time=datetime(2030, 1, 3, tzinfo=UTC),
     )
 
     assert result == 2
@@ -596,8 +596,8 @@ def test_xtdb_temporal_upsert_treats_explicit_valid_time_change_as_changed():
         {
             "_id": [1],
             "destination": ["Alpha"],
-            "_valid_from": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
-            "_valid_to": [datetime(2030, 2, 1, tzinfo=timezone.utc)],
+            "_valid_from": [datetime(2030, 1, 1, tzinfo=UTC)],
+            "_valid_to": [datetime(2030, 2, 1, tzinfo=UTC)],
         }
     )
     ops.table_insert.return_value = 1
@@ -616,8 +616,8 @@ def test_xtdb_temporal_upsert_treats_explicit_valid_time_change_as_changed():
             {
                 "id": [1],
                 "destination": ["Alpha"],
-                "_valid_from": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
-                "_valid_to": [datetime(2030, 3, 1, tzinfo=timezone.utc)],
+                "_valid_from": [datetime(2030, 1, 1, tzinfo=UTC)],
+                "_valid_to": [datetime(2030, 3, 1, tzinfo=UTC)],
             }
         ),
         "test",
@@ -625,7 +625,7 @@ def test_xtdb_temporal_upsert_treats_explicit_valid_time_change_as_changed():
         dataframe_ops=ops,
         table_config=table_config,
         delta_config=DeltaConfig(drop_unchanged_rows=True),
-        update_time=datetime(2030, 1, 2, tzinfo=timezone.utc),
+        update_time=datetime(2030, 1, 2, tzinfo=UTC),
     )
 
     assert result == 1
@@ -633,8 +633,8 @@ def test_xtdb_temporal_upsert_treats_explicit_valid_time_change_as_changed():
     assert written_df.to_dict(as_series=False) == {
         "id": [1],
         "destination": ["Alpha"],
-        "_valid_from": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
-        "_valid_to": [datetime(2030, 3, 1, tzinfo=timezone.utc)],
+        "_valid_from": [datetime(2030, 1, 1, tzinfo=UTC)],
+        "_valid_to": [datetime(2030, 3, 1, tzinfo=UTC)],
     }
 
 
@@ -645,7 +645,7 @@ def test_xtdb_temporal_upsert_ignores_valid_from_when_filtering_unchanged_rows()
         {
             "_id": [1],
             "destination": ["Alpha"],
-            "_valid_from": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
+            "_valid_from": [datetime(2030, 1, 1, tzinfo=UTC)],
         }
     )
     ops.table_insert.return_value = 0
@@ -664,7 +664,7 @@ def test_xtdb_temporal_upsert_ignores_valid_from_when_filtering_unchanged_rows()
             {
                 "id": [1],
                 "destination": ["Alpha"],
-                "_valid_from": [datetime(2030, 2, 1, tzinfo=timezone.utc)],
+                "_valid_from": [datetime(2030, 2, 1, tzinfo=UTC)],
             }
         ),
         "test",
@@ -869,8 +869,8 @@ def test_xtdb_temporal_upsert_maps_configured_valid_time_columns():
     backend = XtdbBackend()
     ops = Mock()
     ops.table_insert.return_value = 1
-    asof_time = datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc)
-    expiry_time = datetime(2030, 2, 1, 12, 0, tzinfo=timezone.utc)
+    asof_time = datetime(2030, 1, 1, 12, 0, tzinfo=UTC)
+    expiry_time = datetime(2030, 2, 1, 12, 0, tzinfo=UTC)
 
     result = backend.temporal_upsert(
         pl.DataFrame(
@@ -935,7 +935,7 @@ def test_xtdb_temporal_upsert_rejects_missing_valid_time_source_column():
             {
                 "id": [1],
                 "destination": ["Alpha"],
-                "msg_timestamp": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
+                "msg_timestamp": [datetime(2030, 1, 1, tzinfo=UTC)],
                 "valid_until": [None],
             },
             ValidTimeConfig(
@@ -970,8 +970,8 @@ def test_xtdb_temporal_upsert_rejects_valid_time_target_conflict():
             pl.DataFrame(
                 {
                     "id": [1],
-                    "msg_timestamp": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
-                    "_valid_from": [datetime(2030, 1, 2, tzinfo=timezone.utc)],
+                    "msg_timestamp": [datetime(2030, 1, 1, tzinfo=UTC)],
+                    "_valid_from": [datetime(2030, 1, 2, tzinfo=UTC)],
                 }
             ),
             "test",
@@ -1010,28 +1010,30 @@ def test_xtdb_table_creation_maps_mysql_compatibility_types(monkeypatch):
     executed_sql = [call.args[0].text for call in connection.execute.call_args_list]
     assert all(not sql.startswith("CREATE TABLE") for sql in executed_sql)
     assert executed_sql == [
-        "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
-        "(_id, table_schema, table_name, primary_keys_json, id_policy, "
-        "columns_json, foreign_keys_json, is_temporal) "
-        "VALUES ('test.compat_types'::TEXT, 'test'::TEXT, 'compat_types'::TEXT, "
-        "'[\"id\"]'::TEXT, 'single-key'::TEXT, "
-        '\'[{"table":"compat_types","name":"id","data_type":"INT",'
-        '"default_value":null,"autoincrement":false,"nullable":false,'
-        '"unique_constraint":[]},{"table":"compat_types","name":"bool_col",'
-        '"data_type":"BOOL","default_value":null,"autoincrement":false,'
-        '"nullable":true,"unique_constraint":[]},{"table":"compat_types",'
-        '"name":"bit_col","data_type":"BIT","default_value":null,'
-        '"autoincrement":false,"nullable":true,"unique_constraint":[]},'
-        '{"table":"compat_types","name":"tinyint_col","data_type":"TINYINT",'
-        '"default_value":null,"autoincrement":false,"nullable":true,'
-        '"unique_constraint":[]},{"table":"compat_types","name":"mediumint_col",'
-        '"data_type":"MEDIUMINT","default_value":null,"autoincrement":false,'
-        '"nullable":true,"unique_constraint":[]},{"table":"compat_types",'
-        '"name":"datetime_col","data_type":"DATETIME","default_value":null,'
-        '"autoincrement":false,"nullable":true,"unique_constraint":[]},'
-        '{"table":"compat_types","name":"time_col","data_type":"TIME",'
-        '"default_value":null,"autoincrement":false,"nullable":true,'
-        "\"unique_constraint\":[]}]'::TEXT, '[]'::TEXT, FALSE::BOOLEAN)",
+        (
+            "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
+            "(_id, table_schema, table_name, primary_keys_json, id_policy, "
+            "columns_json, foreign_keys_json, is_temporal) "
+            "VALUES ('test.compat_types'::TEXT, 'test'::TEXT, 'compat_types'::TEXT, "
+            "'[\"id\"]'::TEXT, 'single-key'::TEXT, "
+            '\'[{"table":"compat_types","name":"id","data_type":"INT",'
+            '"default_value":null,"autoincrement":false,"nullable":false,'
+            '"unique_constraint":[]},{"table":"compat_types","name":"bool_col",'
+            '"data_type":"BOOL","default_value":null,"autoincrement":false,'
+            '"nullable":true,"unique_constraint":[]},{"table":"compat_types",'
+            '"name":"bit_col","data_type":"BIT","default_value":null,'
+            '"autoincrement":false,"nullable":true,"unique_constraint":[]},'
+            '{"table":"compat_types","name":"tinyint_col","data_type":"TINYINT",'
+            '"default_value":null,"autoincrement":false,"nullable":true,'
+            '"unique_constraint":[]},{"table":"compat_types","name":"mediumint_col",'
+            '"data_type":"MEDIUMINT","default_value":null,"autoincrement":false,'
+            '"nullable":true,"unique_constraint":[]},{"table":"compat_types",'
+            '"name":"datetime_col","data_type":"DATETIME","default_value":null,'
+            '"autoincrement":false,"nullable":true,"unique_constraint":[]},'
+            '{"table":"compat_types","name":"time_col","data_type":"TIME",'
+            '"default_value":null,"autoincrement":false,"nullable":true,'
+            "\"unique_constraint\":[]}]'::TEXT, '[]'::TEXT, FALSE::BOOLEAN)"
+        ),
     ]
     assert _xtdb_declared_columns(table_config) == [
         "_id",
@@ -1082,8 +1084,10 @@ def test_xtdb_table_config_ops_drop_all_erases_configured_tables(monkeypatch):
 
     assert executed == [
         "ERASE FROM market.prices WHERE TRUE",
-        "DELETE FROM market.__polars_hist_db_xtdb_table_configs "
-        "WHERE _id = 'market.prices'::TEXT",
+        (
+            "DELETE FROM market.__polars_hist_db_xtdb_table_configs "
+            "WHERE _id = 'market.prices'::TEXT"
+        ),
     ]
 
 
@@ -1116,8 +1120,10 @@ def test_xtdb_table_config_ops_drop_removes_metadata_without_data_table(monkeypa
     ops.drop(table_config)
 
     assert executed == [
-        "DELETE FROM market.__polars_hist_db_xtdb_table_configs "
-        "WHERE _id = 'market.prices'::TEXT",
+        (
+            "DELETE FROM market.__polars_hist_db_xtdb_table_configs "
+            "WHERE _id = 'market.prices'::TEXT"
+        ),
     ]
 
 
@@ -1211,19 +1217,21 @@ def test_xtdb_table_creation_records_configured_columns_without_ddl(monkeypatch)
     executed_sql = [call.args[0].text for call in connection.execute.call_args_list]
     assert all(not sql.startswith("CREATE TABLE") for sql in executed_sql)
     assert executed_sql == [
-        "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
-        "(_id, table_schema, table_name, primary_keys_json, id_policy, "
-        "columns_json, foreign_keys_json, is_temporal) "
-        "VALUES ('test.records'::TEXT, 'test'::TEXT, 'records'::TEXT, "
-        "'[\"id\"]'::TEXT, 'single-key'::TEXT, "
-        '\'[{"table":"records","name":"id","data_type":"BIGINT",'
-        '"default_value":null,"autoincrement":false,"nullable":false,'
-        '"unique_constraint":[]},{"table":"records","name":"destination",'
-        '"data_type":"VARCHAR(255)","default_value":null,"autoincrement":false,'
-        '"nullable":true,"unique_constraint":[]},{"table":"records",'
-        '"name":"amount_value","data_type":"DECIMAL(20,6)","default_value":null,'
-        '"autoincrement":false,"nullable":true,"unique_constraint":[]}]'
-        "'::TEXT, '[]'::TEXT, FALSE::BOOLEAN)",
+        (
+            "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
+            "(_id, table_schema, table_name, primary_keys_json, id_policy, "
+            "columns_json, foreign_keys_json, is_temporal) "
+            "VALUES ('test.records'::TEXT, 'test'::TEXT, 'records'::TEXT, "
+            "'[\"id\"]'::TEXT, 'single-key'::TEXT, "
+            '\'[{"table":"records","name":"id","data_type":"BIGINT",'
+            '"default_value":null,"autoincrement":false,"nullable":false,'
+            '"unique_constraint":[]},{"table":"records","name":"destination",'
+            '"data_type":"VARCHAR(255)","default_value":null,"autoincrement":false,'
+            '"nullable":true,"unique_constraint":[]},{"table":"records",'
+            '"name":"amount_value","data_type":"DECIMAL(20,6)","default_value":null,'
+            '"autoincrement":false,"nullable":true,"unique_constraint":[]}]'
+            "'::TEXT, '[]'::TEXT, FALSE::BOOLEAN)"
+        ),
     ]
 
 
@@ -1271,19 +1279,21 @@ def test_xtdb_table_creation_records_composite_primary_key_columns(monkeypatch):
     executed_sql = [call.args[0].text for call in connection.execute.call_args_list]
     assert all(not sql.startswith("CREATE TABLE") for sql in executed_sql)
     assert executed_sql == [
-        "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
-        "(_id, table_schema, table_name, primary_keys_json, id_policy, "
-        "columns_json, foreign_keys_json, is_temporal) "
-        "VALUES ('test.records'::TEXT, 'test'::TEXT, 'records'::TEXT, "
-        "'[\"entity_id\",\"record_id\"]'::TEXT, 'xtdb-pk-v1'::TEXT, "
-        '\'[{"table":"records","name":"entity_id","data_type":"BIGINT",'
-        '"default_value":null,"autoincrement":false,"nullable":false,'
-        '"unique_constraint":[]},{"table":"records","name":"record_id",'
-        '"data_type":"BIGINT","default_value":null,"autoincrement":false,'
-        '"nullable":false,"unique_constraint":[]},{"table":"records",'
-        '"name":"destination","data_type":"VARCHAR(255)","default_value":null,'
-        '"autoincrement":false,"nullable":true,"unique_constraint":[]}]'
-        "'::TEXT, '[]'::TEXT, FALSE::BOOLEAN)",
+        (
+            "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
+            "(_id, table_schema, table_name, primary_keys_json, id_policy, "
+            "columns_json, foreign_keys_json, is_temporal) "
+            "VALUES ('test.records'::TEXT, 'test'::TEXT, 'records'::TEXT, "
+            "'[\"entity_id\",\"record_id\"]'::TEXT, 'xtdb-pk-v1'::TEXT, "
+            '\'[{"table":"records","name":"entity_id","data_type":"BIGINT",'
+            '"default_value":null,"autoincrement":false,"nullable":false,'
+            '"unique_constraint":[]},{"table":"records","name":"record_id",'
+            '"data_type":"BIGINT","default_value":null,"autoincrement":false,'
+            '"nullable":false,"unique_constraint":[]},{"table":"records",'
+            '"name":"destination","data_type":"VARCHAR(255)","default_value":null,'
+            '"autoincrement":false,"nullable":true,"unique_constraint":[]}]'
+            "'::TEXT, '[]'::TEXT, FALSE::BOOLEAN)"
+        ),
     ]
 
 
@@ -1307,17 +1317,19 @@ def test_xtdb_table_creation_records_primary_key_metadata(monkeypatch):
 
     executed_sql = [call.args[0].text for call in connection.execute.call_args_list]
     assert executed_sql == [
-        "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
-        "(_id, table_schema, table_name, primary_keys_json, id_policy, "
-        "columns_json, foreign_keys_json, is_temporal) "
-        "VALUES ('test.records'::TEXT, 'test'::TEXT, 'records'::TEXT, "
-        "'[\"entity_id\",\"record_id\"]'::TEXT, 'xtdb-pk-v1'::TEXT, "
-        '\'[{"table":"records","name":"entity_id","data_type":"BIGINT",'
-        '"default_value":null,"autoincrement":false,"nullable":false,'
-        '"unique_constraint":[]},{"table":"records","name":"record_id",'
-        '"data_type":"VARCHAR(255)","default_value":null,"autoincrement":false,'
-        '"nullable":false,"unique_constraint":[]}]\'::TEXT, \'[]\'::TEXT, '
-        "FALSE::BOOLEAN)",
+        (
+            "INSERT INTO test.__polars_hist_db_xtdb_table_configs "
+            "(_id, table_schema, table_name, primary_keys_json, id_policy, "
+            "columns_json, foreign_keys_json, is_temporal) "
+            "VALUES ('test.records'::TEXT, 'test'::TEXT, 'records'::TEXT, "
+            "'[\"entity_id\",\"record_id\"]'::TEXT, 'xtdb-pk-v1'::TEXT, "
+            '\'[{"table":"records","name":"entity_id","data_type":"BIGINT",'
+            '"default_value":null,"autoincrement":false,"nullable":false,'
+            '"unique_constraint":[]},{"table":"records","name":"record_id",'
+            '"data_type":"VARCHAR(255)","default_value":null,"autoincrement":false,'
+            '"nullable":false,"unique_constraint":[]}]\'::TEXT, \'[]\'::TEXT, '
+            "FALSE::BOOLEAN)"
+        ),
     ]
 
 
@@ -1806,7 +1818,7 @@ def test_xtdb_temporal_upsert_keeps_temporal_tables_off_epoch():
     backend = XtdbBackend()
     ops = Mock()
     ops.table_insert.return_value = 1
-    update_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    update_time = datetime(2026, 1, 1, tzinfo=UTC)
     table_config = TableConfig(
         schema="fact",
         name="records",
@@ -1836,7 +1848,7 @@ def test_xtdb_temporal_upsert_respects_configured_valid_time_over_epoch():
     backend = XtdbBackend()
     ops = Mock()
     ops.table_insert.return_value = 1
-    mapped_from = datetime(2030, 6, 1, tzinfo=timezone.utc)
+    mapped_from = datetime(2030, 6, 1, tzinfo=UTC)
     table_config = TableConfig(
         schema="reference",
         name="rates",
@@ -1874,7 +1886,7 @@ def test_xtdb_temporal_upsert_preserves_user_provided_valid_from():
     backend = XtdbBackend()
     ops = Mock()
     ops.table_insert.return_value = 1
-    explicit_from = datetime(2028, 1, 1, tzinfo=timezone.utc)
+    explicit_from = datetime(2028, 1, 1, tzinfo=UTC)
     table_config = TableConfig(
         schema="reference",
         name="rates",

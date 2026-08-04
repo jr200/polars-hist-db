@@ -1,24 +1,25 @@
 import asyncio
-import pytest
-import pytest_asyncio
-import polars as pl
 import logging
 
-from polars_hist_db.config import TransformFnRegistry, IngestFnRegistry
+import polars as pl
+import pytest
+import pytest_asyncio
+
+from polars_hist_db.config import IngestFnRegistry, TransformFnRegistry
 from polars_hist_db.dataset import run_datasets
 from polars_hist_db.utils.compare import compare_dataframes
-from .helpers import custom_load_json, custom_try_to_usd
+
+from ..utils.dsv_helper import (
+    read_df_from_db,
+    setup_fixture_dataset,
+)
 from ..utils.nats_helper import (
     create_nats_server,
     create_nats_test_client,
     publish_dataframe_messages,
     try_create_test_stream,
 )
-
-from ..utils.dsv_helper import (
-    read_df_from_db,
-    setup_fixture_dataset,
-)
+from .helpers import custom_load_json, custom_try_to_usd
 
 pytestmark = pytest.mark.integration
 
@@ -76,7 +77,7 @@ async def test_turkey_stream(nats_js, fixture_with_config):
     # wait for 1 second
     await asyncio.sleep(1)
 
-    uploaded_dfs = list()
+    uploaded_dfs = []
     await run_datasets(
         base_config,
         engine,

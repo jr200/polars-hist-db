@@ -1,20 +1,20 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
+from typing import Any
 from uuid import uuid4
 
-from pycrdt import Doc, Map
 import pytest
-from typing import Any
+from pycrdt import Doc, Map
 
 from polars_hist_db.config import TableColumnConfig, TableConfig
 from polars_hist_db.overrides import (
     AtomicInsert,
     AtomicUpdate,
+    CrdtDocument,
     CrdtPreconditionFailed,
     CrdtRevisionConflict,
     InMemoryCrdtDocumentStore,
-    RowGuard,
-    CrdtDocument,
     MariaDbCrdtDocumentStore,
+    RowGuard,
     prepare_crdt_update,
 )
 
@@ -122,7 +122,7 @@ def _operation_update(operation_id: str) -> bytes:
 def test_prepared_commit_finalizes_operations_and_rejects_later_mutation():
     operation_id = str(uuid4())
     source_update = _operation_update(operation_id)
-    accepted_at = datetime(2026, 7, 12, 11, tzinfo=timezone.utc)
+    accepted_at = datetime(2026, 7, 12, 11, tzinfo=UTC)
 
     prepared = prepare_crdt_update(
         "document-1",
@@ -174,7 +174,7 @@ def test_prepared_commit_checks_revision_guards_and_atomic_inserts():
         None,
         _document_update(),
         actor_id="user-1",
-        recorded_at=datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+        recorded_at=datetime(2026, 7, 12, 11, tzinfo=UTC),
     )
 
     result = store.commit(
@@ -193,7 +193,7 @@ def test_prepared_commit_checks_revision_guards_and_atomic_inserts():
         None,
         _document_update(),
         actor_id="user-1",
-        recorded_at=datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+        recorded_at=datetime(2026, 7, 12, 11, tzinfo=UTC),
     )
     with pytest.raises(CrdtRevisionConflict):
         store.commit(stale)
@@ -203,7 +203,7 @@ def test_prepared_commit_checks_revision_guards_and_atomic_inserts():
         None,
         _document_update(),
         actor_id="user-1",
-        recorded_at=datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+        recorded_at=datetime(2026, 7, 12, 11, tzinfo=UTC),
     )
     with pytest.raises(CrdtPreconditionFailed):
         store.commit(

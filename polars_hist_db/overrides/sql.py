@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import base64
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from hashlib import sha256
-from typing import Any, Sequence
+from typing import Any
 
 from sqlalchemy import Connection, MetaData, Table, and_, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -32,16 +33,8 @@ from .config import (
     build_crdt_document_table_config,
     build_crdt_update_table_config,
     build_document_access_table_configs,
-    build_override_table_config,
     build_layer_composition_table_config,
-)
-from .operations import CompositionRevision
-from .pagination import (
-    Page,
-    decode_cursor,
-    encode_cursor,
-    page_from_items,
-    validate_limit,
+    build_override_table_config,
 )
 from .crdt import (
     AtomicInsert,
@@ -54,11 +47,19 @@ from .crdt import (
     RowGuard,
     _doc,
 )
+from .operations import CompositionRevision
+from .pagination import (
+    Page,
+    decode_cursor,
+    encode_cursor,
+    page_from_items,
+    validate_limit,
+)
 from .types import (
     CrdtDocumentStoreConfig,
     DocumentAccessStoreConfig,
-    OverrideLedgerConfig,
     LayerCompositionStoreConfig,
+    OverrideLedgerConfig,
 )
 
 
@@ -141,9 +142,7 @@ def _aware_datetime(value: object) -> datetime:
         value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
     )
     return (
-        parsed.replace(tzinfo=timezone.utc)
-        if parsed.tzinfo is None
-        else parsed.astimezone(timezone.utc)
+        parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
     )
 
 
@@ -286,7 +285,7 @@ class MariaDbCrdtDocumentStore:
                     revision=next_revision,
                     generation=_generation(prepared),
                     head_state_vector_base64=_encode(prepared.state_vector),
-                    updated_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(UTC),
                 )
             )
         else:
@@ -297,7 +296,7 @@ class MariaDbCrdtDocumentStore:
                 .values(
                     revision=next_revision,
                     head_state_vector_base64=_encode(prepared.state_vector),
-                    updated_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(UTC),
                 )
             )
             if result.rowcount != 1:
@@ -312,7 +311,7 @@ class MariaDbCrdtDocumentStore:
                 source_update_hash=prepared.source_update_hash,
                 accepted_update_hash=prepared.accepted_update_hash,
                 update_base64=_encode(prepared.accepted_update),
-                accepted_at=datetime.now(timezone.utc),
+                accepted_at=datetime.now(UTC),
             )
         )
         self._insert_operations(prepared, next_revision)

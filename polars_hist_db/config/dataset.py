@@ -1,10 +1,11 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Tuple, cast
 import logging
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
+from typing import Any, Literal, cast
 
+from .input.input_source import InputConfig
 from .parser_config import IngestionColumnConfig
 from .table import TableColumnConfig, TableConfigs
-from .input.input_source import InputConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,16 +45,16 @@ class PipelineColumn:
     table: str
     item_type: str
     column_type: PipelineColumnType
-    source: Optional[str] = None
-    target: Optional[str] = None
-    target_data_type: Optional[str] = None
-    ingestion_data_type: Optional[str] = None
+    source: str | None = None
+    target: str | None = None
+    target_data_type: str | None = None
+    ingestion_data_type: str | None = None
     required: bool = False
     transforms: Mapping[str, Any] = field(default_factory=dict)
-    aggregation: Optional[str] = None
+    aggregation: str | None = None
     deduce_foreign_key: bool = False
-    value_if_missing: Optional[str] = None
-    nullable: Optional[bool] = None
+    value_if_missing: str | None = None
+    nullable: bool | None = None
     omit_row_if_null: bool = False
 
 
@@ -69,19 +70,19 @@ class PipelineExtractColumn:
 
 @dataclass(init=False)
 class Pipeline:
-    items: Tuple[PipelineColumn, ...]
-    _header_maps: Dict[str, Dict[str, str]] = field(
+    items: tuple[PipelineColumn, ...]
+    _header_maps: dict[str, dict[str, str]] = field(
         init=False, repr=False, compare=False
     )
-    _item_types: Dict[str, Tuple[str, ...]] = field(
+    _item_types: dict[str, tuple[str, ...]] = field(
         init=False, repr=False, compare=False
     )
-    _extract_items: Dict[int, Tuple[PipelineExtractColumn, ...]] = field(
+    _extract_items: dict[int, tuple[PipelineExtractColumn, ...]] = field(
         init=False, repr=False, compare=False
     )
-    _main_table_name: Tuple[str, str] = field(init=False, repr=False, compare=False)
-    _table_names: Tuple[str, ...] = field(init=False, repr=False, compare=False)
-    _pipeline_items: Dict[int, Tuple[str, str]] = field(
+    _main_table_name: tuple[str, str] = field(init=False, repr=False, compare=False)
+    _table_names: tuple[str, ...] = field(init=False, repr=False, compare=False)
+    _pipeline_items: dict[int, tuple[str, str]] = field(
         init=False, repr=False, compare=False
     )
 
@@ -90,7 +91,7 @@ class Pipeline:
             columns = tuple(cast(PipelineColumn, item) for item in items)
         else:
             raw_items = cast(Sequence[Mapping[str, Any]], items)
-            parsed_columns: List[PipelineColumn] = []
+            parsed_columns: list[PipelineColumn] = []
             for pipeline_id, item in enumerate(raw_items):
                 item_columns: Sequence[Mapping[str, Any]] = item.get("columns") or ({},)
                 parsed_columns.extend(
@@ -121,7 +122,7 @@ class Pipeline:
             if column.source is not None and column.target is not None:
                 self._header_maps[column.table][column.target] = column.source
 
-        item_types: Dict[str, List[str]] = {table: [] for table in self._table_names}
+        item_types: dict[str, list[str]] = {table: [] for table in self._table_names}
         for column in columns:
             if column.item_type not in item_types[column.table]:
                 item_types[column.table].append(column.item_type)
@@ -190,10 +191,10 @@ class Pipeline:
     @staticmethod
     def _resolved_types(
         column: PipelineColumn,
-        table_column: Optional[TableColumnConfig],
+        table_column: TableColumnConfig | None,
         table_schema: str,
         table_name: str,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         table_data_type = table_column.data_type if table_column is not None else None
         target_data_type = (
             column.target_data_type or table_data_type or column.ingestion_data_type
@@ -208,7 +209,7 @@ class Pipeline:
 
     def build_ingestion_column_definitions(
         self, all_tables: TableConfigs
-    ) -> List[IngestionColumnConfig]:
+    ) -> list[IngestionColumnConfig]:
         temporary_types = {"input_only", "dsv_only", "time_partition_only"}
         ordered_columns = [
             column for column in self.items if column.column_type not in temporary_types
@@ -255,7 +256,7 @@ class Pipeline:
 
     def build_delta_table_column_configs(
         self, all_tables: TableConfigs, table_name: str
-    ) -> List[TableColumnConfig]:
+    ) -> list[TableColumnConfig]:
         candidates = []
         for table in all_tables.items:
             table_columns = {column.name: column for column in table.columns}
@@ -303,7 +304,7 @@ class Pipeline:
             if name is not None and last_index[name] == index
         ]
 
-    def get_header_map(self, table: str) -> Dict[str, str]:
+    def get_header_map(self, table: str) -> dict[str, str]:
         return dict(self._header_maps.get(table, {}))
 
     def item_type(self, table: str) -> str:
@@ -313,16 +314,16 @@ class Pipeline:
 
         return item_types[0]
 
-    def extract_items(self, pipeline_id: int) -> Tuple[PipelineExtractColumn, ...]:
+    def extract_items(self, pipeline_id: int) -> tuple[PipelineExtractColumn, ...]:
         return self._extract_items.get(pipeline_id, ())
 
-    def get_main_table_name(self) -> Tuple[str, str]:
+    def get_main_table_name(self) -> tuple[str, str]:
         return self._main_table_name
 
-    def get_table_names(self) -> List[str]:
+    def get_table_names(self) -> list[str]:
         return list(self._table_names)
 
-    def get_pipeline_items(self) -> Dict[int, Tuple[str, str]]:
+    def get_pipeline_items(self) -> dict[int, tuple[str, str]]:
         return dict(self._pipeline_items)
 
 
@@ -338,8 +339,8 @@ class TimePartition:
 class ValidTimeConfig:
     table: str
     from_column: str
-    schema: Optional[str] = None
-    to_column: Optional[str] = None
+    schema: str | None = None
+    to_column: str | None = None
 
     def matches(self, table_schema: str, table_name: str) -> bool:
         if self.table != table_name:
@@ -354,11 +355,11 @@ class DatasetConfig:
     input_config: InputConfig
     pipeline: Pipeline
     scrape_limit: int = -1
-    time_partition: Optional[TimePartition] = None
-    null_values: Optional[Sequence[str]] = None
+    time_partition: TimePartition | None = None
+    null_values: Sequence[str] | None = None
     delta_config: DeltaConfig = field(default_factory=DeltaConfig)
     valid_time: Sequence[ValidTimeConfig] = field(default_factory=tuple)
-    config_file_path: Optional[str] = None
+    config_file_path: str | None = None
 
     def __post_init__(self):
         if not isinstance(self.delta_config, DeltaConfig):
@@ -387,7 +388,7 @@ class DatasetConfig:
 
     def valid_time_for_table(
         self, table_schema: str, table_name: str
-    ) -> Optional[ValidTimeConfig]:
+    ) -> ValidTimeConfig | None:
         return next(
             (
                 valid_time
@@ -401,7 +402,7 @@ class DatasetConfig:
 @dataclass
 class DatasetsConfig:
     datasets: Sequence[DatasetConfig]
-    config_file_path: Optional[str] = None
+    config_file_path: str | None = None
 
     def __post_init__(self):
         self.datasets = [
@@ -409,7 +410,7 @@ class DatasetsConfig:
             for ds_dict in self.datasets
         ]
 
-    def __getitem__(self, key: str) -> Optional[DatasetConfig]:
+    def __getitem__(self, key: str) -> DatasetConfig | None:
         try:
             if isinstance(key, int):
                 return self.datasets[key]

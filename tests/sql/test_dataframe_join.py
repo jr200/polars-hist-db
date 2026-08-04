@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-import pytest
+
 import polars as pl
+import pytest
 from polars.testing import assert_frame_equal
 
 from polars_hist_db.core.dataframe import TimeHint
@@ -8,14 +9,14 @@ from polars_hist_db.core.dataframe import TimeHint
 from ..utils.dsv_helper import (
     add_random_row,
     backend_params,
+    connection_context_for_engine,
+    dataframe_ops_for_engine,
     from_test_result,
     modify_and_read,
+    normalise_query_result_for_backend,
     read_df_from_db,
     set_random_seed,
     setup_fixture_dataset,
-    connection_context_for_engine,
-    dataframe_ops_for_engine,
-    normalise_query_result_for_backend,
 )
 
 pytestmark = pytest.mark.integration
@@ -45,7 +46,7 @@ def test_time_hints(temp_table):
     )
 
     set_random_seed(1)
-    for i in range(0, 7):
+    for i in range(7):
         df_i = add_random_row(df_1, table_config, {"id": 1})
         ts_i = ts_1 + timedelta(days=i * 30)
         df_read, df_read_history = modify_and_read(
@@ -64,7 +65,7 @@ def test_time_hints(temp_table):
         asof_utc = None
         df_1 = (
             dataframe_ops_for_engine(engine, connection)
-            .table_query(  # noqa: F821
+            .table_query(
                 table_schema,
                 table_configs.items[0].name,
                 query_df,

@@ -1,13 +1,14 @@
 import json
+
+import nats
+import polars as pl
 import pytest
 import pytest_asyncio
-import polars as pl
-import nats
 
 from polars_hist_db.config.input.jetstream_config import JetStreamSubscriptionConfig
 from tests.utils.nats_helper import (
-    create_nats_test_client,
     create_nats_server,
+    create_nats_test_client,
     publish_dataframe_messages,
     try_create_test_stream,
 )

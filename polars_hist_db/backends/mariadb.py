@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from contextlib import nullcontext
+from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
-from ..core import DataframeOps, TableConfigOps, TableOps
-from ..core import TimeHint
+from ..core import DataframeOps, TableConfigOps, TableOps, TimeHint
 from .base import (
     TableHealthResult,
     bounded_table_health_query,
@@ -21,16 +20,18 @@ from .temporal import system_time_hint_clause
 if TYPE_CHECKING:
     from ..config import TableConfig
     from ..overrides import (
+        ArrowOverrideStoreConfig,
         CrdtDocumentStoreConfig,
         DocumentAccessStoreConfig,
-        ArrowOverrideStoreConfig,
         LayerCompositionStoreConfig,
         OverrideLedgerConfig,
     )
-    from ..overrides.sql import MariaDbDocumentAccessStore
-    from ..overrides.sql import MariaDbLayerCompositionStore
-    from ..overrides.sql import MariaDbCrdtDocumentStore
     from ..overrides.arrow import RepositoryArrowOverrideOperationStore
+    from ..overrides.sql import (
+        MariaDbCrdtDocumentStore,
+        MariaDbDocumentAccessStore,
+        MariaDbLayerCompositionStore,
+    )
 
 
 @dataclass(frozen=True)
@@ -82,16 +83,16 @@ class MariaDbBackend:
     def crdt_documents(
         self,
         connection: Any,
-        document_store: "CrdtDocumentStoreConfig",
-        projection: "OverrideLedgerConfig",
-    ) -> "MariaDbCrdtDocumentStore":
+        document_store: CrdtDocumentStoreConfig,
+        projection: OverrideLedgerConfig,
+    ) -> MariaDbCrdtDocumentStore:
         from ..overrides.sql import MariaDbCrdtDocumentStore
 
         return MariaDbCrdtDocumentStore(connection, document_store, projection)
 
     def arrow_overrides(
-        self, connection: Any, config: "ArrowOverrideStoreConfig"
-    ) -> "RepositoryArrowOverrideOperationStore":
+        self, connection: Any, config: ArrowOverrideStoreConfig
+    ) -> RepositoryArrowOverrideOperationStore:
         from ..overrides.arrow import RepositoryArrowOverrideOperationStore
         from ..overrides.arrow_sql import MariaDbArrowOverrideRepository
 
@@ -100,15 +101,15 @@ class MariaDbBackend:
         )
 
     def document_access(
-        self, connection: Any, config: "DocumentAccessStoreConfig"
-    ) -> "MariaDbDocumentAccessStore":
+        self, connection: Any, config: DocumentAccessStoreConfig
+    ) -> MariaDbDocumentAccessStore:
         from ..overrides.sql import MariaDbDocumentAccessStore
 
         return MariaDbDocumentAccessStore(connection, config)
 
     def layer_compositions(
-        self, connection: Any, config: "LayerCompositionStoreConfig"
-    ) -> "MariaDbLayerCompositionStore":
+        self, connection: Any, config: LayerCompositionStoreConfig
+    ) -> MariaDbLayerCompositionStore:
         from ..overrides.sql import MariaDbLayerCompositionStore
 
         return MariaDbLayerCompositionStore(connection, config)

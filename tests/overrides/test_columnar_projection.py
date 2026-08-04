@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import polars as pl
 import pytest
@@ -12,8 +12,8 @@ def test_applies_overrides_columnarly_and_preserves_schema() -> None:
             "trade_id": range(150),
             "status": ["Expected"] * 150,
             "amount": [1.0] * 150,
-            "aware_at": [datetime(2026, 7, 1, tzinfo=timezone.utc)] * 150,
-            "naive_at": [datetime(2026, 7, 1)] * 150,
+            "aware_at": [datetime(2026, 7, 1, tzinfo=UTC)] * 150,
+            "naive_at": [datetime.fromisoformat("2026-07-01")] * 150,
         }
     )
     original_schema = frame.schema
@@ -25,10 +25,8 @@ def test_applies_overrides_columnarly_and_preserves_schema() -> None:
             ColumnOverride("149", "status", "Possible"),
             ColumnOverride("149", "status", "Actual"),
             ColumnOverride("149", "amount", 3.5),
-            ColumnOverride(
-                "149", "aware_at", datetime(2026, 7, 2, tzinfo=timezone.utc)
-            ),
-            ColumnOverride("149", "naive_at", datetime(2026, 7, 2)),
+            ColumnOverride("149", "aware_at", datetime(2026, 7, 2, tzinfo=UTC)),
+            ColumnOverride("149", "naive_at", datetime.fromisoformat("2026-07-02")),
             ColumnOverride("149", "classification", "Actual", pl.String()),
             ColumnOverride("0", "amount", None),
         ],
@@ -38,8 +36,8 @@ def test_applies_overrides_columnarly_and_preserves_schema() -> None:
     assert result["status"][149] == "Actual"
     assert result["amount"][0] is None
     assert result["amount"][149] == 3.5
-    assert result["aware_at"][149] == datetime(2026, 7, 2, tzinfo=timezone.utc)
-    assert result["naive_at"][149] == datetime(2026, 7, 2)
+    assert result["aware_at"][149] == datetime(2026, 7, 2, tzinfo=UTC)
+    assert result["naive_at"][149] == datetime.fromisoformat("2026-07-02")
     assert result["classification"][0] is None
     assert result["classification"][149] == "Actual"
 

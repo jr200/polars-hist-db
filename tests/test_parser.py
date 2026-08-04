@@ -1,9 +1,10 @@
 from polars_hist_db.config import (
-    TableColumnConfig,
     ForeignKeyConfig,
+    TableColumnConfig,
     TableConfig,
     TableConfigs,
 )
+
 from .utils.dsv_helper import get_test_config
 
 

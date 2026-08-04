@@ -1,19 +1,18 @@
 import asyncio
+import logging
 from contextlib import ExitStack
 from datetime import datetime
-import logging
 from random import uniform
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any
 from uuid import uuid4
 
 import polars as pl
 from sqlalchemy import Connection, Engine
 
-from ..config import TableConfig, TableConfigs, DatasetConfig
+from ..config import DatasetConfig, TableConfig, TableConfigs
 from ..core import DataframeOps, TableConfigOps
-from ..utils import NonRetryableException
 from ..loaders.input_source import BatchFinalizer
-
+from ..utils import NonRetryableException
 from .extract_item import scrape_extract_item
 from .primary_item import scrape_primary_item
 
@@ -37,8 +36,8 @@ def _scrape_pipeline_item(
     tables: TableConfigs,
     upload_time: datetime,
     connection: Connection,
-    partition_df: Optional[pl.DataFrame] = None,
-    stage_run_id: Optional[str] = None,
+    partition_df: pl.DataFrame | None = None,
+    stage_run_id: str | None = None,
     staging: Any = None,
     backend: Any = None,
 ) -> bool:
@@ -90,12 +89,12 @@ def _ensure_delta_table(
 
 
 def _run_pipeline_as_transaction(
-    partitions: List[Tuple[datetime, pl.DataFrame]],
+    partitions: list[tuple[datetime, pl.DataFrame]],
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
     finalizer: BatchFinalizer,
-    delta_table_config: Optional[TableConfig] = None,
+    delta_table_config: TableConfig | None = None,
     backend: Any = None,
     ingest_connection: Any = None,
 ):
@@ -127,7 +126,7 @@ def _run_pipeline_as_transaction(
                 delta_table_config,
                 dataset.delta_config.is_temporary_table,
             )
-        modified_tables: Set[Tuple[str, str]] = set()
+        modified_tables: set[tuple[str, str]] = set()
         for i, (ts, partition_df) in enumerate(partitions):
             stage_run_id = None
             assert isinstance(ts, datetime), f"timestamp is not a datetime [{type(ts)}]"
@@ -195,7 +194,7 @@ def _run_pipeline_as_transaction(
 
 
 async def try_run_pipeline_as_transaction(
-    partitions: List[Tuple[datetime, pl.DataFrame]],
+    partitions: list[tuple[datetime, pl.DataFrame]],
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
@@ -204,7 +203,7 @@ async def try_run_pipeline_as_transaction(
     seconds_between_retries: float = 60,
     max_retry_delay: float = 300,
     retry_jitter: float = 0.1,
-    delta_table_config: Optional[TableConfig] = None,
+    delta_table_config: TableConfig | None = None,
     backend: Any = None,
     ingest_connection: Any = None,
 ):

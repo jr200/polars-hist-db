@@ -1,42 +1,38 @@
+import logging
+from collections.abc import Iterable, Mapping
 from datetime import datetime, time
 from itertools import batched
-import logging
 from types import MappingProxyType
-from typing import Dict, Iterable, List, Literal, Mapping, Optional, Union
+from typing import Literal
 from uuid import uuid4
 
 import polars as pl
 from sqlalchemy import (
-    and_,
-    bindparam,
-    column,
     Connection,
     DefaultClause,
-    delete,
-    select,
     Select,
     Selectable,
     Subquery,
     Table,
     TextClause,
+    and_,
+    bindparam,
+    column,
+    delete,
+    select,
 )
 
-
+from ..config import DeltaConfig, TableConfig
+from ..types import PolarsType, SQLType
+from ..utils.db_utils import (
+    is_text_col,
+    strip_outer_quotes,
+)
 from .db import DbOps
 from .delta_table import DeltaTableOps
 from .table import TableOps
 from .table_config import TableConfigOps
 from .timehint import TimeHint
-
-from ..config import DeltaConfig, TableConfig
-
-from ..types import SQLType, PolarsType
-
-from ..utils.db_utils import (
-    is_text_col,
-    strip_outer_quotes,
-)
-
 
 LOGGER = logging.getLogger(__name__)
 _NO_TIME_HINT = TimeHint(mode="none")
@@ -50,7 +46,7 @@ class DataframeOps:
         self,
         table_schema: str,
         table_name: str,
-        time_hint: Optional[TimeHint] = None,
+        time_hint: TimeHint | None = None,
     ) -> pl.DataFrame:
         tbo = TableOps(table_schema, table_name, self.connection)
         tbl = tbo.get_table_metadata()
@@ -69,11 +65,11 @@ class DataframeOps:
     def from_selectable(
         self,
         query: Selectable | TextClause,
-        schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
+        schema_overrides: Mapping[str, pl.DataType] | None = None,
     ) -> pl.DataFrame:
         inferred_dtypes = PolarsType.get_dataframe_schema_from_selectable(query)
         if schema_overrides is None:
-            schema_overrides = dict()
+            schema_overrides = {}
 
         inferred_dtypes.update(schema_overrides)
         df = pl.read_database(
@@ -83,13 +79,13 @@ class DataframeOps:
         return df
 
     def from_raw_sql(
-        self, query: str, schema_overrides: Optional[Mapping[str, pl.DataType]] = None
+        self, query: str, schema_overrides: Mapping[str, pl.DataType] | None = None
     ) -> pl.DataFrame:
         inferred_dtypes = PolarsType.get_dataframe_schema_from_sqltext(
             query, self.connection
         )
         if schema_overrides is None:
-            schema_overrides = dict()
+            schema_overrides = {}
 
         inferred_dtypes.update(schema_overrides)
         df = pl.read_database(
@@ -100,10 +96,10 @@ class DataframeOps:
 
     @staticmethod
     def fill_nulls_with_defaults(
-        df: pl.DataFrame, default_values: Dict[str, str]
+        df: pl.DataFrame, default_values: dict[str, str]
     ) -> pl.DataFrame:
         for col in df.columns:
-            if col in default_values.keys():
+            if col in default_values:
                 col_polars_dtype = df[col].dtype
                 if col_polars_dtype == pl.Time:
                     default_value = pl.lit(
@@ -123,8 +119,8 @@ class DataframeOps:
         table_schema: str,
         table_name: str,
         df: pl.DataFrame,
-        primary_keys: List[str],
-        tbl_for_types: Optional[Table] = None,
+        primary_keys: list[str],
+        tbl_for_types: Table | None = None,
         is_temporary_table: bool = False,
     ):
         table_config = TableConfig.from_dataframe(
@@ -150,7 +146,7 @@ class DataframeOps:
         table_schema: str,
         table_name: str,
         query_df: pl.DataFrame,
-        column_selection: Optional[List[str]],
+        column_selection: list[str] | None,
         time_hint: TimeHint = _NO_TIME_HINT,
     ) -> pl.DataFrame:
         tmp_table_name = f"tmp_{uuid4()}".lower()
@@ -172,7 +168,7 @@ class DataframeOps:
         )
 
         tmp_tbl = TableOps(table_schema, tmp_name, self.connection).get_table_metadata()
-        tbl: Union[Table, Subquery] = TableOps(
+        tbl: Table | Subquery = TableOps(
             table_schema, table_name, self.connection
         ).get_table_metadata()
 
@@ -275,7 +271,7 @@ class DataframeOps:
         df: pl.DataFrame,
         table_schema: str,
         table_name: str,
-        primary_keys_override: Optional[List[str]] = None,
+        primary_keys_override: list[str] | None = None,
     ):
         if df.is_empty():
             return
@@ -330,7 +326,7 @@ class DataframeOps:
         table_schema: str,
         table_name: str,
         delta_config: DeltaConfig,
-        update_time: Optional[datetime] = None,
+        update_time: datetime | None = None,
         src_tgt_colname_map: Mapping[str, str] = MappingProxyType({}),
     ):
         # currently this function always inserts into a delta table first
@@ -377,7 +373,7 @@ class DataframeOps:
         df: pl.DataFrame,
         table_schema: str,
         table_name: str,
-        update_time: Optional[datetime] = None,
+        update_time: datetime | None = None,
     ) -> int:
         DbOps(self.connection).set_system_versioning_time(update_time)
         try:

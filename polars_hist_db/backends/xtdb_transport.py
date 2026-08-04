@@ -1,9 +1,10 @@
-from contextlib import contextmanager
-from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal
 import math
 import re
-from typing import Any, Iterable, Iterator, Optional
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
+from typing import Any
 from urllib.parse import quote
 
 import polars as pl
@@ -14,7 +15,6 @@ from sqlalchemy.engine import Engine
 from ..config import TableConfig
 from ..utils.arrow import require_unique_arrow_field_names
 from .config import DbEngineConfig
-
 
 _XTDB_LAST_SYSTEM_TIME_KEY = "polars_hist_db_xtdb_last_system_time"
 _XTDB_ACTIVE_TRANSACTION_KEY = "polars_hist_db_xtdb_active_transaction"
@@ -139,7 +139,7 @@ def _xtdb_buffering_paused(connection: Any) -> Iterator[None]:
 @contextmanager
 def _xtdb_buffered_transaction_scope(
     connection: Any,
-    system_time: Optional[datetime] = None,
+    system_time: datetime | None = None,
 ) -> Iterator[None]:
     """Buffer ingest DML so reads can finish before one atomic XTDB commit."""
     info = getattr(connection, "info", None)
@@ -154,12 +154,13 @@ def _xtdb_buffered_transaction_scope(
     try:
         yield
     except BaseException:
+        operations.clear()
         raise
     else:
         if operations:
             info.pop(_XTDB_BUFFERED_TRANSACTION_KEY, None)
 
-            def flush(transaction_time: Optional[datetime]) -> None:
+            def flush(transaction_time: datetime | None) -> None:
                 with _xtdb_transaction_scope(connection, transaction_time):
                     for operation, arguments in operations:
                         if operation == "dml":
@@ -201,7 +202,7 @@ def _xtdb_buffered_transaction_scope(
 @contextmanager
 def _xtdb_transaction_scope(
     connection: Any,
-    system_time: Optional[datetime] = None,
+    system_time: datetime | None = None,
 ) -> Iterator[Any]:
     driver_connection = _driver_connection(connection)
     if driver_connection is None:
@@ -351,7 +352,7 @@ def _xtdb_parameter_value(value: Any, cast_type: str) -> Any:
         and cast_type.upper().startswith("TIMESTAMP")
         and value.tzinfo is not None
     ):
-        value = value.astimezone(timezone.utc)
+        value = value.astimezone(UTC)
         if "WITH TIME ZONE" not in cast_type.upper():
             value = value.replace(tzinfo=None)
     return value
@@ -359,7 +360,7 @@ def _xtdb_parameter_value(value: Any, cast_type: str) -> Any:
 
 def _normalize_xtdb_timestamp_columns(
     df: pl.DataFrame,
-    table_config: Optional[TableConfig],
+    table_config: TableConfig | None,
 ) -> pl.DataFrame:
     from .xtdb_arrow import _xtdb_insert_casts
 
@@ -386,7 +387,7 @@ def _execute_xtdb_dml(
     sql: str,
     rows: list[tuple[Any, ...]] | None = None,
     *,
-    system_time: Optional[datetime] = None,
+    system_time: datetime | None = None,
 ) -> int:
     info = getattr(connection, "info", None)
     if (
@@ -473,7 +474,7 @@ def _execute_xtdb_arrow_copy(
     table_sql: str,
     df: pl.DataFrame,
     *,
-    system_time: Optional[datetime] = None,
+    system_time: datetime | None = None,
 ) -> None:
     info = getattr(connection, "info", None)
     if (

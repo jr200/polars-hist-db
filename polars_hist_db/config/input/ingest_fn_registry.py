@@ -1,16 +1,18 @@
-from datetime import datetime
 import logging
-from typing import Any, Callable, List, Dict
+from collections.abc import Callable
+from datetime import datetime
+from typing import Any, ClassVar
+
 import polars as pl
 
 LOGGER = logging.getLogger(__name__)
 
-IngestFnSignature = Callable[[Any, datetime, Dict[str, Any]], pl.DataFrame]
-IngestRegistryStore = Dict[str, IngestFnSignature]
+IngestFnSignature = Callable[[Any, datetime, dict[str, Any]], pl.DataFrame]
+IngestRegistryStore = dict[str, IngestFnSignature]
 
 
 class IngestFnRegistry:
-    _borg: Dict[str, Any] = {"_registry": None}
+    _borg: ClassVar[dict[str, Any]] = {"_registry": None}
 
     def __init__(self) -> None:
         self.__dict__ = self._borg
@@ -18,7 +20,7 @@ class IngestFnRegistry:
 
     def _one_time_init(self) -> IngestRegistryStore:
         if self._registry is None:
-            self._registry = dict()
+            self._registry = {}
 
         return self._registry
 
@@ -42,7 +44,7 @@ class IngestFnRegistry:
         payload: Any,
         ts: datetime,
         name: str,
-        args: Dict[str, Any],
+        args: dict[str, Any],
     ) -> pl.DataFrame:
         if name not in self._registry:
             raise ValueError(f"No ingest function registered with the name '{name}'.")
@@ -56,5 +58,5 @@ class IngestFnRegistry:
 
         return result_df
 
-    def list_functions(self) -> List[str]:
+    def list_functions(self) -> list[str]:
         return list(self._registry.keys())

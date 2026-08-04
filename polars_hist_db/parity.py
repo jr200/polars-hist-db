@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 import polars as pl
 from sqlalchemy.engine import Engine
@@ -72,7 +73,7 @@ def prepare_parity_config(
     if dataset_name is None:
         raise ValueError("dataset_name is required when payload is provided")
     if payload_time is None:
-        payload_time = datetime.now(timezone.utc)
+        payload_time = datetime.now(UTC)
 
     dataset = config.datasets[dataset_name]
     if dataset is None:

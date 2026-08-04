@@ -1,41 +1,39 @@
 import csv
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-from io import StringIO
 import os
-from pathlib import Path
 import random
 import subprocess
 import tempfile
 import textwrap
 import time
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from io import StringIO
+from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Literal, Optional
 
 import polars as pl
 import pytest
 import sqlalchemy
-from sqlalchemy import Engine, Select, select, text
+from sqlalchemy import Engine, Select, create_engine, select, text
 from sqlalchemy.dialects import mysql
-
-from sqlalchemy import create_engine
 
 from polars_hist_db.backends import DbEngineConfig, backend_from_config
 from polars_hist_db.backends.xtdb import XtdbBackend
-from polars_hist_db.config.parser_config import IngestionColumnConfig
-from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.config import (
+    DatasetConfig,
     PolarsHistDbConfig,
     TableConfig,
     TableConfigs,
-    DatasetConfig,
 )
+from polars_hist_db.config.parser_config import IngestionColumnConfig
 from polars_hist_db.core import (
     AuditOps,
     DataframeOps,
     DbOps,
     TableOps,
 )
+from polars_hist_db.loaders import load_typed_dsv
 from polars_hist_db.types import PolarsType, SQLAlchemyType
 
 
@@ -136,7 +134,7 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
     print(
         f"Create temporary directory with {dircnt} directories with depth {depth} and {3 * filecnt} files"
     )
-    tempDir = tempfile.TemporaryDirectory(prefix="scandir_rs_")  # noqa: F821
+    tempDir = tempfile.TemporaryDirectory(prefix="scandir_rs_")
     for dn in range(dircnt):
         dirName = f"{tempDir.name}/dir{dn}"
         for _depth_level in range(depth):
@@ -151,8 +149,8 @@ def create_temp_file_tree(dircnt: int, depth: int, filecnt: int):
 
 def _infer_input_columns_from_tables(
     table_configs: TableConfigs,
-) -> List[IngestionColumnConfig]:
-    items: List[IngestionColumnConfig] = []
+) -> list[IngestionColumnConfig]:
+    items: list[IngestionColumnConfig] = []
     for table_config in table_configs.items:
         for column in table_config.columns:
             dc = IngestionColumnConfig(
@@ -189,9 +187,9 @@ def from_test_result(
     x: str,
     table_name: str,
     tables: TableConfigs,
-    dataset: Optional[DatasetConfig] = None,
+    dataset: DatasetConfig | None = None,
     skip_time_partition: bool = True,
-    schema_overrides: Optional[Dict[str, pl.DataType]] = None,
+    schema_overrides: dict[str, pl.DataType] | None = None,
 ) -> pl.DataFrame:
     x_cleaned = clean_dsv_string(x)
 
@@ -210,7 +208,7 @@ def from_test_result(
         ]
 
     if not schema_overrides:
-        schema_overrides = dict()
+        schema_overrides = {}
 
     schema_overrides.update(
         {
@@ -359,9 +357,9 @@ def read_df_from_db(
     engine: Engine,
     table_schema: str,
     table_config: TableConfig,
-    asof_date: Optional[datetime] = None,
+    asof_date: datetime | None = None,
     return_view: bool = False,
-) -> Tuple[pl.DataFrame, Optional[pl.DataFrame]]:
+) -> tuple[pl.DataFrame, pl.DataFrame | None]:
     # table_name = (
     #     table_config.view_name
     #     if return_view and table_config.view_name
@@ -369,7 +367,7 @@ def read_df_from_db(
     # )
 
     if asof_date is None:
-        asof_date = datetime.now(timezone.utc)
+        asof_date = datetime.now(UTC)
     table_name = table_config.name
     primary_keys = list(table_config.primary_keys)
     backend = _backend_from_engine(engine)
@@ -440,7 +438,7 @@ def read_df_from_db(
 def read_raw_sql_from_db(
     engine: Engine,
     query: str,
-    table_config: Optional[TableConfig] = None,
+    table_config: TableConfig | None = None,
 ) -> pl.DataFrame:
     backend = _backend_from_engine(engine)
     connection_context = engine.connect if backend.name == "xtdb" else engine.begin
@@ -502,7 +500,7 @@ def modify_and_read(
     operation: Literal["delete", "upload"],
     as_override: bool = False,
     return_view: bool = False,
-) -> Tuple[pl.DataFrame, Optional[pl.DataFrame]]:
+) -> tuple[pl.DataFrame, pl.DataFrame | None]:
     backend = _backend_from_engine(engine)
     schema = {
         column.name: PolarsType.from_sql(column.data_type)
@@ -536,7 +534,7 @@ def modify_and_read(
             assert dataset.delta_config is not None
             if app_time is not None and "_valid_from" not in df.columns:
                 df = df.with_columns(
-                    pl.lit(app_time.astimezone(timezone.utc)).alias("_valid_from")
+                    pl.lit(app_time.astimezone(UTC)).alias("_valid_from")
                 )
             backend.temporal_upsert(
                 df,
@@ -547,7 +545,7 @@ def modify_and_read(
                 delta_config=dataset.delta_config,
                 valid_time=dataset.valid_time_for_table(table_schema, config.name),
                 dropout_close_time=(
-                    app_time.astimezone(timezone.utc) if app_time is not None else None
+                    app_time.astimezone(UTC) if app_time is not None else None
                 ),
             )
         elif operation == "delete":
@@ -574,12 +572,12 @@ def set_random_seed(seed: int):
 def add_random_row(
     df: pl.DataFrame,
     table_config: TableConfig,
-    primary_key: Optional[Dict[str, Any]] = None,
+    primary_key: dict[str, Any] | None = None,
 ):
     new_row = dict(primary_key) if primary_key else {}
     if primary_key:
         df = df.filter(
-            pl.col(list(primary_key.keys())[0]) != list(primary_key.values())[0]
+            pl.col(next(iter(primary_key.keys()))) != next(iter(primary_key.values()))
         )
 
     sa_schema = {
@@ -607,15 +605,18 @@ def add_random_row(
                 )
             )
         elif isinstance(c_type, sqlalchemy.types.Date):
-            c_val = (
-                datetime.now() + timedelta(days=random.randint(-1000, 1000))
-            ).date()
+            c_val = datetime.now(UTC).date() + timedelta(
+                days=random.randint(-1000, 1000)
+            )
         elif isinstance(c_type, sqlalchemy.types.DateTime):
-            c_val = datetime.now() + timedelta(
+            c_val = datetime.now(UTC).replace(tzinfo=None) + timedelta(
                 days=random.randint(-1000, 1000), seconds=random.randint(0, 86399)
             )
         elif isinstance(c_type, sqlalchemy.types.Time):
-            c_val = (datetime.min + timedelta(seconds=random.randint(0, 86399))).time()
+            c_val = (
+                datetime.min.replace(tzinfo=UTC)
+                + timedelta(seconds=random.randint(0, 86399))
+            ).time()
         elif isinstance(c_type, sqlalchemy.types.Interval):
             c_val = timedelta(seconds=random.randint(0, 86400 * 365))
         elif isinstance(c_type, sqlalchemy.types.ARRAY):

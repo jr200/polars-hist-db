@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal
 
 from .input_source import InputConfig
 
@@ -8,16 +8,16 @@ from .input_source import InputConfig
 class JetStreamSubscriptionConfig:
     subject: str
     stream: str
-    durable: Optional[str]
-    options: Dict[str, Any]
-    consumer_args: Dict[str, Any]
+    durable: str | None
+    options: dict[str, Any]
+    consumer_args: dict[str, Any]
 
     def __post_init__(self):
         if self.options is None:
-            self.options = dict()
+            self.options = {}
 
         if self.consumer_args is None:
-            self.consumer_args = dict()
+            self.consumer_args = {}
 
 
 @dataclass
@@ -52,7 +52,7 @@ class JetStreamConfig:
 @dataclass
 class JetstreamIngestConfig:
     fn_name: str
-    fn_args: Optional[Dict[str, Any]] = None
+    fn_args: dict[str, Any] | None = None
 
 
 @dataclass

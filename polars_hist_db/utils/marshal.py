@@ -1,13 +1,13 @@
 import base64
-from typing import Union, Optional, Literal, TypeAlias
 import zlib
+from typing import Literal
 
 import polars as pl
 
-IpcCompression: TypeAlias = Literal["uncompressed", "lz4", "zstd", "zlib"]
+type IpcCompression = Literal["uncompressed", "lz4", "zstd", "zlib"]
 
 
-def to_ipc_b64(df: pl.DataFrame, compression: Optional[IpcCompression] = None) -> bytes:
+def to_ipc_b64(df: pl.DataFrame, compression: IpcCompression | None = None) -> bytes:
     if compression is None:
         compression = "uncompressed"
 
@@ -22,7 +22,7 @@ def to_ipc_b64(df: pl.DataFrame, compression: Optional[IpcCompression] = None) -
     return base64_bytes
 
 
-def from_ipc_b64(payload: Union[str, bytes], use_zlib: bool = False) -> pl.DataFrame:
+def from_ipc_b64(payload: str | bytes, use_zlib: bool = False) -> pl.DataFrame:
     decoded = base64.b64decode(payload)
     if use_zlib:
         decoded = zlib.decompress(decoded)

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
 from hashlib import sha256
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from polars_hist_db.config import TableConfig
 
@@ -439,7 +440,7 @@ def _operation_from_yjs(
     recorded_at: datetime | None,
 ) -> ReplicatedOverrideOperation:
     if not isinstance(raw, dict):
-        raise ValueError("CRDT operation entries must be objects")
+        raise TypeError("CRDT operation entries must be objects")
     provisional = actor_id is not None and recorded_at is not None
     if provisional and any(
         raw.get(field) is not None
@@ -535,7 +536,7 @@ def _hash(value: bytes) -> str:
 
 def _string(value: object, name: str) -> str:
     if not isinstance(value, str):
-        raise ValueError(f"CRDT operation {name} must be a string")
+        raise TypeError(f"CRDT operation {name} must be a string")
     return value
 
 
@@ -549,7 +550,7 @@ def _integer(value: object, name: str) -> int:
     if isinstance(value, float) and value.is_integer():
         return int(value)
     if not isinstance(value, int):
-        raise ValueError(f"CRDT operation {name} must be an integer")
+        raise TypeError(f"CRDT operation {name} must be an integer")
     return value
 
 
@@ -565,13 +566,13 @@ def _optional_dict(value: object, name: str) -> dict[str, object] | None:
     if value is None:
         return None
     if not isinstance(value, dict):
-        raise ValueError(f"CRDT operation {name} must be an object")
+        raise TypeError(f"CRDT operation {name} must be an object")
     return dict(value)
 
 
 def _timestamp(value: object, name: str) -> datetime:
     if not isinstance(value, str):
-        raise ValueError(f"CRDT operation {name} must be an ISO timestamp")
+        raise TypeError(f"CRDT operation {name} must be an ISO timestamp")
     try:
         return datetime.fromisoformat(value)
     except ValueError as exc:

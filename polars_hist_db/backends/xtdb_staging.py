@@ -1,9 +1,10 @@
+import hashlib
+import json
+from collections.abc import Iterable, Mapping
 from datetime import date, datetime, time
 from decimal import Decimal
 from functools import partial
-import hashlib
-import json
-from typing import Any, Iterable, Mapping, Optional, cast
+from typing import Any, cast
 
 import polars as pl
 
@@ -15,19 +16,18 @@ from ..config import (
 )
 from ..pipeline_projection import project_staged_pipeline_item_dataframe
 from ..types import PolarsType
-from .xtdb_query import _xtdb_table_query_target_column
 from .xtdb_dataframe import (
-    _uploaded_xtdb_relation,
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
+    _uploaded_xtdb_relation,
 )
+from .xtdb_query import _xtdb_table_query_target_column
 from .xtdb_transport import (
     _is_xtdb_adbc_ingest_unavailable,
     _normalize_xtdb_timestamp_columns,
     _qualified_table_name,
     _xtdb_column_identifier,
 )
-
 
 _XTDB_STAGE_RUN_ID_COLUMN = "stage_run_id"
 _XTDB_STAGE_ROW_INDEX_COLUMN = "stage_row_index"
@@ -279,7 +279,7 @@ class XtdbStagingOps:
     def __init__(
         self,
         connection: Any,
-        max_rows_per_insert: Optional[int] = None,
+        max_rows_per_insert: int | None = None,
         adbc_connection: Any | None = None,
     ):
         self.connection = connection
@@ -426,7 +426,7 @@ class XtdbStagingOps:
         pipeline_id: int,
         table_config: TableConfig,
         *,
-        valid_time: Optional[ValidTimeConfig],
+        valid_time: ValidTimeConfig | None,
     ) -> pl.DataFrame:
         stage_df = self._stage_run_cache.get(stage_run_id)
         if stage_df is None:

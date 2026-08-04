@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
 import pyarrow as pa
@@ -7,8 +7,8 @@ from sqlalchemy import MetaData, Table, create_engine, text
 
 from polars_hist_db.config import TableColumnConfig, TableConfig
 from polars_hist_db.overrides import (
-    ArrowOverrideStoreConfig,
     ArrowOverridePreconditionFailed,
+    ArrowOverrideStoreConfig,
     MariaDbArrowOverrideRepository,
     RepositoryArrowOverrideOperationStore,
     RowGuard,
@@ -42,7 +42,7 @@ def _proposal(value: str) -> pa.Table:
                 "value": _value(value),
                 "supersedes_ids": [],
                 "removes_ids": [],
-                "valid_from": datetime(2026, 7, 19, tzinfo=timezone.utc),
+                "valid_from": datetime(2026, 7, 19, tzinfo=UTC),
                 "source_drift": False,
             }
         ],
@@ -53,7 +53,7 @@ def _proposal(value: str) -> pa.Table:
 def test_sql_repository_obeys_arrow_sync_contract() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:")
     layer_id = uuid4()
-    now = datetime(2026, 7, 19, 2, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 19, 2, tzinfo=UTC)
     with engine.begin() as connection:
         connection.execute(text("ATTACH DATABASE ':memory:' AS overrides"))
         config = ArrowOverrideStoreConfig()

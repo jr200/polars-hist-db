@@ -1,9 +1,9 @@
-from contextlib import contextmanager
-from collections.abc import Iterator
-from datetime import datetime, timezone
 import os
 import subprocess
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 import polars as pl
@@ -13,7 +13,6 @@ from sqlalchemy import text
 from polars_hist_db.backends import DbEngineConfig, XtdbBackend
 from polars_hist_db.config import TableColumnConfig, TableConfig
 from polars_hist_db.core import TimeHint
-
 
 pytestmark = [
     pytest.mark.integration,
@@ -25,8 +24,8 @@ pytestmark = [
 
 
 try:
-    import adbc_driver_flightsql  # noqa: F401
-    import psycopg  # noqa: F401
+    import adbc_driver_flightsql
+    import psycopg
 except ImportError:
     pytestmark = [
         *pytestmark,
@@ -202,7 +201,7 @@ def test_xtdb_adbc_live_temporal_upsert_supports_system_time_asof():
         )
 
         time.sleep(0.2)
-        checkpoint = datetime.now(timezone.utc)
+        checkpoint = datetime.now(UTC)
         time.sleep(0.2)
 
         backend.temporal_upsert(

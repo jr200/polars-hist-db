@@ -1,11 +1,11 @@
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Mapping, Optional
 
 import polars as pl
-from sqlalchemy import Column, Identity
 import yaml
+from sqlalchemy import Column, Identity
 
-from ..types import PolarsType, SQLType, SQLAlchemyType
+from ..types import PolarsType, SQLAlchemyType, SQLType
 
 
 @dataclass
@@ -13,10 +13,10 @@ class TableColumnConfig:
     table: str
     name: str
     data_type: str
-    default_value: Optional[str] = None
+    default_value: str | None = None
     autoincrement: bool = False
     nullable: bool = True
-    unique_constraint: List[str] = field(default_factory=list)
+    unique_constraint: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if self.unique_constraint is None:
@@ -24,14 +24,14 @@ class TableColumnConfig:
 
     @classmethod
     def from_dataframe(
-        cls, df: pl.DataFrame, table_name_override: Optional[str] = None
-    ) -> List["TableColumnConfig"]:
+        cls, df: pl.DataFrame, table_name_override: str | None = None
+    ) -> list["TableColumnConfig"]:
         schema = TableColumnConfig.df_schema()
-        df = df.select([c for c in schema.keys() if c in df.columns])
+        df = df.select([c for c in schema if c in df.columns])
 
         result = []
         for row in df.iter_rows(named=True):
-            row_dict = {c: row[c] for c in schema.keys() if c in row}
+            row_dict = {c: row[c] for c in schema if c in row}
             if table_name_override is not None:
                 row_dict["table"] = table_name_override
             cc = TableColumnConfig(**row_dict)
@@ -41,7 +41,7 @@ class TableColumnConfig:
 
     @classmethod
     def df_schema(cls) -> pl.Schema:
-        schema: Dict[str, pl.DataType] = {
+        schema: dict[str, pl.DataType] = {
             "table": pl.Utf8(),
             "name": pl.Utf8(),
             "data_type": pl.Utf8(),
@@ -71,7 +71,7 @@ class TableColumnConfig:
 class TableConfig:
     name: str
     schema: str
-    columns: List[TableColumnConfig]
+    columns: list[TableColumnConfig]
     forbid_drop_table: bool = False
     foreign_keys: Iterable["ForeignKeyConfig"] = field(default_factory=tuple)
     is_temporal: bool = False
@@ -144,7 +144,7 @@ class TableConfig:
 
         return result
 
-    def table_names(self) -> List[str]:
+    def table_names(self) -> list[str]:
         result = [self.name]
 
         return result
@@ -155,7 +155,7 @@ class TableConfig:
         df: pl.DataFrame,
         table_schema: str,
         table_name: str,
-        primary_keys: List[str],
+        primary_keys: list[str],
         default_categorical_length: int,
     ) -> "TableConfig":
         columns = [
@@ -182,8 +182,8 @@ class TableConfig:
 
         return pl.DataFrame(schema=schema)
 
-    def build_sqlalchemy_columns(self, is_delta_table: bool) -> List[Column]:
-        columns: List[Column] = []
+    def build_sqlalchemy_columns(self, is_delta_table: bool) -> list[Column]:
+        columns: list[Column] = []
 
         for col_cfg in self.columns:
             try:
@@ -240,8 +240,8 @@ class ForeignKeyConfig:
 
 @dataclass
 class TableConfigs:
-    items: List[TableConfig]
-    _by_name: Dict[str, TableConfig] = field(init=False, repr=False, compare=False)
+    items: list[TableConfig]
+    _by_name: dict[str, TableConfig] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self.items = [TableConfig(**tc_dict) for tc_dict in self.items]
@@ -257,10 +257,10 @@ class TableConfigs:
         except KeyError as exc:
             raise ValueError(f"TableConfig {name} not found") from exc
 
-    def names(self) -> List[str]:
+    def names(self) -> list[str]:
         return [tc.name for tc in self.items]
 
-    def schemas(self) -> List[str]:
+    def schemas(self) -> list[str]:
         schemas = {tc.schema for tc in self.items}
         return sorted(schemas)
 

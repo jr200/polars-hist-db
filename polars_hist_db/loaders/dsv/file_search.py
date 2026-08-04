@@ -1,8 +1,9 @@
-from datetime import datetime
-from typing import Any, Mapping, Iterable, List
 import logging
 import os
 import re
+from collections.abc import Iterable, Mapping
+from datetime import datetime
+from typing import Any
 
 import polars as pl
 import pytz
@@ -20,7 +21,7 @@ def _parse_time(path, pattern: str, src_tz: TzInfo, target_tz: TzInfo) -> dateti
 
     d = {k: int(v) for k, v in m.groupdict().items()}
     src_dt = src_tz.localize(
-        datetime(
+        datetime(  # noqa: DTZ001 -- pytz requires localizing a naive datetime
             d["y"],
             d["m"],
             d["d"],
@@ -54,7 +55,7 @@ def find_files(search_paths: pl.DataFrame) -> pl.DataFrame:
 
 def _find_files_with_timestamps(
     root_path: str,
-    file_include: List[str],
+    file_include: list[str],
     timestamp: Mapping[str, Any],
     is_enabled: bool,
     max_depth: int = 4,
@@ -101,7 +102,7 @@ def _find_files_with_timestamps(
         mtime = (
             entry.st_mtime
             if isinstance(entry.st_mtime, datetime)
-            else source_tz.localize(datetime.fromtimestamp(entry.st_mtime))
+            else datetime.fromtimestamp(entry.st_mtime, tz=source_tz)
         ).astimezone(target_tz)
         created_at = (
             _parse_time(path, timestamp["datetime_regex"], source_tz, target_tz)

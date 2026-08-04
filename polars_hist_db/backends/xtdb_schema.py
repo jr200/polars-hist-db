@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 
 import polars as pl
 
@@ -22,7 +22,6 @@ from .xtdb_transport import (
     _xtdb_column_identifier,
     _xtdb_sql_literal,
 )
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -111,7 +110,7 @@ def _split_xtdb_set_members(data_type: str) -> list[str]:
     return members
 
 
-def _xtdb_union_members(data_type: str) -> Optional[list[str]]:
+def _xtdb_union_members(data_type: str) -> list[str] | None:
     if data_type.startswith("#{") and data_type.endswith("}"):
         return _split_xtdb_set_members(data_type)
     if _xtdb_type_head(data_type) not in {":UNION", ":SPARSE-UNION"}:
@@ -350,9 +349,7 @@ def _xtdb_table_config_from_metadata(
 
     raw_columns = json.loads(str(columns_json))
     if not isinstance(raw_columns, list):
-        raise ValueError(
-            f"Invalid XTDB column metadata for {table_schema}.{table_name}"
-        )
+        raise TypeError(f"Invalid XTDB column metadata for {table_schema}.{table_name}")
 
     columns = [
         TableColumnConfig(**column)

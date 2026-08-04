@@ -3,9 +3,9 @@ import pytest
 from polars_hist_db.config import TableConfig
 from tests.utils.dsv_helper import (
     backend_params,
-    setup_fixture_dataset,
-    connection_context_for_engine,
     commit_xtdb_connection,
+    connection_context_for_engine,
+    setup_fixture_dataset,
     table_config_ops_for_engine,
 )
 

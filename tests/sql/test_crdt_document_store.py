@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
+from typing import Any
 from uuid import uuid4
 
-from pycrdt import Doc, Map
 import pytest
+from pycrdt import Doc, Map
 from sqlalchemy import select
-from typing import Any
 
 from polars_hist_db.core import TableConfigOps
 from polars_hist_db.overrides import (
@@ -64,7 +64,7 @@ def test_mariadb_crdt_store_persists_prepared_commit_and_projection():
         None,
         source_update,
         actor_id="user-1",
-        recorded_at=datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+        recorded_at=datetime(2026, 7, 12, 11, tzinfo=UTC),
     )
 
     engine = mariadb_engine_test()
@@ -88,7 +88,7 @@ def test_mariadb_crdt_store_persists_prepared_commit_and_projection():
                 None,
                 source_update,
                 actor_id="user-1",
-                recorded_at=datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+                recorded_at=datetime(2026, 7, 12, 11, tzinfo=UTC),
             )
             operation = (
                 connection.execute(

@@ -1,10 +1,10 @@
 """Append custom benchmark results to the tracked documentation history."""
 
-from argparse import ArgumentParser
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import platform
+from argparse import ArgumentParser
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import polars as pl
@@ -39,7 +39,7 @@ def record_history(
         {
             "commit": commit,
             "repository": repository,
-            "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
+            "timestamp": timestamp or datetime.now(UTC).isoformat(),
             "runner": runner,
             "python": platform.python_version(),
             "polars": pl.__version__,

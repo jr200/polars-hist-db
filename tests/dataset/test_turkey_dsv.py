@@ -1,18 +1,19 @@
-from datetime import datetime, timedelta
-import pytest
-import polars as pl
-from polars.testing import assert_frame_equal
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+import polars as pl
+import pytest
+from polars.testing import assert_frame_equal
+
 from polars_hist_db.config.transform_fn_registry import TransformFnRegistry
-from polars_hist_db.dataset import run_datasets
 from polars_hist_db.core.dataframe import DataframeOps, TimeHint
+from polars_hist_db.dataset import run_datasets
 from polars_hist_db.utils import compare_dataframes
+
 from ..utils.dsv_helper import (
     from_test_result,
     setup_fixture_dataset,
 )
-
 from .helpers import custom_try_to_usd
 
 pytestmark = pytest.mark.integration
@@ -60,7 +61,7 @@ async def test_load_file(fixture_with_config):
         food_prices_asof_df = DataframeOps(connection).from_table(
             "test",
             "food_prices",
-            TimeHint(mode="asof", asof_utc=datetime(2015, 3, 31)),
+            TimeHint(mode="asof", asof_utc=datetime(2015, 3, 31, tzinfo=UTC)),
         )
 
         food_prices_t1_t2_df = DataframeOps(connection).from_table(
@@ -68,7 +69,7 @@ async def test_load_file(fixture_with_config):
             "food_prices",
             TimeHint(
                 mode="span",
-                asof_utc=datetime(2015, 4, 1),
+                asof_utc=datetime(2015, 4, 1, tzinfo=UTC),
                 history_span=timedelta(days=15),
             ),
         )

@@ -1,18 +1,20 @@
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
+
 import polars as pl
-from sqlalchemy import ColumnElement, and_, Column, Connection, select
+from sqlalchemy import Column, ColumnElement, Connection, and_, select
 from sqlalchemy.sql.functions import coalesce
 
-from ..core import DataframeOps, TableOps
 from ..config import PipelineExtractColumn, TableConfig
+from ..core import DataframeOps, TableOps
 
 LOGGER = logging.getLogger(__name__)
 
 
 def _get_column_info(
-    table_config: TableConfig, col_map: Dict[str, str], col_name: str
-) -> Optional[Dict[str, Any]]:
+    table_config: TableConfig, col_map: dict[str, str], col_name: str
+) -> dict[str, Any] | None:
     """Retrieve column information for the given column name."""
     column = next(
         (column for column in table_config.columns if column.name == col_map[col_name]),
@@ -26,7 +28,7 @@ def _get_column_info(
 def _coalesce_with_default(
     col: Column[Any],
     table_config: TableConfig,
-    col_map: Dict[str, str],
+    col_map: dict[str, str],
     coalesce_disabled: bool = True,
 ) -> ColumnElement[Any]:
     """Apply coalesce with default value if column is not nullable and coalesce is enabled."""
@@ -42,14 +44,14 @@ def _coalesce_with_default(
 
 def _get_foreign_key_columns(
     col_info: Sequence[PipelineExtractColumn],
-) -> List[str]:
+) -> list[str]:
     """Retrieve columns that need foreign key deducing."""
     return [column.source for column in col_info if column.deduce_foreign_key]
 
 
 def _get_value_columns(
     col_info: Sequence[PipelineExtractColumn],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Retrieve columns that do not need foreign key deducing."""
     return {
         column.source: column.target
@@ -73,13 +75,13 @@ def _prepare_population_set(
     )
     parent_tbl = parent_tbo.get_table_metadata()
 
-    src_primary_keys = [src_tbl.c[k] for k in src_tbl.primary_key.columns.keys()]
+    src_primary_keys = list(src_tbl.primary_key.columns)
     parent_implied_cols = [
         parent_tbl.c[column.target] for column in col_info if column.deduce_foreign_key
     ]
 
     value_col_map = _get_value_columns(col_info)
-    src_value_cols = [src_tbl.c[col] for col in value_col_map.keys()]
+    src_value_cols = [src_tbl.c[col] for col in value_col_map]
 
     on_clause = [
         parent_tbl.c[t]
@@ -129,7 +131,7 @@ def deduce_foreign_keys(
     )
 
     if not new_items_to_insert_in_parent.is_empty():
-        missing_values_map: Dict[str, str] = {
+        missing_values_map: dict[str, str] = {
             c.name: c.default_value
             for c in parent_table_config.columns
             if c.default_value is not None and c.name

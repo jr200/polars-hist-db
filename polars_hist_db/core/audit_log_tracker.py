@@ -1,6 +1,8 @@
-from datetime import datetime
 import logging
-from typing import Dict, Any, Callable, Awaitable, Optional, List
+from collections.abc import Awaitable, Callable
+from datetime import datetime
+from typing import Any, ClassVar
+
 import pytz
 from sqlalchemy.engine import Connection
 
@@ -12,15 +14,15 @@ TableUpdateCallback = Callable[[str, str, datetime], Awaitable[None]]
 
 
 class AuditLogTracker:
-    _borg: Dict[str, Any] = {}
+    _borg: ClassVar[dict[str, Any]] = {}
 
-    last_known_updates: Dict[str, datetime]
-    table_update_callback: Optional[TableUpdateCallback]
+    last_known_updates: dict[str, datetime]
+    table_update_callback: TableUpdateCallback | None
 
     def __init__(self):
         self.__dict__ = self._borg
         if "last_known_updates" not in self._borg:
-            self._borg["last_known_updates"] = dict()
+            self._borg["last_known_updates"] = {}
         if "table_update_callback" not in self._borg:
             self._borg["table_update_callback"] = None
 
@@ -34,7 +36,7 @@ class AuditLogTracker:
         self.last_known_updates.clear()
 
     async def check_for_updates(
-        self, epoch_ms: int, schemas: List[str], connection: Connection
+        self, epoch_ms: int, schemas: list[str], connection: Connection
     ):
         # this is implemented as a polling task to allow for historic-replays
         # options were:
@@ -79,7 +81,7 @@ class AuditLogTracker:
                                 table_name,
                                 new_timestamp,
                             )
-                        except Exception as e:
+                        except Exception as e:  # noqa: BLE001
                             LOGGER.error(
                                 "Error in table update callback for %s.%s: %s",
                                 aops.schema,

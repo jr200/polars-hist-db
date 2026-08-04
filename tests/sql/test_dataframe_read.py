@@ -1,5 +1,6 @@
-import pytest
 import polars as pl
+import pytest
+
 from ..utils.dsv_helper import (
     backend_params,
     from_test_result,

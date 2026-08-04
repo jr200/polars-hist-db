@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import Mock
 
@@ -73,7 +73,7 @@ def test_xtdb_generated_foreign_key_payload_preserves_canonical_ids():
         {
             "name": ['a"b'],
             "day": [date(2020, 1, 2)],
-            "at": [datetime(2020, 1, 2, 3, 4, 5, 123400, tzinfo=timezone.utc)],
+            "at": [datetime(2020, 1, 2, 3, 4, 5, 123400, tzinfo=UTC)],
             "amount": [Decimal("2.10")],
         }
     )
@@ -98,7 +98,7 @@ def test_xtdb_staging_partition_stays_in_memory_without_database_io():
             TableColumnConfig("record_stream", "destination_name", "VARCHAR(64)"),
         ],
     )
-    partition_time = datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc)
+    partition_time = datetime(2030, 1, 1, 12, 0, tzinfo=UTC)
     staging = XtdbStagingOps(connection)
 
     inserted_count = staging.insert_partition(
@@ -141,7 +141,7 @@ def test_xtdb_staging_903_rows_avoids_database_io():
         pl.DataFrame({"record_id": range(903)}),
         config,
         "stage-1",
-        datetime(2030, 1, 1, tzinfo=timezone.utc),
+        datetime(2030, 1, 1, tzinfo=UTC),
         uniqueness_col_set=["record_id"],
         prefill_nulls_with_default=True,
     )
@@ -218,7 +218,7 @@ def test_xtdb_staging_projects_from_insert_cache_after_partition_insert(monkeypa
         pl.DataFrame({"record_id": [1], "destination_name": ["Alpha"]}),
         delta_table_config,
         "stage-1",
-        datetime(2030, 1, 1, tzinfo=timezone.utc),
+        datetime(2030, 1, 1, tzinfo=UTC),
         uniqueness_col_set=["record_id"],
         prefill_nulls_with_default=True,
     )
@@ -291,7 +291,7 @@ def test_xtdb_staging_projects_empty_insert_from_cache(monkeypatch):
         pl.DataFrame(schema={"record_id": pl.Int64, "destination_name": pl.String}),
         delta_table_config,
         "stage-1",
-        datetime(2030, 1, 1, tzinfo=timezone.utc),
+        datetime(2030, 1, 1, tzinfo=UTC),
         uniqueness_col_set=["record_id"],
         prefill_nulls_with_default=True,
     )
@@ -324,7 +324,7 @@ def test_xtdb_staging_projects_pipeline_item_with_valid_time_mapping(monkeypatch
             "stage_row_index": [0],
             "record_id": [1],
             "destination_name": ["Alpha"],
-            "msg_timestamp": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
+            "msg_timestamp": [datetime(2030, 1, 1, tzinfo=UTC)],
             "ignored": ["not written"],
         }
     )
@@ -372,7 +372,7 @@ def test_xtdb_staging_projects_pipeline_item_with_valid_time_mapping(monkeypatch
     assert result.to_dict(as_series=False) == {
         "record_id": [1],
         "destination": ["Alpha"],
-        "msg_timestamp": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
+        "msg_timestamp": [datetime(2030, 1, 1, tzinfo=UTC)],
     }
     from_raw_sql.assert_not_called()
 
@@ -500,7 +500,7 @@ def test_xtdb_staging_cache_materializes_missing_columns(monkeypatch):
         pl.DataFrame({"record_id": [1], "destination_name": ["Alpha"]}),
         delta_table_config,
         "stage-1",
-        datetime(2030, 1, 1, tzinfo=timezone.utc),
+        datetime(2030, 1, 1, tzinfo=UTC),
         uniqueness_col_set=["record_id"],
         prefill_nulls_with_default=True,
     )
@@ -524,7 +524,7 @@ def test_xtdb_staging_cache_materializes_missing_columns(monkeypatch):
         "destination_name": ["Alpha"],
         "source_note": [None],
         "stage_run_id": ["stage-1"],
-        "stage_partition_time": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
+        "stage_partition_time": [datetime(2030, 1, 1, tzinfo=UTC)],
     }
     assert staging._stage_run_cache["stage-1"].schema["source_note"] == pl.String
     table_insert.assert_not_called()
@@ -618,7 +618,7 @@ def test_xtdb_staging_omits_explicitly_inapplicable_rows(caplog):
         {
             "record_id": [1, 2],
             "observed_at": [
-                datetime(2030, 1, 1, tzinfo=timezone.utc),
+                datetime(2030, 1, 1, tzinfo=UTC),
                 None,
             ],
         }
@@ -638,7 +638,7 @@ def test_xtdb_staging_omits_explicitly_inapplicable_rows(caplog):
 
     assert result.to_dict(as_series=False) == {
         "record_id": [1],
-        "observed_at": [datetime(2030, 1, 1, tzinfo=timezone.utc)],
+        "observed_at": [datetime(2030, 1, 1, tzinfo=UTC)],
     }
     assert "omitted 1 pipeline row" in caplog.text
 
@@ -652,8 +652,8 @@ def test_xtdb_staging_cleanup_only_discards_memory_cache():
             "stage_row_index": [0, 1],
             "record_id": [10, 20],
             "stage_partition_time": [
-                datetime(2030, 1, 1),
-                datetime(2030, 1, 1),
+                datetime.fromisoformat("2030-01-01"),
+                datetime.fromisoformat("2030-01-01"),
             ],
         }
     )

@@ -1,10 +1,11 @@
+from sqlalchemy.dialects import mysql
+
 from polars_hist_db.overrides import (
     OverrideLedgerConfig,
     build_override_table_config,
     build_override_valid_time_config,
 )
 from polars_hist_db.types import SQLAlchemyType
-from sqlalchemy.dialects import mysql
 
 
 def test_override_table_config_builds_sqlalchemy_columns_for_mariadb_path():

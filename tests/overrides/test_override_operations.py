@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -15,7 +15,7 @@ from polars_hist_db.overrides import (
 
 
 def _utc(hour: int) -> datetime:
-    return datetime(2026, 7, 13, hour, tzinfo=timezone.utc)
+    return datetime(2026, 7, 13, hour, tzinfo=UTC)
 
 
 def _operation(

@@ -1,6 +1,6 @@
 import builtins
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime, time
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
@@ -13,8 +13,8 @@ from polars_hist_db.backends.xtdb import (
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
     XtdbTableConfigOps,
-    _execute_xtdb_dml,
     _execute_xtdb_arrow_copy,
+    _execute_xtdb_dml,
 )
 from polars_hist_db.backends.xtdb_dataframe import _uploaded_xtdb_relation
 from polars_hist_db.config import TableColumnConfig, TableConfig
@@ -79,14 +79,16 @@ def test_xtdb_dml_retries_with_append_time_when_system_time_is_too_old():
     row_count = _execute_xtdb_dml(
         connection,
         "INSERT INTO test.records (_id) VALUES (1)",
-        system_time=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        system_time=datetime(2025, 1, 1, tzinfo=UTC),
     )
 
     assert row_count == 0
     assert connection.connection.driver_connection.rollback_count == 1
     assert connection.connection.driver_connection.executed == [
-        "BEGIN READ WRITE WITH (SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
-        "'2025-01-01T00:00:00+00:00')",
+        (
+            "BEGIN READ WRITE WITH (SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
+            "'2025-01-01T00:00:00+00:00')"
+        ),
         "INSERT INTO test.records (_id) VALUES (1)",
         "COMMIT",
         "ROLLBACK",
@@ -341,13 +343,15 @@ def test_xtdb_dataframe_ops_uses_system_time_transaction_for_update_time():
         pl.DataFrame({"_id": [1], "destination": ["Alpha"]}),
         "test",
         "records",
-        update_time=datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc),
+        update_time=datetime(2030, 1, 1, 12, 0, tzinfo=UTC),
     )
 
     assert result == 1
     assert driver_connection.execute.call_args_list[0].args == (
-        "BEGIN READ WRITE WITH (SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
-        "'2030-01-01T12:00:00+00:00')",
+        (
+            "BEGIN READ WRITE WITH (SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
+            "'2030-01-01T12:00:00+00:00')"
+        ),
     )
 
 
@@ -433,12 +437,14 @@ def test_uploaded_xtdb_relation_adds_document_ids_and_erases_on_failure(monkeypa
         "polars_hist_db.backends.xtdb_dataframe._execute_xtdb_dml", erase
     )
 
-    with pytest.raises(RuntimeError, match="query failed"):
-        with _uploaded_xtdb_relation(
+    with (
+        pytest.raises(RuntimeError, match="query failed"),
+        _uploaded_xtdb_relation(
             ops, pl.DataFrame({"id": [10, 20]}), "test"
-        ) as table_sql:
-            assert table_sql.startswith("test.__polars_hist_db_keys_")
-            raise RuntimeError("query failed")
+        ) as table_sql,
+    ):
+        assert table_sql.startswith("test.__polars_hist_db_keys_")
+        raise RuntimeError("query failed")
 
     uploaded = ops.table_insert.call_args.args[0]
     assert uploaded.to_dict(as_series=False) == {"_id": [0, 1], "id": [10, 20]}
@@ -513,7 +519,7 @@ def test_xtdb_dml_advances_reused_system_time_on_same_connection():
             return False
 
     connection = _Connection()
-    system_time = datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc)
+    system_time = datetime(2030, 1, 1, 12, 0, tzinfo=UTC)
 
     _execute_xtdb_dml(
         connection, "CREATE TABLE test.one (_id)", system_time=system_time
@@ -528,11 +534,15 @@ def test_xtdb_dml_advances_reused_system_time_on_same_connection():
         if statement.startswith("BEGIN READ WRITE")
     ]
     assert begin_statements == [
-        "BEGIN READ WRITE WITH (SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
-        "'2030-01-01T12:00:00+00:00')",
-        "BEGIN READ WRITE WITH "
-        "(SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
-        "'2030-01-01T12:00:00.000001+00:00')",
+        (
+            "BEGIN READ WRITE WITH (SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
+            "'2030-01-01T12:00:00+00:00')"
+        ),
+        (
+            "BEGIN READ WRITE WITH "
+            "(SYSTEM_TIME = TIMESTAMP WITH TIME ZONE "
+            "'2030-01-01T12:00:00.000001+00:00')"
+        ),
     ]
 
 
@@ -598,7 +608,7 @@ def test_xtdb_dataframe_ops_preserves_bound_timestamp_parameters_as_utc_instants
         pl.DataFrame(
             {
                 "id": [1],
-                "seen_at": [datetime(2030, 1, 1, 12, 30, tzinfo=timezone.utc)],
+                "seen_at": [datetime(2030, 1, 1, 12, 30, tzinfo=UTC)],
             }
         ),
         "test",
@@ -608,9 +618,7 @@ def test_xtdb_dataframe_ops_preserves_bound_timestamp_parameters_as_utc_instants
 
     insert_call = _single_executemany_call(driver_connection)
     assert "%s::TIMESTAMP WITH TIME ZONE" in insert_call.args[0]
-    assert insert_call.args[1] == [
-        (1, 1, datetime(2030, 1, 1, 12, 30, tzinfo=timezone.utc))
-    ]
+    assert insert_call.args[1] == [(1, 1, datetime(2030, 1, 1, 12, 30, tzinfo=UTC))]
 
 
 def test_xtdb_dataframe_ops_casts_datetime_precision_to_timestamp_with_timezone():
@@ -633,7 +641,7 @@ def test_xtdb_dataframe_ops_casts_datetime_precision_to_timestamp_with_timezone(
         pl.DataFrame(
             {
                 "id": [1],
-                "seen_at": [datetime(2030, 1, 1, 12, 30, tzinfo=timezone.utc)],
+                "seen_at": [datetime(2030, 1, 1, 12, 30, tzinfo=UTC)],
             }
         ),
         "test",
@@ -643,9 +651,7 @@ def test_xtdb_dataframe_ops_casts_datetime_precision_to_timestamp_with_timezone(
 
     insert_call = _single_executemany_call(driver_connection)
     assert "%s::TIMESTAMP WITH TIME ZONE" in insert_call.args[0]
-    assert insert_call.args[1] == [
-        (1, 1, datetime(2030, 1, 1, 12, 30, tzinfo=timezone.utc))
-    ]
+    assert insert_call.args[1] == [(1, 1, datetime(2030, 1, 1, 12, 30, tzinfo=UTC))]
 
 
 def test_xtdb_dataframe_ops_uses_native_casts_for_mysql_compatibility_types():
@@ -681,8 +687,8 @@ def test_xtdb_dataframe_ops_uses_native_casts_for_mysql_compatibility_types():
                 "smallint_col": [738221],
                 "mediumint_col": [4],
                 "real_col": [78.9],
-                "datetime_col": [datetime(2030, 1, 1, 12, 0)],
-                "time_col": [datetime(2030, 1, 1, 12, 30).time()],
+                "datetime_col": [datetime.fromisoformat("2030-01-01T12:00:00")],
+                "time_col": [time(12, 30)],
             }
         ),
         "test",
@@ -709,8 +715,8 @@ def test_xtdb_dataframe_ops_uses_native_casts_for_mysql_compatibility_types():
             738221,
             4,
             78.9,
-            datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc),
-            datetime(2030, 1, 1, 12, 30).time(),
+            datetime(2030, 1, 1, 12, 0, tzinfo=UTC),
+            time(12, 30),
         )
     ]
 

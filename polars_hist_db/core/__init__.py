@@ -8,8 +8,8 @@ from .table_config import TableConfigOps
 from .timehint import TimeHint
 
 __all__ = [
-    "AuditOps",
     "AuditLogTracker",
+    "AuditOps",
     "DataframeOps",
     "DbOps",
     "DeltaTableOps",

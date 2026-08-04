@@ -1,9 +1,10 @@
-from typing import Any, Dict, List
-import polars as pl
 from datetime import datetime
+from typing import Any
+
+import polars as pl
 
 
-def custom_load_json(payload: Any, ts: datetime, args: Dict[str, Any]) -> pl.DataFrame:
+def custom_load_json(payload: Any, ts: datetime, args: dict[str, Any]) -> pl.DataFrame:
     assert isinstance(payload, dict)
     assert isinstance(args, dict)
     assert isinstance(args["msg_counter"], int)
@@ -19,7 +20,7 @@ def custom_load_json(payload: Any, ts: datetime, args: Dict[str, Any]) -> pl.Dat
 
 
 def custom_try_to_usd(
-    df: pl.DataFrame, result_col: str, args: List[Any]
+    df: pl.DataFrame, result_col: str, args: list[Any]
 ) -> pl.DataFrame:
     usdtry_fx_rates = pl.from_dict(
         {

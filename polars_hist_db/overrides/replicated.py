@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-from datetime import datetime, timezone
-from hashlib import sha256
 import json
-from typing import Iterable, Literal
+from collections.abc import Iterable
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
+from hashlib import sha256
+from typing import Literal
 from uuid import UUID
 
 from .pagination import Page, paginate
@@ -252,7 +253,7 @@ def _scope(operation: ReplicatedOverrideOperation) -> tuple[str, str, str, str]:
 
 
 def _timestamp(value: datetime | None) -> str | None:
-    return None if value is None else value.astimezone(timezone.utc).isoformat()
+    return None if value is None else value.astimezone(UTC).isoformat()
 
 
 def _value_key(value: OverrideTypedValue | None) -> str:

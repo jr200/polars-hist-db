@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 
 import polars as pl
 import pytest
@@ -6,8 +6,8 @@ from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table
 
 from polars_hist_db.config import DeltaConfig
 from polars_hist_db.config.parser_config import IngestionColumnConfig
-from polars_hist_db.core.dataframe import DataframeOps
 from polars_hist_db.core.audit import AuditOps
+from polars_hist_db.core.dataframe import DataframeOps
 from polars_hist_db.core.delta_table import (
     DeltaTableOps,
     _prevalidate_upsert_from_table,
@@ -89,7 +89,7 @@ def test_temporal_delete_resets_session_timestamp_after_error(monkeypatch):
         "table_delete_rows",
         lambda *args: (_ for _ in ()).throw(RuntimeError("delete failed")),
     )
-    update_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    update_time = datetime(2026, 1, 1, tzinfo=UTC)
 
     with pytest.raises(RuntimeError, match="delete failed"):
         ops.table_delete_rows_temporal(
@@ -110,7 +110,7 @@ def test_temporal_upsert_resets_session_timestamp_after_error(monkeypatch):
         "polars_hist_db.core.delta_table.TableOps.get_table_metadata",
         lambda self: (_ for _ in ()).throw(RuntimeError("upsert failed")),
     )
-    update_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    update_time = datetime(2026, 1, 1, tzinfo=UTC)
 
     with pytest.raises(RuntimeError, match="upsert failed"):
         ops.upsert("items", update_time)

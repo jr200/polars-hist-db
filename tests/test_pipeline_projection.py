@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from types import SimpleNamespace
 
 import polars as pl
@@ -44,7 +44,7 @@ def _dataset() -> SimpleNamespace:
 
 
 def test_valid_time_source_columns_are_projected_from_staging_data():
-    event_time = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    event_time = datetime(2030, 1, 1, tzinfo=UTC)
 
     result = project_staged_pipeline_item_dataframe(
         pl.DataFrame(

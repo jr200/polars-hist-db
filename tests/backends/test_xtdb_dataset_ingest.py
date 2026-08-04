@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from types import SimpleNamespace
 
 import polars as pl
@@ -74,8 +74,8 @@ def test_xtdb_primary_ingest_uses_staged_dataframe_for_temporal_upsert():
             }
         ],
     )
-    msg_timestamp = datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc)
-    update_time = datetime(2030, 1, 1, 12, 5, tzinfo=timezone.utc)
+    msg_timestamp = datetime(2030, 1, 1, 12, 0, tzinfo=UTC)
+    update_time = datetime(2030, 1, 1, 12, 5, tzinfo=UTC)
     staged_df = pl.DataFrame(
         {
             "record_id": [1],
@@ -158,7 +158,7 @@ def test_xtdb_primary_ingest_uses_bulk_dataframe_ops_for_non_temporal_table():
             }
         ],
     )
-    update_time = datetime(2030, 1, 1, 12, 5, tzinfo=timezone.utc)
+    update_time = datetime(2030, 1, 1, 12, 5, tzinfo=UTC)
     staged_df = pl.DataFrame(
         {
             "record_id": [1],
@@ -236,7 +236,7 @@ def test_xtdb_extract_ingest_uses_bulk_dataframe_ops_for_non_temporal_table():
             },
         ],
     )
-    update_time = datetime(2030, 1, 1, 12, 5, tzinfo=timezone.utc)
+    update_time = datetime(2030, 1, 1, 12, 5, tzinfo=UTC)
     staged_df = pl.DataFrame(
         {
             "entity_id": [123],

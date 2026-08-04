@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import json
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from hashlib import sha256
-import json
-from typing import Iterable
 
 from .config import build_document_access_table_configs
 from .crdt import RowGuard

@@ -1,11 +1,11 @@
-from datetime import date, datetime, time, timedelta, timezone
-from decimal import Decimal
+from collections.abc import Sequence
 from contextlib import nullcontext
-from typing import Sequence
+from datetime import UTC, date, datetime, time, timedelta
+from decimal import Decimal
 from uuid import UUID, uuid4
 
-import pyarrow as pa
 import polars as pl
+import pyarrow as pa
 import pytest
 
 from polars_hist_db.overrides import (
@@ -14,25 +14,23 @@ from polars_hist_db.overrides import (
     ArrowOverrideLayerNotFound,
     ArrowOverridePreconditionFailed,
     DocumentAccessStoreConfig,
-    InMemoryArrowOverrideRepository,
     InMemoryArrowOverrideOperationStore,
+    InMemoryArrowOverrideRepository,
     RepositoryArrowOverrideOperationStore,
     RowGuard,
     arrow_override_operation_schema,
     arrow_override_operations_from_storage,
     arrow_override_storage_frames,
     build_document_access_table_configs,
-    decode_arrow_override_operations,
     decode_arrow_override_acknowledgements,
+    decode_arrow_override_operations,
     decode_arrow_override_projection,
-    encode_arrow_override_operations,
     encode_arrow_override_acknowledgements,
+    encode_arrow_override_operations,
     encode_arrow_override_projection,
     finalize_arrow_override_operations,
     validate_arrow_override_operations,
 )
-
-UTC = timezone.utc
 
 
 def _value(kind: str, value: object) -> dict[str, object]:

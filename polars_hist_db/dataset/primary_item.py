@@ -1,13 +1,12 @@
-from datetime import datetime
 import logging
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any
 
 import polars as pl
-from sqlalchemy import func, or_, select, Table
-from sqlalchemy import Connection
+from sqlalchemy import Connection, Table, func, or_, select
 
-from ..config import TableConfig, TableConfigs, DatasetConfig
-from ..core import TableConfigOps, DeltaTableOps, TableOps
+from ..config import DatasetConfig, TableConfig, TableConfigs
+from ..core import DeltaTableOps, TableConfigOps, TableOps
 from ..pipeline_projection import valid_time_source_columns
 
 LOGGER = logging.getLogger(__name__)
@@ -60,8 +59,8 @@ def scrape_primary_item(
     tables: TableConfigs,
     upload_time: datetime,
     connection: Connection,
-    partition_df: Optional[pl.DataFrame] = None,
-    stage_run_id: Optional[str] = None,
+    partition_df: pl.DataFrame | None = None,
+    stage_run_id: str | None = None,
     staging: Any = None,
     backend: Any = None,
 ) -> bool:
@@ -101,14 +100,11 @@ def scrape_primary_item(
 
     common_columns = [c.name for c in tbo.get_column_intersection(selected_columns)]
 
-    if selected_columns is not None:
-        if len(common_columns) != len(selected_columns):
-            cols_not_configured = set(common_columns).symmetric_difference(
-                selected_columns
-            )
-            raise ValueError(
-                f"column mismatch on {cols_not_configured} in {selected_columns}"
-            )
+    if selected_columns is not None and len(common_columns) != len(selected_columns):
+        cols_not_configured = set(common_columns).symmetric_difference(selected_columns)
+        raise ValueError(
+            f"column mismatch on {cols_not_configured} in {selected_columns}"
+        )
 
     ni, nu, nd = DeltaTableOps(
         delta_table_schema, delta_table_name, dataset.delta_config, connection
@@ -132,7 +128,7 @@ def scrape_xtdb_pipeline_item(
     table_config: TableConfig,
     upload_time: datetime,
     connection: Connection,
-    stage_run_id: Optional[str],
+    stage_run_id: str | None,
     staging: Any,
     backend: Any,
 ) -> bool:

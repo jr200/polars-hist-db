@@ -1,6 +1,6 @@
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Literal, Mapping, Optional
-
+from typing import Any, Literal
 
 BackendName = Literal["mariadb", "xtdb", "mssql"]
 
@@ -13,13 +13,13 @@ def _default_port(backend: str) -> int:
     return 3306
 
 
-def _default_adbc_port(backend: str) -> Optional[int]:
+def _default_adbc_port(backend: str) -> int | None:
     if backend == "xtdb":
         return 9832
     return None
 
 
-def _default_max_rows_per_insert(backend: str) -> Optional[int]:
+def _default_max_rows_per_insert(backend: str) -> int | None:
     if backend == "xtdb":
         return 10_000
     return None
@@ -35,7 +35,7 @@ def _parse_port(value: Any, backend: str) -> int:
     return _default_port(backend)
 
 
-def _parse_optional_port(value: Any, backend: str) -> Optional[int]:
+def _parse_optional_port(value: Any, backend: str) -> int | None:
     if value is None:
         return _default_adbc_port(backend)
     if isinstance(value, int):
@@ -45,7 +45,7 @@ def _parse_optional_port(value: Any, backend: str) -> Optional[int]:
     return _default_adbc_port(backend)
 
 
-def _parse_optional_positive_int(value: Any) -> Optional[int]:
+def _parse_optional_positive_int(value: Any) -> int | None:
     if value is None:
         return None
     if isinstance(value, int):
@@ -60,7 +60,7 @@ def _parse_optional_positive_int(value: Any) -> Optional[int]:
     return parsed
 
 
-def _parse_max_rows_per_insert(value: Any, backend: str) -> Optional[int]:
+def _parse_max_rows_per_insert(value: Any, backend: str) -> int | None:
     if value is None:
         return _default_max_rows_per_insert(backend)
     return _parse_optional_positive_int(value)
@@ -71,14 +71,14 @@ class DbEngineConfig:
     backend: BackendName = "mariadb"
     hostname: str = "127.0.0.1"
     port: int = 3306
-    adbc_port: Optional[int] = None
-    database: Optional[str] = None
-    username: Optional[str] = None
-    password: Optional[str] = None
-    ssl_config: Optional[Mapping[str, Any]] = None
+    adbc_port: int | None = None
+    database: str | None = None
+    username: str | None = None
+    password: str | None = None
+    ssl_config: Mapping[str, Any] | None = None
     pool_size: int = 3
     max_overflow: int = 2
-    max_rows_per_insert: Optional[int] = None
+    max_rows_per_insert: int | None = None
 
     @classmethod
     def from_mapping(cls, cfg: Mapping[str, Any]) -> "DbEngineConfig":

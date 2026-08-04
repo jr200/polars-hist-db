@@ -1,6 +1,5 @@
 import itertools
 import logging
-from typing import List, Optional, Tuple
 
 import polars as pl
 
@@ -9,7 +8,7 @@ LOGGER = logging.getLogger(__name__)
 
 def compute_diff(
     df: pl.DataFrame,
-    cols: List[Tuple[str, str]],
+    cols: list[tuple[str, str]],
     suffix: str = "_diff",
     float_tol: float = 10e-10,
 ) -> pl.DataFrame:
@@ -63,9 +62,9 @@ def compute_diff(
 def compare_dataframes(
     lhs: pl.DataFrame,
     rhs: pl.DataFrame,
-    on: List[str],
-    cmp_cols: Optional[List[str]] = None,
-    suffixes: Tuple[str, str, str] = ("_lhs", "_rhs", "_diff"),
+    on: list[str],
+    cmp_cols: list[str] | None = None,
+    suffixes: tuple[str, str, str] = ("_lhs", "_rhs", "_diff"),
 ):
     _lhs, _rhs, _diff = suffixes
 

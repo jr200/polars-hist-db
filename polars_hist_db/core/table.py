@@ -1,23 +1,22 @@
 import logging
-from types import MappingProxyType
-from typing import Mapping, Optional, Sequence
 import warnings
+from collections.abc import Mapping, Sequence
+from types import MappingProxyType
+
 from sqlalchemy import (
     Column,
     ColumnCollection,
     Connection,
+    MetaData,
+    Table,
     func,
     inspect,
-    MetaData,
     select,
-    Table,
     text,
 )
-
 from sqlalchemy.exc import SAWarning
 
 from .db import DbOps
-
 
 LOGGER = logging.getLogger(__name__)
 _TABLE_METADATA_CACHE_ATTR = "_polars_hist_db_table_metadata_cache"
@@ -103,7 +102,7 @@ class TableOps:
 
     def get_column_intersection(
         self,
-        column_selection: Optional[Sequence[str]],
+        column_selection: Sequence[str] | None,
     ) -> ColumnCollection:
         tbl = self.get_table_metadata()
 

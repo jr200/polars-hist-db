@@ -1,28 +1,25 @@
-from collections import defaultdict
 import logging
-from typing import List, Mapping, Optional
+from collections import defaultdict
+from collections.abc import Mapping
 
 from sqlalchemy import (
     Column,
     Connection,
     DefaultClause,
     ForeignKeyConstraint,
-    inspect,
     MetaData,
     Table,
-    text,
     UniqueConstraint,
+    inspect,
+    text,
 )
-from sqlalchemy.schema import CreateColumn
-from sqlalchemy.schema import CreateTable
+from sqlalchemy.schema import CreateColumn, CreateTable
 
-from .db import DbOps
-from .table import TableOps
-
-from ..config.table import TableConfig, TableConfigs, TableColumnConfig
+from ..config.table import TableColumnConfig, TableConfig, TableConfigs
 from ..types import SQLAlchemyType
 from ..utils.db_utils import strip_outer_quotes
-
+from .db import DbOps
+from .table import TableOps
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +38,7 @@ class TableConfigOps:
     def create(
         self,
         table_config: TableConfig,
-        column_selection: Optional[List[str]] = None,
+        column_selection: list[str] | None = None,
         is_delta_table: bool = False,
         is_temporary_table: bool = False,
     ) -> Table:
@@ -146,7 +143,7 @@ class TableConfigOps:
         self,
         table_name: str,
         table_config: TableConfig,
-        column_selection: Optional[List[str]] = None,
+        column_selection: list[str] | None = None,
     ) -> Table:
         tbo = TableOps(table_config.schema, table_name, self.connection)
         if tbo.table_exists():
@@ -189,8 +186,8 @@ class TableConfigOps:
         self,
         table_name: str,
         table_config: TableConfig,
-        column_selection: Optional[List[str]] = None,
-        additional_columns: Optional[List[Column]] = None,
+        column_selection: list[str] | None = None,
+        additional_columns: list[Column] | None = None,
         is_delta_table: bool = False,
         is_temporary_table: bool = False,
     ) -> Table:
@@ -206,7 +203,7 @@ class TableConfigOps:
         if additional_columns is not None:
             columns.extend(additional_columns)
 
-        unique_constraint_items: Mapping[str, List[str]] = defaultdict(list)
+        unique_constraint_items: Mapping[str, list[str]] = defaultdict(list)
         if not is_delta_table:
             for col_def in table_config.columns:
                 for uc_name in col_def.unique_constraint:

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 import polars as pl
@@ -21,8 +22,8 @@ from .arrow import (
     empty_arrow_override_operations,
     validate_arrow_override_operations,
 )
-from .crdt import RowGuard
 from .config import build_arrow_override_table_configs
+from .crdt import RowGuard
 from .types import ArrowOverrideStoreConfig
 
 
@@ -61,7 +62,7 @@ class MariaDbArrowOverrideRepository:
                         layer_id=layer_id.bytes,
                         generation=generation,
                         revision=0,
-                        updated_at=datetime.now(timezone.utc),
+                        updated_at=datetime.now(UTC),
                     )
                 )
         except IntegrityError as exc:
@@ -237,7 +238,7 @@ class MariaDbArrowOverrideRepository:
                 .values(
                     generation=generation,
                     revision=0,
-                    updated_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(UTC),
                 )
             )
 

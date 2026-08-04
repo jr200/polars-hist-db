@@ -1,27 +1,24 @@
 import asyncio
-from datetime import datetime
 import logging
-from typing import Any, AsyncGenerator, List, Tuple
+from collections.abc import AsyncGenerator
+from datetime import datetime
+from typing import Any
 
+import polars as pl
 from nats.js.api import ConsumerConfig
 from nats.js.client import JetStreamContext
 from nats.js.errors import NotFoundError
-
-import polars as pl
 from sqlalchemy import Connection, Engine
-
-from ..core.audit import AuditOps
-from ..observability import record_uploader_batch
-from ..utils.exceptions import NonRetryableException
-
-from .ingest_payload import load_df_from_msg
 
 from ..config.dataset import DatasetConfig
 from ..config.input.jetstream_config import JetStreamInputConfig
 from ..config.table import TableConfigs
+from ..core.audit import AuditOps
+from ..observability import record_uploader_batch
+from ..utils.exceptions import NonRetryableException
+from .ingest_payload import load_df_from_msg
 from .input_source import BatchFinalizer, InputSource
 from .transform import apply_transformations, enforce_input_schema
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +46,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
         table_schema: str,
         table_name: str,
         subject: str,
-    ) -> tuple[List[Tuple[datetime, pl.DataFrame]], BatchFinalizer]:
+    ) -> tuple[list[tuple[datetime, pl.DataFrame]], BatchFinalizer]:
         all_dfs = []
         msg_audits = []
         for msg in msgs:
@@ -102,7 +99,7 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
 
         def write_audit_before_commit(
             connection: Connection,
-            modified_tables: List[Tuple[str, str]],
+            modified_tables: list[tuple[str, str]],
         ) -> bool:
             for audit_log_id, created_at in msg_audits:
                 result = True
@@ -145,15 +142,15 @@ class JetStreamInputSource(InputSource[JetStreamInputConfig]):
     async def next_df(
         self, engine: Engine
     ) -> AsyncGenerator[
-        Tuple[
-            List[Tuple[datetime, pl.DataFrame]],
+        tuple[
+            list[tuple[datetime, pl.DataFrame]],
             BatchFinalizer,
         ],
         None,
     ]:
         async def _generator() -> AsyncGenerator[
-            Tuple[
-                List[Tuple[datetime, pl.DataFrame]],
+            tuple[
+                list[tuple[datetime, pl.DataFrame]],
                 BatchFinalizer,
             ],
             None,

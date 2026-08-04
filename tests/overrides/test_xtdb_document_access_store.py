@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -26,7 +26,7 @@ def test_xtdb_access_create_submits_one_asserted_transaction(monkeypatch):
         "Shared corrections",
         None,
         "user-1",
-        datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+        datetime(2026, 7, 12, 11, tzinfo=UTC),
         initial_grants=(AccessGrantInput("grant-1", "operators", "editor"),),
         idempotency_key="command-1",
         owning_group="operators",
@@ -73,9 +73,7 @@ def test_xtdb_access_lists_use_keyset_pagination(monkeypatch):
     queries: list[str] = []
     store = XtdbDocumentAccessStore(object(), DocumentAccessStoreConfig())
     monkeypatch.setattr(store, "_rows", lambda sql: queries.append(sql) or [])
-    cursor = encode_cursor(
-        (datetime(2026, 7, 12, 11, tzinfo=timezone.utc), "document-1")
-    )
+    cursor = encode_cursor((datetime(2026, 7, 12, 11, tzinfo=UTC), "document-1"))
 
     page = store.list_all(cursor=cursor, limit=7)
 
@@ -104,7 +102,7 @@ def test_xtdb_access_create_reports_the_assertion_that_conflicted(monkeypatch):
             "Shared corrections",
             None,
             "user-1",
-            datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+            datetime(2026, 7, 12, 11, tzinfo=UTC),
             idempotency_key="command-1",
         )
 
@@ -128,7 +126,7 @@ def test_xtdb_access_create_does_not_mask_unexpected_database_errors(monkeypatch
             "Shared corrections",
             None,
             "user-1",
-            datetime(2026, 7, 12, 11, tzinfo=timezone.utc),
+            datetime(2026, 7, 12, 11, tzinfo=UTC),
             idempotency_key="command-1",
         )
 

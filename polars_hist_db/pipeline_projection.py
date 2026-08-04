@@ -1,11 +1,11 @@
 import logging
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import polars as pl
 
 from .config import PipelineExtractColumn, TableConfig, ValidTimeConfig
 from .types import PolarsType
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def _omit_inapplicable_rows(
 def _include_valid_time_source_columns(
     selected_columns: list[str],
     src_tgt_colname_map: dict[str, str],
-    valid_time: Optional[ValidTimeConfig],
+    valid_time: ValidTimeConfig | None,
     stage_df: pl.DataFrame,
 ) -> list[str]:
     result = list(selected_columns)
@@ -78,7 +78,7 @@ def _include_valid_time_source_columns(
 
 def valid_time_source_columns(
     src_tgt_colname_map: dict[str, str],
-    valid_time: Optional[ValidTimeConfig],
+    valid_time: ValidTimeConfig | None,
 ) -> list[str]:
     if valid_time is None:
         return []
@@ -99,7 +99,7 @@ def project_staged_pipeline_item_dataframe(
     dataset: Any,
     pipeline_id: int,
     table_config: TableConfig,
-    valid_time: Optional[ValidTimeConfig],
+    valid_time: ValidTimeConfig | None,
 ) -> pl.DataFrame:
     upload_items = dataset.pipeline.extract_items(pipeline_id)
     stage_df = _omit_inapplicable_rows(stage_df, upload_items)

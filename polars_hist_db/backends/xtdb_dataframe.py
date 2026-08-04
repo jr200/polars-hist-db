@@ -1,7 +1,8 @@
+import logging
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from datetime import datetime
-import logging
-from typing import Any, Iterator, Mapping, Optional, cast
+from typing import Any, cast
 from uuid import uuid4
 
 import polars as pl
@@ -21,7 +22,6 @@ from .xtdb_transport import (
     _xtdb_parameter_value,
 )
 
-
 _XTDB_QUERY_ROWS_PER_CHUNK = 10_000
 LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class XtdbDataframeOps:
     def __init__(
         self,
         connection: Any,
-        max_rows_per_insert: Optional[int] = None,
+        max_rows_per_insert: int | None = None,
     ):
         self.connection = connection
         self.max_rows_per_insert = max_rows_per_insert
@@ -44,8 +44,8 @@ class XtdbDataframeOps:
     def from_raw_sql(
         self,
         query: str,
-        schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
-        execute_options: Optional[dict[str, Any]] = None,
+        schema_overrides: Mapping[str, pl.DataType] | None = None,
+        execute_options: dict[str, Any] | None = None,
     ) -> pl.DataFrame:
         if schema_overrides is None:
             schema_overrides = {}
@@ -62,8 +62,8 @@ class XtdbDataframeOps:
         self,
         table_schema: str,
         table_name: str,
-        schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
-        time_hint: Optional[TimeHint] = None,
+        schema_overrides: Mapping[str, pl.DataType] | None = None,
+        time_hint: TimeHint | None = None,
     ) -> pl.DataFrame:
         from .xtdb_arrow import (
             _restore_xtdb_logical_columns,
@@ -96,7 +96,7 @@ class XtdbDataframeOps:
         table_schema: str,
         table_name: str,
         query_df: pl.DataFrame,
-        column_selection: Optional[list[str]],
+        column_selection: list[str] | None,
         time_hint: TimeHint | None = None,
         table_config: TableConfig | None = None,
         basis_time: datetime | None = None,
@@ -204,8 +204,8 @@ class XtdbDataframeOps:
         df: pl.DataFrame,
         table_schema: str,
         table_name: str,
-        table_config: Optional[TableConfig] = None,
-        update_time: Optional[datetime] = None,
+        table_config: TableConfig | None = None,
+        update_time: datetime | None = None,
         force_type_coercion: bool = False,
     ) -> int:
         from .xtdb_arrow import (
@@ -291,7 +291,7 @@ class XtdbAdbcDataframeOps:
     def __init__(
         self,
         connection: Any,
-        max_rows_per_insert: Optional[int] = None,
+        max_rows_per_insert: int | None = None,
     ):
         self.connection = connection
         self.max_rows_per_insert = max_rows_per_insert
@@ -299,7 +299,7 @@ class XtdbAdbcDataframeOps:
     def from_raw_sql(
         self,
         query: str,
-        schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
+        schema_overrides: Mapping[str, pl.DataType] | None = None,
     ) -> pl.DataFrame:
         from .xtdb_arrow import _apply_schema_overrides
 
@@ -316,8 +316,8 @@ class XtdbAdbcDataframeOps:
         self,
         table_schema: str,
         table_name: str,
-        schema_overrides: Optional[Mapping[str, pl.DataType]] = None,
-        time_hint: Optional[TimeHint] = None,
+        schema_overrides: Mapping[str, pl.DataType] | None = None,
+        time_hint: TimeHint | None = None,
     ) -> pl.DataFrame:
         table_sql = _qualified_table_name(table_schema, table_name)
         hint_clause = system_time_hint_clause(time_hint)
@@ -337,8 +337,8 @@ class XtdbAdbcDataframeOps:
         df: pl.DataFrame,
         table_schema: str,
         table_name: str,
-        table_config: Optional[TableConfig] = None,
-        update_time: Optional[datetime] = None,
+        table_config: TableConfig | None = None,
+        update_time: datetime | None = None,
         force_type_coercion: bool = False,
     ) -> int:
         from .xtdb_arrow import (

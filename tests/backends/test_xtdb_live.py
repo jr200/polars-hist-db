@@ -1,10 +1,11 @@
-from contextlib import contextmanager
-from datetime import date, datetime, time as datetime_time, timezone
-from decimal import Decimal
 import os
 import subprocess
 import time
 from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import UTC, date, datetime
+from datetime import time as datetime_time
+from decimal import Decimal
 
 import polars as pl
 import pytest
@@ -12,8 +13,8 @@ from sqlalchemy import Engine, text
 
 from polars_hist_db.backends import DbEngineConfig, XtdbBackend
 from polars_hist_db.config import (
-    DeltaConfig,
     DatasetConfig,
+    DeltaConfig,
     TableColumnConfig,
     TableConfig,
     TableConfigs,
@@ -31,7 +32,6 @@ from polars_hist_db.overrides import (
     build_document_access_table_configs,
 )
 
-
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
@@ -42,7 +42,7 @@ pytestmark = [
 
 
 try:
-    import psycopg  # noqa: F401
+    import psycopg
 except ImportError:
     pytestmark = [
         *pytestmark,
@@ -103,28 +103,27 @@ def test_xtdb_live_create_append_read_roundtrip():
         ],
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.dataframes(connection).table_insert(
-                pl.DataFrame(
-                    {
-                        "id": [1, 2],
-                        "destination": ["Alpha", "Beta"],
-                        "amount_value": [10.5, 20.25],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                table_config=table_config,
-            )
+        backend.dataframes(connection).table_insert(
+            pl.DataFrame(
+                {
+                    "id": [1, 2],
+                    "destination": ["Alpha", "Beta"],
+                    "amount_value": [10.5, 20.25],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            table_config=table_config,
+        )
 
-            result = backend.dataframes(connection).from_table(
-                table_config.schema,
-                table_config.name,
-            )
+        result = backend.dataframes(connection).from_table(
+            table_config.schema,
+            table_config.name,
+        )
 
     assert result.sort("_id").select(["_id", "destination", "amount_value"]).to_dict(
         as_series=False
@@ -157,7 +156,7 @@ def test_xtdb_live_document_access_create():
                 "Shared layer",
                 None,
                 "user-1",
-                datetime.now(timezone.utc),
+                datetime.now(UTC),
                 initial_grants=(AccessGrantInput("grant-1", "group-1", "manager"),),
                 idempotency_key="command-1",
                 owning_group="group-1",
@@ -167,7 +166,7 @@ def test_xtdb_live_document_access_create():
                 " shared layer ",
                 None,
                 "user-1",
-                datetime.now(timezone.utc),
+                datetime.now(UTC),
                 initial_grants=(AccessGrantInput("grant-2", "group-1", "manager"),),
                 idempotency_key="command-2",
                 owning_group="group-1",
@@ -178,7 +177,7 @@ def test_xtdb_live_document_access_create():
                 "Shared layer",
                 None,
                 "user-2",
-                datetime.now(timezone.utc),
+                datetime.now(UTC),
                 initial_grants=(AccessGrantInput("grant-3", "group-2", "manager"),),
                 idempotency_key="command-3",
                 owning_group="group-2",
@@ -219,7 +218,7 @@ def test_xtdb_live_reflection_preserves_caller_transaction_without_metadata():
                     {
                         "id": [1],
                         "label": ["Alpha"],
-                        "seen_at": [datetime(2026, 7, 18, tzinfo=timezone.utc)],
+                        "seen_at": [datetime(2026, 7, 18, tzinfo=UTC)],
                     }
                 ),
                 "public",
@@ -272,8 +271,8 @@ def test_xtdb_live_validates_supported_physical_type_families():
             "amount": pl.Series([Decimal("3.125")], dtype=pl.Decimal(15, 3)),
             "event_date": [date(2026, 7, 18)],
             "event_time": [datetime_time(12, 34, 56)],
-            "seen_at_local": [datetime(2026, 7, 18, 12, 34, 56)],
-            "seen_at_utc": [datetime(2026, 7, 18, 12, 34, 56, tzinfo=timezone.utc)],
+            "seen_at_local": [datetime.fromisoformat("2026-07-18T12:34:56")],
+            "seen_at_utc": [datetime(2026, 7, 18, 12, 34, 56, tzinfo=UTC)],
         }
     )
 
@@ -304,28 +303,27 @@ def test_xtdb_live_insert_non_public_table_with_reserved_column_name():
         ],
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.dataframes(connection).table_insert(
-                pl.DataFrame(
-                    {
-                        "entity_id": pl.Series([311038700], dtype=pl.Int32),
-                        "name": ["ALPHA"],
-                        "flag": ["BS"],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                table_config=table_config,
-            )
+        backend.dataframes(connection).table_insert(
+            pl.DataFrame(
+                {
+                    "entity_id": pl.Series([311038700], dtype=pl.Int32),
+                    "name": ["ALPHA"],
+                    "flag": ["BS"],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            table_config=table_config,
+        )
 
-            result = backend.dataframes(connection).from_table(
-                table_config.schema,
-                table_config.name,
-            )
+        result = backend.dataframes(connection).from_table(
+            table_config.schema,
+            table_config.name,
+        )
 
     assert result.sort("_id").select(["_id", "name", "flag"]).to_dict(
         as_series=False
@@ -347,29 +345,28 @@ def test_xtdb_live_insert_column_with_slash_roundtrip():
         ],
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.dataframes(connection).table_insert(
-                pl.DataFrame(
-                    {
-                        "entity_id": pl.Series([1], dtype=pl.Int32),
-                        "capacity/bcm": pl.Series(
-                            [Decimal("4.080")], dtype=pl.Decimal(15, 3)
-                        ),
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                table_config=table_config,
-            )
+        backend.dataframes(connection).table_insert(
+            pl.DataFrame(
+                {
+                    "entity_id": pl.Series([1], dtype=pl.Int32),
+                    "capacity/bcm": pl.Series(
+                        [Decimal("4.080")], dtype=pl.Decimal(15, 3)
+                    ),
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            table_config=table_config,
+        )
 
-            result = backend.dataframes(connection).from_table(
-                table_config.schema,
-                table_config.name,
-            )
+        result = backend.dataframes(connection).from_table(
+            table_config.schema,
+            table_config.name,
+        )
 
     assert result.select(["_id", "capacity/bcm"]).to_dict(as_series=False) == {
         "_id": [1],
@@ -466,7 +463,7 @@ def test_xtdb_live_normalizes_foreign_keys_end_to_end():
 
         for _ in range(2):
             _run_pipeline_as_transaction(
-                [(datetime.now(timezone.utc), upload)],
+                [(datetime.now(UTC), upload)],
                 dataset,
                 tables,
                 engine,
@@ -503,32 +500,31 @@ def test_xtdb_live_composite_primary_key_roundtrip():
         ],
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.dataframes(connection).table_insert(
-                pl.DataFrame(
-                    {
-                        "entity_id": [10, 10],
-                        "record_id": ["A", "B"],
-                        "destination": ["Alpha", "Beta"],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                table_config=table_config,
-            )
+        backend.dataframes(connection).table_insert(
+            pl.DataFrame(
+                {
+                    "entity_id": [10, 10],
+                    "record_id": ["A", "B"],
+                    "destination": ["Alpha", "Beta"],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            table_config=table_config,
+        )
 
-            result = backend.dataframes(connection).from_table(
-                table_config.schema,
-                table_config.name,
-            )
-            reflected_config = backend.table_configs(connection).from_table(
-                table_config.schema,
-                table_config.name,
-            )
+        result = backend.dataframes(connection).from_table(
+            table_config.schema,
+            table_config.name,
+        )
+        reflected_config = backend.table_configs(connection).from_table(
+            table_config.schema,
+            table_config.name,
+        )
 
     assert result.sort("record_id").select(
         ["_id", "entity_id", "record_id", "destination"]
@@ -556,58 +552,53 @@ def test_xtdb_live_temporal_upsert_honours_update_time_system_time():
         ],
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Alpha"],
-                        "amount_value": [10.5],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                update_time=datetime(2030, 1, 1, tzinfo=timezone.utc),
-            )
-            backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Beta"],
-                        "amount_value": [20.25],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                update_time=datetime(2030, 1, 2, tzinfo=timezone.utc),
+        backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Alpha"],
+                    "amount_value": [10.5],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            update_time=datetime(2030, 1, 1, tzinfo=UTC),
+        )
+        backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Beta"],
+                    "amount_value": [20.25],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            update_time=datetime(2030, 1, 2, tzinfo=UTC),
+        )
+
+        table_sql = f"{table_config.schema}.{table_config.name}"
+
+        def read_at(asof: datetime) -> pl.DataFrame:
+            timestamp = asof.isoformat()
+            return backend.dataframes(connection).from_raw_sql(
+                "SELECT _id, destination, amount_value "
+                f"FROM {table_sql} "
+                f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
+                f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}'"
             )
 
-            table_sql = f"{table_config.schema}.{table_config.name}"
-
-            def read_at(asof: datetime) -> pl.DataFrame:
-                timestamp = asof.isoformat()
-                return backend.dataframes(connection).from_raw_sql(
-                    "SELECT _id, destination, amount_value "
-                    f"FROM {table_sql} "
-                    f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
-                    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}'"
-                )
-
-            asof_after_second = read_at(datetime(2030, 1, 3, tzinfo=timezone.utc))
-            asof_before_first = read_at(
-                datetime(2029, 12, 31, 23, 59, tzinfo=timezone.utc)
-            )
-            asof_between_updates = read_at(
-                datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc)
-            )
+        asof_after_second = read_at(datetime(2030, 1, 3, tzinfo=UTC))
+        asof_before_first = read_at(datetime(2029, 12, 31, 23, 59, tzinfo=UTC))
+        asof_between_updates = read_at(datetime(2030, 1, 1, 12, 0, tzinfo=UTC))
 
     assert asof_before_first.is_empty()
     assert asof_after_second.select(["_id", "destination", "amount_value"]).to_dict(
@@ -642,78 +633,75 @@ def test_xtdb_live_delta_upsert_drops_unchanged_rows():
         row_finality="disabled",
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Alpha"],
-                        "amount_value": [10.5],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-                update_time=datetime(2030, 1, 1, tzinfo=timezone.utc),
-            )
-            unchanged_count = backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Alpha"],
-                        "amount_value": [10.5],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-                update_time=datetime(2030, 1, 2, tzinfo=timezone.utc),
-            )
-            changed_count = backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Beta"],
-                        "amount_value": [20.25],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-                update_time=datetime(2030, 1, 3, tzinfo=timezone.utc),
+        backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Alpha"],
+                    "amount_value": [10.5],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+            update_time=datetime(2030, 1, 1, tzinfo=UTC),
+        )
+        unchanged_count = backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Alpha"],
+                    "amount_value": [10.5],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+            update_time=datetime(2030, 1, 2, tzinfo=UTC),
+        )
+        changed_count = backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Beta"],
+                    "amount_value": [20.25],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+            update_time=datetime(2030, 1, 3, tzinfo=UTC),
+        )
+
+        history = backend.dataframes(connection).from_raw_sql(
+            "SELECT _id, destination, amount_value, _system_from "
+            f"FROM {table_config.schema}.{table_config.name} "
+            "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL "
+            "ORDER BY _system_from"
+        )
+        table_sql = f"{table_config.schema}.{table_config.name}"
+
+        def read_at(asof: datetime) -> pl.DataFrame:
+            timestamp = asof.isoformat()
+            return backend.dataframes(connection).from_raw_sql(
+                "SELECT _id, destination, amount_value "
+                f"FROM {table_sql} "
+                f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
+                f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}'"
             )
 
-            history = backend.dataframes(connection).from_raw_sql(
-                "SELECT _id, destination, amount_value, _system_from "
-                f"FROM {table_config.schema}.{table_config.name} "
-                "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL "
-                "ORDER BY _system_from"
-            )
-            table_sql = f"{table_config.schema}.{table_config.name}"
-
-            def read_at(asof: datetime) -> pl.DataFrame:
-                timestamp = asof.isoformat()
-                return backend.dataframes(connection).from_raw_sql(
-                    "SELECT _id, destination, amount_value "
-                    f"FROM {table_sql} "
-                    f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
-                    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}'"
-                )
-
-            asof_after_unchanged = read_at(
-                datetime(2030, 1, 2, 12, 0, tzinfo=timezone.utc)
-            )
-            asof_after_changed = read_at(datetime(2030, 1, 4, tzinfo=timezone.utc))
+        asof_after_unchanged = read_at(datetime(2030, 1, 2, 12, 0, tzinfo=UTC))
+        asof_after_changed = read_at(datetime(2030, 1, 4, tzinfo=UTC))
 
     assert unchanged_count == 0
     assert changed_count == 1
@@ -751,34 +739,33 @@ def test_xtdb_live_delta_upsert_takes_last_duplicate_source_key():
         row_finality="disabled",
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            row_count = backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1, 1],
-                        "destination": ["Alpha", "Beta"],
-                        "amount_value": [10.5, 20.25],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-                update_time=datetime(2030, 1, 1, tzinfo=timezone.utc),
-            )
+        row_count = backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1, 1],
+                    "destination": ["Alpha", "Beta"],
+                    "amount_value": [10.5, 20.25],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+            update_time=datetime(2030, 1, 1, tzinfo=UTC),
+        )
 
-            timestamp = datetime(2030, 1, 2, tzinfo=timezone.utc).isoformat()
-            result = backend.dataframes(connection).from_raw_sql(
-                "SELECT _id, destination, amount_value "
-                f"FROM {table_config.schema}.{table_config.name} "
-                f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
-                f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}'"
-            )
+        timestamp = datetime(2030, 1, 2, tzinfo=UTC).isoformat()
+        result = backend.dataframes(connection).from_raw_sql(
+            "SELECT _id, destination, amount_value "
+            f"FROM {table_config.schema}.{table_config.name} "
+            f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
+            f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}'"
+        )
 
     assert row_count == 1
     assert result.select(["_id", "destination", "amount_value"]).to_dict(
@@ -803,56 +790,55 @@ def test_xtdb_live_delta_upsert_dropout_deletes_missing_rows():
     )
     delta_config = DeltaConfig(row_finality="dropout")
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1, 2],
-                        "destination": ["Alpha", "Beta"],
-                        "amount_value": [10.5, 20.25],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-                update_time=datetime(2030, 1, 1, tzinfo=timezone.utc),
+        backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1, 2],
+                    "destination": ["Alpha", "Beta"],
+                    "amount_value": [10.5, 20.25],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+            update_time=datetime(2030, 1, 1, tzinfo=UTC),
+        )
+        changed_count = backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Alpha"],
+                    "amount_value": [10.5],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+            update_time=datetime(2030, 1, 2, tzinfo=UTC),
+        )
+
+        table_sql = f"{table_config.schema}.{table_config.name}"
+
+        def read_at(asof: datetime) -> pl.DataFrame:
+            timestamp = asof.isoformat()
+            return backend.dataframes(connection).from_raw_sql(
+                "SELECT _id, destination, amount_value "
+                f"FROM {table_sql} "
+                f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
+                f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}' "
+                "ORDER BY _id"
             )
-            changed_count = backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Alpha"],
-                        "amount_value": [10.5],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-                update_time=datetime(2030, 1, 2, tzinfo=timezone.utc),
-            )
 
-            table_sql = f"{table_config.schema}.{table_config.name}"
-
-            def read_at(asof: datetime) -> pl.DataFrame:
-                timestamp = asof.isoformat()
-                return backend.dataframes(connection).from_raw_sql(
-                    "SELECT _id, destination, amount_value "
-                    f"FROM {table_sql} "
-                    f"FOR VALID_TIME AS OF TIMESTAMP '{timestamp}' "
-                    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{timestamp}' "
-                    "ORDER BY _id"
-                )
-
-            before_dropout = read_at(datetime(2030, 1, 1, 12, tzinfo=timezone.utc))
-            after_dropout = read_at(datetime(2030, 1, 3, tzinfo=timezone.utc))
+        before_dropout = read_at(datetime(2030, 1, 1, 12, tzinfo=UTC))
+        after_dropout = read_at(datetime(2030, 1, 3, tzinfo=UTC))
 
     assert changed_count == 2
     assert before_dropout.select(["_id", "destination", "amount_value"]).to_dict(
@@ -883,50 +869,49 @@ def test_xtdb_live_delta_upsert_dropout_closes_missing_rows_at_valid_time():
     )
     delta_config = DeltaConfig(row_finality="dropout")
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1, 2],
-                        "destination": ["Alpha", "Beta"],
-                        "_valid_from": [datetime(1985, 1, 1, tzinfo=timezone.utc)] * 2,
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-            )
-            backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Alpha"],
-                        "_valid_from": [datetime(1986, 1, 1, tzinfo=timezone.utc)],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                delta_config=delta_config,
-            )
+        backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1, 2],
+                    "destination": ["Alpha", "Beta"],
+                    "_valid_from": [datetime(1985, 1, 1, tzinfo=UTC)] * 2,
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+        )
+        backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Alpha"],
+                    "_valid_from": [datetime(1986, 1, 1, tzinfo=UTC)],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            delta_config=delta_config,
+        )
 
-            history = backend.dataframes(connection).from_raw_sql(
-                f"""
+        history = backend.dataframes(connection).from_raw_sql(
+            f"""
                 SELECT _id, destination, _valid_from, _valid_to
                 FROM {table_config.schema}.{table_config.name}
                 FOR VALID_TIME ALL
                 WHERE _id = 2
                 ORDER BY _valid_from
                 """
-            )
-            connection.commit()
+        )
+        connection.commit()
 
     history = history.with_columns(
         pl.col(column).dt.replace_time_zone(None)
@@ -937,8 +922,8 @@ def test_xtdb_live_delta_upsert_dropout_closes_missing_rows_at_valid_time():
     ) == {
         "_id": [2],
         "destination": ["Beta"],
-        "_valid_from": [datetime(1985, 1, 1)],
-        "_valid_to": [datetime(1986, 1, 1)],
+        "_valid_from": [datetime.fromisoformat("1985-01-01")],
+        "_valid_to": [datetime.fromisoformat("1986-01-01")],
     }
 
 
@@ -954,43 +939,42 @@ def test_xtdb_live_temporal_upsert_honours_explicit_valid_time_window():
         ],
     )
 
-    with _xtdb_engine() as engine:
-        with engine.connect() as connection:
-            backend = XtdbBackend()
-            backend.table_configs(connection).create(table_config)
+    with _xtdb_engine() as engine, engine.connect() as connection:
+        backend = XtdbBackend()
+        backend.table_configs(connection).create(table_config)
 
-            row_count = backend.temporal_upsert(
-                pl.DataFrame(
-                    {
-                        "id": [1],
-                        "destination": ["Alpha"],
-                        "amount_value": [10.5],
-                        "_valid_from": [datetime(2030, 1, 10, tzinfo=timezone.utc)],
-                        "_valid_to": [datetime(2030, 1, 20, tzinfo=timezone.utc)],
-                    }
-                ),
-                table_config.schema,
-                table_config.name,
-                connection=connection,
-                table_config=table_config,
-                update_time=datetime(2030, 1, 1, tzinfo=timezone.utc),
+        row_count = backend.temporal_upsert(
+            pl.DataFrame(
+                {
+                    "id": [1],
+                    "destination": ["Alpha"],
+                    "amount_value": [10.5],
+                    "_valid_from": [datetime(2030, 1, 10, tzinfo=UTC)],
+                    "_valid_to": [datetime(2030, 1, 20, tzinfo=UTC)],
+                }
+            ),
+            table_config.schema,
+            table_config.name,
+            connection=connection,
+            table_config=table_config,
+            update_time=datetime(2030, 1, 1, tzinfo=UTC),
+        )
+
+        table_sql = f"{table_config.schema}.{table_config.name}"
+
+        def read_valid_at(valid_asof: datetime) -> pl.DataFrame:
+            valid_timestamp = valid_asof.isoformat()
+            system_timestamp = datetime(2030, 1, 2, tzinfo=UTC).isoformat()
+            return backend.dataframes(connection).from_raw_sql(
+                "SELECT _id, destination, amount_value "
+                f"FROM {table_sql} "
+                f"FOR VALID_TIME AS OF TIMESTAMP '{valid_timestamp}' "
+                f"FOR SYSTEM_TIME AS OF TIMESTAMP '{system_timestamp}'"
             )
 
-            table_sql = f"{table_config.schema}.{table_config.name}"
-
-            def read_valid_at(valid_asof: datetime) -> pl.DataFrame:
-                valid_timestamp = valid_asof.isoformat()
-                system_timestamp = datetime(2030, 1, 2, tzinfo=timezone.utc).isoformat()
-                return backend.dataframes(connection).from_raw_sql(
-                    "SELECT _id, destination, amount_value "
-                    f"FROM {table_sql} "
-                    f"FOR VALID_TIME AS OF TIMESTAMP '{valid_timestamp}' "
-                    f"FOR SYSTEM_TIME AS OF TIMESTAMP '{system_timestamp}'"
-                )
-
-            before_window = read_valid_at(datetime(2030, 1, 5, tzinfo=timezone.utc))
-            inside_window = read_valid_at(datetime(2030, 1, 15, tzinfo=timezone.utc))
-            after_window = read_valid_at(datetime(2030, 1, 25, tzinfo=timezone.utc))
+        before_window = read_valid_at(datetime(2030, 1, 5, tzinfo=UTC))
+        inside_window = read_valid_at(datetime(2030, 1, 15, tzinfo=UTC))
+        after_window = read_valid_at(datetime(2030, 1, 25, tzinfo=UTC))
 
     assert row_count == 1
     assert before_window.is_empty()

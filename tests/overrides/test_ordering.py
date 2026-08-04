@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 from polars_hist_db.overrides import (
     OverrideOperation,
@@ -18,7 +18,7 @@ def test_xtdb_order_preserves_close_before_set_within_one_transaction() -> None:
 
 
 def test_personal_projection_preserves_authoritative_store_order() -> None:
-    at = datetime(2026, 7, 17, tzinfo=timezone.utc)
+    at = datetime(2026, 7, 17, tzinfo=UTC)
     close = OverrideOperation(
         operation_id="op-z-close",
         change_set_id="change-1",

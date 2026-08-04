@@ -1,7 +1,9 @@
-from typing import Any, Iterable, Mapping
 import os
-import yaml
+from collections.abc import Iterable, Mapping
 from functools import reduce
+from typing import Any
+
+import yaml
 
 
 def get_nested_key(my_dict: Mapping[str, Any], keys: Iterable[str]):

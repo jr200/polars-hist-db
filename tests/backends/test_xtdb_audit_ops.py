@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import polars as pl
 
@@ -67,7 +67,7 @@ def test_xtdb_audit_filter_items_creates_audit_table_without_sqlalchemy_inspecto
         pl.DataFrame(
             {
                 "__path": ["trades.csv"],
-                "__created_at": [datetime(2026, 1, 1, tzinfo=timezone.utc)],
+                "__created_at": [datetime(2026, 1, 1, tzinfo=UTC)],
             }
         ),
         "__path",
@@ -109,7 +109,7 @@ def test_xtdb_audit_filter_items_returns_all_items_before_audit_data_table_exist
     source_items = pl.DataFrame(
         {
             "__path": ["trades.csv"],
-            "__created_at": [datetime(2026, 1, 1, tzinfo=timezone.utc)],
+            "__created_at": [datetime(2026, 1, 1, tzinfo=UTC)],
         }
     )
     filtered_items = AuditOps("sample").filter_items(
@@ -143,9 +143,7 @@ def test_xtdb_audit_filter_items_queries_only_candidate_sources(monkeypatch):
         def from_raw_sql(self, query, schema_overrides=None):
             assert "MAX(data_source_ts)" in query
             assert "GROUP BY data_source" not in query
-            return pl.DataFrame(
-                {"data_source_ts": [datetime(2026, 1, 2, tzinfo=timezone.utc)]}
-            )
+            return pl.DataFrame({"data_source_ts": [datetime(2026, 1, 2, tzinfo=UTC)]})
 
         def table_query(
             self,
@@ -169,9 +167,9 @@ def test_xtdb_audit_filter_items_queries_only_candidate_sources(monkeypatch):
             {
                 "__path": ["processed.csv", "historic.csv", "new.csv"],
                 "__created_at": [
-                    datetime(2026, 1, 3, tzinfo=timezone.utc),
-                    datetime(2026, 1, 1, tzinfo=timezone.utc),
-                    datetime(2026, 1, 3, tzinfo=timezone.utc),
+                    datetime(2026, 1, 3, tzinfo=UTC),
+                    datetime(2026, 1, 1, tzinfo=UTC),
+                    datetime(2026, 1, 3, tzinfo=UTC),
                 ],
             }
         ),
@@ -247,7 +245,7 @@ def test_xtdb_audit_prevalidation_noops_before_audit_data_table_exists(monkeypat
         pl.DataFrame(
             {
                 "__path": ["trades.csv"],
-                "__created_at": [datetime(2026, 1, 1, tzinfo=timezone.utc)],
+                "__created_at": [datetime(2026, 1, 1, tzinfo=UTC)],
             }
         ),
         _XtdbConnection(),
@@ -297,7 +295,7 @@ def test_xtdb_file_filter_uses_plain_connection_context(monkeypatch):
         pl.DataFrame(
             {
                 "__path": ["trades.csv"],
-                "__created_at": [datetime(2026, 1, 1, tzinfo=timezone.utc)],
+                "__created_at": [datetime(2026, 1, 1, tzinfo=UTC)],
             }
         ),
         "sample",
@@ -341,7 +339,7 @@ def test_xtdb_audit_add_entry_writes_via_backend_dataframe_ops(monkeypatch):
         "trades.csv",
         "trades",
         _XtdbConnection(),
-        datetime(2026, 1, 1, tzinfo=timezone.utc),
+        datetime(2026, 1, 1, tzinfo=UTC),
     )
 
     assert did_insert is True

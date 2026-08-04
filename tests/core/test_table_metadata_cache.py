@@ -1,4 +1,4 @@
-from sqlalchemy import Column, create_engine, Integer, MetaData, Table, text
+from sqlalchemy import Column, Integer, MetaData, Table, create_engine, text
 
 from polars_hist_db.config.table import TableColumnConfig, TableConfig
 from polars_hist_db.core.table import TableOps

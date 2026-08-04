@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -41,18 +41,18 @@ def test_in_memory_composition_store_preserves_revision_order() -> None:
         str(uuid4()),
         "root",
         ("left", "right"),
-        datetime(2026, 7, 13, tzinfo=timezone.utc),
+        datetime(2026, 7, 13, tzinfo=UTC),
         None,
-        datetime(2026, 7, 12, tzinfo=timezone.utc),
+        datetime(2026, 7, 12, tzinfo=UTC),
     )
     store.append(first, "editor")
     second = CompositionRevision(
         str(uuid4()),
         "root",
         ("left",),
-        datetime(2026, 7, 14, tzinfo=timezone.utc),
+        datetime(2026, 7, 14, tzinfo=UTC),
         None,
-        datetime(2026, 7, 13, tzinfo=timezone.utc),
+        datetime(2026, 7, 13, tzinfo=UTC),
     )
     store.append(second, "editor")
 

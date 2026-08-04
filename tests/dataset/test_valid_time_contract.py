@@ -1,11 +1,13 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine
 
 from polars_hist_db.config import DatasetConfig, TableConfigs
-from polars_hist_db.dataset.primary_item import scrape_primary_item
-from polars_hist_db.dataset.primary_item import _validate_sql_valid_time_source_table
+from polars_hist_db.dataset.primary_item import (
+    _validate_sql_valid_time_source_table,
+    scrape_primary_item,
+)
 
 
 def _source_table(connection):
@@ -36,8 +38,8 @@ def test_sql_valid_time_source_table_accepts_non_null_columns(connection):
         {
             "id": 1,
             "event_value": "Alpha",
-            "event_timestamp": datetime(2030, 1, 1, tzinfo=timezone.utc),
-            "valid_until": datetime(2030, 2, 1, tzinfo=timezone.utc),
+            "event_timestamp": datetime(2030, 1, 1, tzinfo=UTC),
+            "valid_until": datetime(2030, 2, 1, tzinfo=UTC),
         },
     )
 
@@ -67,7 +69,7 @@ def test_sql_valid_time_source_table_rejects_null_values(connection):
             "id": 1,
             "event_value": "Alpha",
             "event_timestamp": None,
-            "valid_until": datetime(2030, 2, 1, tzinfo=timezone.utc),
+            "valid_until": datetime(2030, 2, 1, tzinfo=UTC),
         },
     )
 
@@ -154,6 +156,6 @@ def test_mariadb_primary_ingest_rejects_null_valid_time_source(monkeypatch, conn
             0,
             dataset,
             tables,
-            datetime(2030, 1, 1, tzinfo=timezone.utc),
+            datetime(2030, 1, 1, tzinfo=UTC),
             connection,
         )

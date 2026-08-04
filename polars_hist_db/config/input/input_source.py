@@ -1,7 +1,7 @@
+import logging
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
-import logging
+from typing import Any
 
 from .types import InputDataSourceType
 
@@ -12,10 +12,10 @@ LOGGER = logging.getLogger(__name__)
 class InputConfig(ABC):
     type: InputDataSourceType
     config_file_path: str
-    filter_past_events: Optional[bool]
+    filter_past_events: bool | None
 
     @staticmethod
-    def from_dict(config: Dict[str, Any]) -> "InputConfig":
+    def from_dict(config: dict[str, Any]) -> "InputConfig":
         input_type = config["type"]
         config.setdefault("filter_past_events", False)
 

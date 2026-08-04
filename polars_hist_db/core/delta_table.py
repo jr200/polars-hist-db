@@ -1,29 +1,28 @@
-from datetime import datetime
 import logging
+from collections.abc import Mapping
+from datetime import datetime
 from types import MappingProxyType
-from typing import List, Literal, Mapping, Optional, Tuple
+from typing import Literal
 
 from sqlalchemy import (
-    and_,
     ColumnElement,
     Connection,
     DefaultClause,
+    Table,
+    and_,
     delete,
     exists,
     func,
     not_,
     select,
-    Table,
 )
 from sqlalchemy.future import select as future_select
 from sqlalchemy.sql.functions import coalesce
 
+from ..config import DeltaConfig, TableColumnConfig, TableConfig
+from ..utils.db_utils import is_text_col
 from .db import DbOps
 from .table import TableOps
-
-from ..config import DeltaConfig, TableConfig, TableColumnConfig
-from ..utils.db_utils import is_text_col
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,17 +40,17 @@ class DeltaTableOps:
         self.delta_config = delta_config
         self.connection = connection
 
-    def table_config(self, column_definitions: List[TableColumnConfig]) -> TableConfig:
+    def table_config(self, column_definitions: list[TableColumnConfig]) -> TableConfig:
         return TableConfig(self.table_name, self.table_schema, column_definitions)
 
     def upsert(
         self,
         target_table: str,
-        update_time: Optional[datetime] = None,
+        update_time: datetime | None = None,
         is_main_table: bool = True,
-        source_columns: Optional[List[str]] = None,
+        source_columns: list[str] | None = None,
         src_tgt_colname_map: Mapping[str, str] = MappingProxyType({}),
-    ) -> Tuple[int, int, int]:
+    ) -> tuple[int, int, int]:
         DbOps(self.connection).set_system_versioning_time(update_time)
         try:
             tgt_to_src_map = {v: k for k, v in src_tgt_colname_map.items()}
@@ -96,10 +95,10 @@ class DeltaTableOps:
         table_schema: str,
         src_table: str,
         target_table: str,
-        source_columns: Optional[List[str]] = None,
+        source_columns: list[str] | None = None,
         src_tgt_colname_map: Mapping[str, str] = MappingProxyType({}),
         on_duplicate_key: Literal["error", "take_last", "take_first"] = "error",
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         target_tbo = TableOps(table_schema, target_table, self.connection)
         target_tbl = target_tbo.get_table_metadata()
         src_tbo = TableOps(table_schema, src_table, self.connection)
@@ -246,7 +245,7 @@ class DeltaTableOps:
             )
         except Exception as e:
             LOGGER.error(e)
-            raise e
+            raise
         num_inserts = result.rowcount
 
         if num_inserts > 0 or num_updates > 0:
@@ -284,7 +283,7 @@ class DeltaTableOps:
         table_schema: str,
         target_table: str,
         ref_table: str,
-        ref_cmp_columns: Optional[List[str]] = None,
+        ref_cmp_columns: list[str] | None = None,
         ref_tgt_colname_map: Mapping[str, str] = MappingProxyType({}),
     ) -> int:
         target_tbo = TableOps(table_schema, target_table, self.connection)
@@ -398,7 +397,7 @@ class DeltaTableOps:
 def _prevalidate_upsert_from_table(
     src_tbl: Table,
     target_tbl: Table,
-    candidate_src_cols: List[str],
+    candidate_src_cols: list[str],
     src_tgt_colname_map: Mapping[str, str],
     disable_check: bool,
 ):

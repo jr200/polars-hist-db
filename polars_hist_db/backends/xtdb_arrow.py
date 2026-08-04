@@ -1,7 +1,8 @@
+import json
+from collections.abc import Iterable, Mapping
 from datetime import date, datetime
 from decimal import Decimal
-import json
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any
 
 import polars as pl
 import pyarrow as pa
@@ -33,7 +34,7 @@ def _xtdb_physical_column_map(table_config: TableConfig) -> dict[str, str]:
 
 def _restore_xtdb_logical_columns(
     df: pl.DataFrame,
-    table_config: Optional[TableConfig],
+    table_config: TableConfig | None,
 ) -> pl.DataFrame:
     if table_config is None:
         return df
@@ -50,7 +51,7 @@ def _restore_xtdb_logical_columns(
 
 def _apply_schema_overrides(
     df: pl.DataFrame,
-    schema_overrides: Optional[Mapping[str, pl.DataType]],
+    schema_overrides: Mapping[str, pl.DataType] | None,
 ) -> pl.DataFrame:
     if not schema_overrides:
         return df
@@ -69,14 +70,10 @@ def _apply_schema_overrides(
 
 def _normalize_xtdb_ingest_arrow(table: pa.Table) -> pa.Table:
     for index, field in enumerate(table.schema):
-        if pa.types.is_large_string(field.type):
-            table = table.set_column(
-                index,
-                field.with_type(pa.string()),
-                table.column(field.name).cast(pa.string()),
-            )
-        elif pa.types.is_dictionary(field.type) and pa.types.is_large_string(
-            field.type.value_type
+        if (
+            pa.types.is_large_string(field.type)
+            or pa.types.is_dictionary(field.type)
+            and pa.types.is_large_string(field.type.value_type)
         ):
             table = table.set_column(
                 index,
@@ -239,7 +236,7 @@ def _xtdb_cast_type_from_polars(dtype: pl.DataType) -> str:
 
 def _xtdb_insert_casts(
     df: pl.DataFrame,
-    table_config: Optional[TableConfig],
+    table_config: TableConfig | None,
 ) -> list[str]:
     configured_types = {}
     if table_config is not None:
@@ -261,9 +258,7 @@ def _xtdb_insert_casts(
 
 def _xtdb_polars_type_or_none(data_type: str) -> pl.DataType | None:
     normalized = data_type.upper()
-    if normalized.startswith(("DATETIME", "TIMESTAMPTZ")) or normalized.startswith(
-        "TIMESTAMP WITH TIME ZONE"
-    ):
+    if normalized.startswith(("DATETIME", "TIMESTAMPTZ", "TIMESTAMP WITH TIME ZONE")):
         return pl.Datetime("us", "UTC")
     try:
         return PolarsType.from_sql(data_type)
@@ -304,7 +299,7 @@ def _xtdb_physical_configured_column_dtypes(
 
 def _apply_xtdb_configured_column_dtypes(
     df: pl.DataFrame,
-    table_config: Optional[TableConfig],
+    table_config: TableConfig | None,
     *,
     force_type_coercion: bool = False,
 ) -> pl.DataFrame:
@@ -322,7 +317,7 @@ def _apply_xtdb_configured_column_dtypes(
 
 def _iter_xtdb_insert_chunks(
     df: pl.DataFrame,
-    max_rows_per_insert: Optional[int],
+    max_rows_per_insert: int | None,
 ) -> Iterable[pl.DataFrame]:
     if max_rows_per_insert is None or df.height <= max_rows_per_insert:
         yield df
@@ -334,7 +329,7 @@ def _iter_xtdb_insert_chunks(
 
 def _prepare_xtdb_insert_dataframe(
     df: pl.DataFrame,
-    table_config: Optional[TableConfig],
+    table_config: TableConfig | None,
 ) -> pl.DataFrame:
     if table_config is None:
         return df

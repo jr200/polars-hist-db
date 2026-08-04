@@ -1,15 +1,12 @@
-from typing import Optional
-
 from nats.js.client import JetStreamContext
 
 from ..config.dataset import DatasetConfig
-from ..config.input.input_source import InputConfig
 from ..config.input.dsv_crawler import DsvCrawlerInputConfig
+from ..config.input.input_source import InputConfig
 from ..config.input.jetstream_config import JetStreamInputConfig
-
 from ..config.table import TableConfigs
-from .input_source import InputSource
 from .dsv_input_source import DsvCrawlerInputSource
+from .input_source import InputSource
 from .jetstream_input_source import JetStreamInputSource
 
 
@@ -21,7 +18,7 @@ class InputSourceFactory:
         tables: TableConfigs,
         dataset: DatasetConfig,
         config: InputConfig,
-        js: Optional[JetStreamContext] = None,
+        js: JetStreamContext | None = None,
     ) -> InputSource:
         if config.type == "dsv":
             assert isinstance(config, DsvCrawlerInputConfig)

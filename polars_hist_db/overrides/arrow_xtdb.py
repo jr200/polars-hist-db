@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 import polars as pl
@@ -24,8 +25,8 @@ from .arrow import (
     empty_arrow_override_operations,
     validate_arrow_override_operations,
 )
-from .crdt import RowGuard
 from .config import build_arrow_override_table_configs
+from .crdt import RowGuard
 from .types import ArrowOverrideStoreConfig
 from .xtdb import _insert_statement, _literal, _table_name, _where
 
@@ -60,7 +61,7 @@ class XtdbArrowOverrideRepository:
                     "layer_id": layer_id.bytes,
                     "generation": generation,
                     "revision": 0,
-                    "updated_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(UTC),
                 },
             )
         )
@@ -171,8 +172,10 @@ class XtdbArrowOverrideRepository:
         )
         statements = [
             *(self._guard_assertion(guard) for guard in guards),
-            f"ASSERT EXISTS (SELECT 1 FROM {_table_name(self.heads)} WHERE "
-            f"{expected}), 'layer revision changed'",
+            (
+                f"ASSERT EXISTS (SELECT 1 FROM {_table_name(self.heads)} WHERE "
+                f"{expected}), 'layer revision changed'"
+            ),
         ]
         if self._exists(self.operations):
             statements.append(
@@ -182,10 +185,12 @@ class XtdbArrowOverrideRepository:
             )
         statements.extend(
             [
-                f"UPDATE {_table_name(self.heads)} SET "
-                f"revision = {expected_revision + 1}::BIGINT, "
-                f"updated_at = {_literal(updated_at, 'TIMESTAMP WITH TIME ZONE')} "
-                f"WHERE {expected}",
+                (
+                    f"UPDATE {_table_name(self.heads)} SET "
+                    f"revision = {expected_revision + 1}::BIGINT, "
+                    f"updated_at = {_literal(updated_at, 'TIMESTAMP WITH TIME ZONE')} "
+                    f"WHERE {expected}"
+                ),
                 *self._insert_frames(
                     (self.operations, operation_rows),
                     (self.references, reference_rows),
@@ -238,8 +243,10 @@ class XtdbArrowOverrideRepository:
             f"AND revision = {head.revision}::BIGINT"
         )
         statements = [
-            f"ASSERT EXISTS (SELECT 1 FROM {_table_name(self.heads)} WHERE "
-            f"{expected}), 'layer revision changed'"
+            (
+                f"ASSERT EXISTS (SELECT 1 FROM {_table_name(self.heads)} WHERE "
+                f"{expected}), 'layer revision changed'"
+            )
         ]
         if self._exists(self.operations):
             if self._exists(self.references):
@@ -258,7 +265,7 @@ class XtdbArrowOverrideRepository:
         statements.append(
             f"UPDATE {_table_name(self.heads)} SET "
             f"generation = {generation}::BIGINT, revision = 0::BIGINT, "
-            f"updated_at = {_literal(datetime.now(timezone.utc), 'TIMESTAMP WITH TIME ZONE')} "
+            f"updated_at = {_literal(datetime.now(UTC), 'TIMESTAMP WITH TIME ZONE')} "
             f"WHERE {expected}"
         )
         _execute_xtdb_transaction(self.connection, statements)

@@ -1,18 +1,18 @@
-from types import SimpleNamespace
-from threading import Event
 import asyncio
 from contextlib import nullcontext
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
+from threading import Event
+from types import SimpleNamespace
 
 import pytest
 
-from polars_hist_db.loaders.input_source import BatchFinalizer
 from polars_hist_db.dataset.scrape import (
     _run_pipeline_as_transaction,
     try_run_pipeline_as_transaction,
 )
-from polars_hist_db.utils import NonRetryableException
+from polars_hist_db.loaders.input_source import BatchFinalizer
 from polars_hist_db.types import TypeContractError
+from polars_hist_db.utils import NonRetryableException
 
 
 @pytest.mark.asyncio
@@ -47,8 +47,8 @@ def test_xtdb_atomic_batch_rejects_multiple_system_times():
         name="xtdb", connection_scope=lambda engine: nullcontext(object())
     )
     partitions = [
-        (datetime(2026, 1, 1, tzinfo=timezone.utc), object()),
-        (datetime(2026, 1, 2, tzinfo=timezone.utc), object()),
+        (datetime(2026, 1, 1, tzinfo=UTC), object()),
+        (datetime(2026, 1, 2, tzinfo=UTC), object()),
     ]
 
     with pytest.raises(NonRetryableException, match="one system-time"):

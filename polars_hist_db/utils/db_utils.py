@@ -1,13 +1,12 @@
-from datetime import datetime
 import logging
 import time
-
+from datetime import UTC, datetime
 
 LOGGER = logging.getLogger(__name__)
 
 
 def smallest_datetime() -> datetime:
-    return datetime(*time.gmtime(1)[:6])
+    return datetime(*time.gmtime(1)[:6], tzinfo=UTC)
 
 
 def as_sql_date(dt: datetime) -> str:

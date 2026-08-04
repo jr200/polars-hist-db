@@ -1,26 +1,26 @@
 import asyncio
-from hashlib import sha256
-from datetime import datetime
 import logging
-from pathlib import Path
 import time
-from typing import Any, AsyncGenerator, List, Tuple, Union
+from collections.abc import AsyncGenerator
+from datetime import datetime
+from hashlib import sha256
+from pathlib import Path
+from typing import Any
 
 import polars as pl
 from sqlalchemy import Connection, Engine
 
 from polars_hist_db.utils.exceptions import NonRetryableException
 
-from .transform import apply_transformations
-
 from ..config.dataset import DatasetConfig
 from ..config.input.dsv_crawler import DsvCrawlerInputConfig
 from ..config.table import TableConfigs
 from ..core.audit import AuditOps
+from ..utils.clock import Clock
 from .dsv.dsv_loader import load_typed_dsv
 from .dsv.file_search import find_files
 from .input_source import BatchFinalizer, InputSource
-from ..utils.clock import Clock
+from .transform import apply_transformations
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def _make_dsv_finalizer(
 ) -> BatchFinalizer:
     def write_audit_before_commit(
         connection: Connection,
-        modified_tables: List[Tuple[str, str]],
+        modified_tables: list[tuple[str, str]],
     ) -> bool:
         result = True
         for modified_schema, modified_table in modified_tables:
@@ -80,8 +80,8 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
         return csv_files_df
 
     def _process_payload(
-        self, payload: Union[Path, bytes], payload_time: datetime
-    ) -> List[Tuple[datetime, pl.DataFrame]]:
+        self, payload: Path | bytes, payload_time: datetime
+    ) -> list[tuple[datetime, pl.DataFrame]]:
         df = load_typed_dsv(
             payload, self.column_definitions, null_values=self.dataset.null_values
         )
@@ -95,15 +95,15 @@ class DsvCrawlerInputSource(InputSource[DsvCrawlerInputConfig]):
     async def next_df(
         self, engine: Engine
     ) -> AsyncGenerator[
-        Tuple[
-            List[Tuple[datetime, pl.DataFrame]],
+        tuple[
+            list[tuple[datetime, pl.DataFrame]],
             BatchFinalizer,
         ],
         None,
     ]:
         async def _generator() -> AsyncGenerator[
-            Tuple[
-                List[Tuple[datetime, pl.DataFrame]],
+            tuple[
+                list[tuple[datetime, pl.DataFrame]],
                 BatchFinalizer,
             ],
             None,

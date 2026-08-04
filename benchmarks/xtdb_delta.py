@@ -7,14 +7,14 @@ Examples:
         --remote-table example.records --remote-limit 50000
 """
 
-from argparse import ArgumentParser
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 import gc
 import json
 import os
-from pathlib import Path
 import re
+from argparse import ArgumentParser
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from statistics import median
 from time import perf_counter
 from types import SimpleNamespace
@@ -265,7 +265,7 @@ def benchmark_time_partitions(
     if bucket_count < 1:
         raise ValueError("bucket count must be positive")
 
-    start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    start = datetime(2025, 1, 1, tzinfo=UTC)
     rows = (
         pl.DataFrame({"id": range(row_count)})
         .with_columns(
@@ -294,7 +294,7 @@ def benchmark_time_partitions(
         ),
     )
     source.config = SimpleNamespace(filter_past_events=False)
-    source.previous_payload_time = datetime.min
+    source.previous_payload_time = datetime.min.replace(tzinfo=UTC)
 
     timings = []
     partition_count = 0
@@ -344,7 +344,7 @@ def synthetic_arrow_override_operations(
                 "unit": None,
                 "supersedes_ids": [],
                 "removes_ids": [],
-                "valid_from": datetime(2026, 1, 1, tzinfo=timezone.utc),
+                "valid_from": datetime(2026, 1, 1, tzinfo=UTC),
                 "valid_to": None,
                 "observed_value": None,
                 "source_drift": False,
@@ -388,7 +388,7 @@ def benchmark_arrow_override_crdt(
             pending=decoded,
             actor_subject="benchmark-subject",
             actor_display_name=None,
-            recorded_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
+            recorded_at=datetime(2026, 1, 2, tzinfo=UTC),
         )
         sync_timings.append(perf_counter() - started)
         projection_rows = result.projection_delta.num_rows

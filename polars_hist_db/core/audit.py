@@ -1,19 +1,18 @@
-from datetime import datetime, timezone
 import hashlib
 import logging
-from typing import Any, Literal, Optional
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 import polars as pl
-from sqlalchemy import and_, Connection, delete, func, Index, select, Table
+from sqlalchemy import Connection, Index, Table, and_, delete, func, select
 
 from ..config.input.types import InputDataSourceType
 from ..config.table import TableColumnConfig, TableConfig
+from ..utils.db_utils import smallest_datetime
 from .dataframe import DataframeOps
 from .db import DbOps
 from .table import TableOps
 from .table_config import TableConfigOps
-
-from ..utils.db_utils import smallest_datetime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -167,8 +166,10 @@ class AuditOps:
                 connection,
                 [
                     f"ERASE FROM {target_fqtn} WHERE TRUE",
-                    f"ERASE FROM {self._table_sql()} "
-                    f"WHERE table_name = {_sql_literal(target_table_name)}",
+                    (
+                        f"ERASE FROM {self._table_sql()} "
+                        f"WHERE table_name = {_sql_literal(target_table_name)}"
+                    ),
                 ],
             )
             LOGGER.info("reset dataset %s (data + audit-log erased)", target_fqtn)
@@ -431,7 +432,7 @@ class AuditOps:
         data_source_timestamp: datetime,
     ) -> bool:
         if data_source_timestamp.tzinfo is None:
-            raise Exception(
+            raise ValueError(
                 "Developer Error: data_source_timestamp must be timezone aware"
             )
 
@@ -440,21 +441,13 @@ class AuditOps:
             "data_source_type": data_source_type,
             "data_source": data_source,
             "data_source_ts": data_source_timestamp,
-            "upload_ts": datetime.now(timezone.utc),
+            "upload_ts": datetime.now(UTC),
         }
 
         if _is_xtdb_connection(connection):
             table_config = self.create(connection)
             assert isinstance(table_config, TableConfig)
-            audit_id_value = "|".join(
-                [
-                    self.schema,
-                    target_table_name,
-                    data_source_type,
-                    data_source,
-                    data_source_timestamp.isoformat(),
-                ]
-            )
+            audit_id_value = f"{self.schema}|{target_table_name}|{data_source_type}|{data_source}|{data_source_timestamp.isoformat()}"
             new_item["audit_id"] = hashlib.sha256(audit_id_value.encode()).hexdigest()
             df = pl.DataFrame([new_item])
             num_rows_changed = _xtdb_dataframe_ops(connection).table_insert(
@@ -477,9 +470,9 @@ class AuditOps:
     def get_latest_entry(
         self,
         connection: Connection,
-        asof_timestamp: Optional[datetime] = None,
-        target_table_name: Optional[str] = None,
-        data_source_type: Optional[InputDataSourceType] = None,
+        asof_timestamp: datetime | None = None,
+        target_table_name: str | None = None,
+        data_source_type: InputDataSourceType | None = None,
     ) -> pl.DataFrame:
         if _is_xtdb_connection(connection):
             self.create(connection)

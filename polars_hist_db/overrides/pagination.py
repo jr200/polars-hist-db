@@ -2,23 +2,23 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 from bisect import bisect_right
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
-import json
-from typing import Callable, Generic, Iterable, TypeVar
-
+from typing import TypeVar
 
 T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class Page(Generic[T]):
+class Page[T]:
     items: tuple[T, ...]
     next_cursor: str | None
 
 
-def paginate(
+def paginate[T](
     items: Iterable[T],
     key: Callable[[T], tuple[datetime, str]],
     *,
@@ -33,7 +33,7 @@ def paginate(
     return page_from_items(ordered[start : start + limit + 1], key, limit)
 
 
-def page_from_items(
+def page_from_items[T](
     items: Iterable[T],
     key: Callable[[T], tuple[datetime, str]],
     limit: int,

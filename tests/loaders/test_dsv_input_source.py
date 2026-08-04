@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import polars as pl
@@ -6,8 +6,10 @@ import pytest
 
 from polars_hist_db.config import TableConfig
 from polars_hist_db.config.dataset import TimePartition
-from polars_hist_db.loaders.dsv_input_source import DsvCrawlerInputSource
-from polars_hist_db.loaders.dsv_input_source import _make_dsv_file_finalizer
+from polars_hist_db.loaders.dsv_input_source import (
+    DsvCrawlerInputSource,
+    _make_dsv_file_finalizer,
+)
 
 
 @pytest.mark.asyncio
@@ -21,7 +23,7 @@ async def test_dsv_file_commit_succeeds_when_no_tables_changed(monkeypatch):
 
     finalizer = _make_dsv_file_finalizer(
         "/tmp/source.csv",
-        datetime(2026, 1, 1, tzinfo=timezone.utc),
+        datetime(2026, 1, 1, tzinfo=UTC),
     )
 
     assert finalizer.write_audit_before_commit(object(), []) is True
@@ -49,9 +51,9 @@ def test_time_partitioning_handles_interleaved_csv_rows():
         ),
     )
     source.config = SimpleNamespace(filter_past_events=False)
-    source.previous_payload_time = datetime.min
-    jan_1 = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    jan_2 = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    source.previous_payload_time = datetime.min.replace(tzinfo=UTC)
+    jan_1 = datetime(2026, 1, 1, tzinfo=UTC)
+    jan_2 = datetime(2026, 1, 2, tzinfo=UTC)
     rows = pl.DataFrame(
         {
             "id": [2, 1, 3, 4],

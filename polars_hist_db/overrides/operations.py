@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import json
 from bisect import bisect_left, bisect_right, insort
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from hashlib import sha256
-import json
-from typing import Iterable, Literal, Protocol
+from typing import Literal, Protocol
 from uuid import uuid4
 
 from .replicated import (
@@ -177,7 +178,7 @@ class InMemoryOverrideOperationsStore:
     def query(self, query: OperationQuery) -> OperationPage:
         if query.limit < 1 or query.limit > 500:
             raise ValueError("limit must be between 1 and 500")
-        now = query.valid_at or datetime.now(timezone.utc)
+        now = query.valid_at or datetime.now(UTC)
         candidate_ids = self._candidate_ids(
             layer_id=query.layer_id,
             entity_id=query.entity_id,
@@ -317,7 +318,7 @@ class InMemoryOverrideOperationsStore:
     def preview_correction(
         self, proposal: CorrectionProposal, *, now: datetime | None = None
     ) -> CorrectionPreview:
-        clock = now or datetime.now(timezone.utc)
+        clock = now or datetime.now(UTC)
         target = self._require_operation(proposal.target_operation_id)
         field_operations = tuple(
             operation
@@ -380,7 +381,7 @@ class InMemoryOverrideOperationsStore:
         *,
         now: datetime | None = None,
     ) -> ReplicatedOverrideOperation:
-        clock = now or datetime.now(timezone.utc)
+        clock = now or datetime.now(UTC)
         preview = self.preview_correction(proposal, now=clock)
         if not _valid_token(
             frontier_token,
@@ -407,7 +408,7 @@ class InMemoryOverrideOperationsStore:
         reason: str = "",
         now: datetime | None = None,
     ) -> PurgePreview:
-        clock = now or datetime.now(timezone.utc)
+        clock = now or datetime.now(UTC)
         layer = next(
             (item for item in self._layers.values() if item.document_id == document_id),
             None,
@@ -437,7 +438,7 @@ class InMemoryOverrideOperationsStore:
         reason: str,
         now: datetime | None = None,
     ) -> PurgeResult:
-        clock = now or datetime.now(timezone.utc)
+        clock = now or datetime.now(UTC)
         targets = tuple(sorted(set(operation_ids)))
         if (
             not reason.strip()

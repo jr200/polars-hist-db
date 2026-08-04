@@ -1,11 +1,10 @@
+import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal
 
 import polars as pl
-import logging
 
 from .transform_fn_registry import TransformFnRegistry
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,16 +15,16 @@ class IngestionColumnConfig:
         "data", "computed", "input_only", "dsv_only", "time_partition_only"
     ]
     schema: str
-    table: Optional[str]
+    table: str | None
     ingestion_data_type: str
     target_data_type: str
-    source: Optional[str] = None
-    target: Optional[str] = None
-    transforms: Dict[str, Any] = field(default_factory=dict)
-    aggregation: Optional[str] = None
+    source: str | None = None
+    target: str | None = None
+    transforms: dict[str, Any] = field(default_factory=dict)
+    aggregation: str | None = None
     deduce_foreign_key: bool = False
-    value_if_missing: Optional[str] = None
-    nullable: Optional[bool] = True
+    value_if_missing: str | None = None
+    nullable: bool | None = True
     required: bool = False
 
     def __post_init__(self):
@@ -34,7 +33,7 @@ class IngestionColumnConfig:
 
     @classmethod
     def df_schema(cls) -> pl.Schema:
-        schema: Dict[str, pl.DataType] = {
+        schema: dict[str, pl.DataType] = {
             "schema": pl.Utf8(),
             "table": pl.Utf8(),
             "source": pl.Utf8(),

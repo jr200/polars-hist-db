@@ -1,11 +1,12 @@
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
-import os
-import logging
-from datetime import datetime
-import polars as pl
-from io import StringIO
 import csv
+import logging
+import os
+from dataclasses import dataclass
+from datetime import datetime
+from io import StringIO
+from typing import Any
+
+import polars as pl
 
 from .input_source import InputConfig
 
@@ -14,9 +15,9 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class DsvCrawlerInputConfig(InputConfig):
-    search_paths: Optional[Union[pl.DataFrame, List[Dict[str, Any]]]] = None
-    payload: Optional[str] = None
-    payload_time: Optional[datetime] = None
+    search_paths: pl.DataFrame | list[dict[str, Any]] | None = None
+    payload: str | None = None
+    payload_time: datetime | None = None
 
     @staticmethod
     def clean_dsv_string(data: str) -> str:

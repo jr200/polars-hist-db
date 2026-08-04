@@ -1,10 +1,11 @@
 import re
 import sys
-from typing import Any, List
+from typing import Any
+
 import polars as pl
 
 
-def null_if_gte(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFrame:
+def null_if_gte(df: pl.DataFrame, result_col: str, args: list[Any]) -> pl.DataFrame:
     threshold_value = args[0]
     df = df.with_columns(
         pl.when(result_col >= pl.lit(threshold_value))
@@ -16,7 +17,7 @@ def null_if_gte(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFr
     return df
 
 
-def parse_date(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFrame:
+def parse_date(df: pl.DataFrame, result_col: str, args: list[Any]) -> pl.DataFrame:
     date_formats = args
     result_df = df.with_columns(
         pl.coalesce(
@@ -36,7 +37,7 @@ def parse_date(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFra
 
 
 def apply_type_casts(
-    df: pl.DataFrame, result_col: str, args: List[Any]
+    df: pl.DataFrame, result_col: str, args: list[Any]
 ) -> pl.DataFrame:
     dtypes = args[0:]
 
@@ -52,10 +53,10 @@ def apply_type_casts(
     return df
 
 
-def combine_columns(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFrame:
+def combine_columns(df: pl.DataFrame, result_col: str, args: list[Any]) -> pl.DataFrame:
     values = args[0:]
 
-    def _make_combine_expr(components: List[str]) -> pl.Expr:
+    def _make_combine_expr(components: list[str]) -> pl.Expr:
         exprs = []
         pattern = r"[$][{](?P<col_name>.*?)[}]"
         for c in components:
@@ -75,7 +76,7 @@ def combine_columns(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.Da
     return df
 
 
-def map_to_true(df: pl.DataFrame, result_col: str, args: List[Any]) -> pl.DataFrame:
+def map_to_true(df: pl.DataFrame, result_col: str, args: list[Any]) -> pl.DataFrame:
     true_values = args
 
     df = df.with_columns(

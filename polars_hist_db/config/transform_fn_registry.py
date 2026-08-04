@@ -1,5 +1,7 @@
 import logging
-from typing import Any, Callable, List, Dict
+from collections.abc import Callable
+from typing import Any, ClassVar
+
 import polars as pl
 
 from .fn_builtins import (
@@ -12,12 +14,12 @@ from .fn_builtins import (
 
 LOGGER = logging.getLogger(__name__)
 
-TransformFnSignature = Callable[[pl.DataFrame, str, List[Any]], pl.DataFrame]
-TransformRegistryStore = Dict[str, TransformFnSignature]
+TransformFnSignature = Callable[[pl.DataFrame, str, list[Any]], pl.DataFrame]
+TransformRegistryStore = dict[str, TransformFnSignature]
 
 
 class TransformFnRegistry:
-    _borg: Dict[str, Any] = {"_registry": None}
+    _borg: ClassVar[dict[str, Any]] = {"_registry": None}
 
     def __init__(self) -> None:
         self.__dict__ = self._borg
@@ -25,7 +27,7 @@ class TransformFnRegistry:
 
     def _one_time_init(self) -> TransformRegistryStore:
         if self._registry is None:
-            self._registry = dict()
+            self._registry = {}
             self.register_function("null_if_gte", null_if_gte)
             self.register_function("apply_type_casts", apply_type_casts)
             self.register_function("combine_columns", combine_columns)
@@ -54,7 +56,7 @@ class TransformFnRegistry:
         name: str,
         df: pl.DataFrame,
         result_col: str,
-        args: List[Any],
+        args: list[Any],
     ) -> pl.DataFrame:
         if name not in self._registry:
             raise ValueError(
@@ -72,5 +74,5 @@ class TransformFnRegistry:
 
         return result_df
 
-    def list_functions(self) -> List[str]:
+    def list_functions(self) -> list[str]:
         return list(self._registry.keys())

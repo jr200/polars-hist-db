@@ -1,9 +1,10 @@
 import json
 import logging
 import os
+
+import nats
 import polars as pl
 from nats.aio.client import Client as NATS
-import nats
 from nats.js.client import JetStreamContext
 
 from polars_hist_db.config.input.jetstream_config import JetStreamSubscriptionConfig

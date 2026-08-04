@@ -1,17 +1,16 @@
-from datetime import datetime
 import logging
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from datetime import datetime
+from typing import Any
 
 import polars as pl
 from sqlalchemy import Connection
 
+from ..config import DatasetConfig, TableConfig, TableConfigs
+from ..core import DeltaTableOps, TableConfigOps, TableOps
+from ..utils import NonRetryableException
 from .foreign_key_helper import deduce_foreign_keys
 from .primary_item import scrape_xtdb_pipeline_item
-
-from ..config import TableConfig, TableConfigs, DatasetConfig
-from ..core import TableConfigOps, DeltaTableOps, TableOps
-from ..utils import NonRetryableException
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,8 +22,8 @@ def scrape_extract_item(
     tables: TableConfigs,
     upload_time: datetime,
     connection: Connection,
-    partition_df: Optional[pl.DataFrame] = None,
-    stage_run_id: Optional[str] = None,
+    partition_df: pl.DataFrame | None = None,
+    stage_run_id: str | None = None,
     staging: Any = None,
     backend: Any = None,
 ) -> bool:

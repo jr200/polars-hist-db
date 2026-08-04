@@ -1,6 +1,7 @@
-from datetime import datetime, timezone
 import logging
-from typing import Any, Callable, Iterable, Literal, Mapping, Optional
+from collections.abc import Callable, Iterable, Mapping
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 import polars as pl
 
@@ -12,12 +13,12 @@ from .xtdb_arrow import (
     _xtdb_document_id_columns,
     _xtdb_document_id_is_encoded,
 )
-from .xtdb_query import _xtdb_temporal_basis_clause
 from .xtdb_dataframe import (
-    _uploaded_xtdb_relation,
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
+    _uploaded_xtdb_relation,
 )
+from .xtdb_query import _xtdb_temporal_basis_clause
 from .xtdb_staging import _fill_xtdb_defaults, _materialize_xtdb_missing_columns
 from .xtdb_transport import (
     _execute_xtdb_dml,
@@ -27,7 +28,6 @@ from .xtdb_transport import (
     _rollback_xtdb_connection,
     _xtdb_timestamp_literal,
 )
-
 
 _XTDB_READONLY_SYSTEM_COLUMNS = {"_system_from", "_system_to"}
 LOGGER = logging.getLogger(__name__)
@@ -40,12 +40,12 @@ def _xtdb_temporal_upsert(
     *,
     connection: Any | None = None,
     dataframe_ops: XtdbDataframeOps | XtdbAdbcDataframeOps | None = None,
-    table_config: Optional[TableConfig] = None,
-    delta_config: Optional[DeltaConfig] = None,
-    update_time: Optional[datetime] = None,
-    valid_time: Optional[ValidTimeConfig] = None,
-    dropout_close_time: Optional[datetime] = None,
-    max_rows_per_insert: Optional[int] = None,
+    table_config: TableConfig | None = None,
+    delta_config: DeltaConfig | None = None,
+    update_time: datetime | None = None,
+    valid_time: ValidTimeConfig | None = None,
+    dropout_close_time: datetime | None = None,
+    max_rows_per_insert: int | None = None,
     dataframe_factory: Callable[[Any], XtdbDataframeOps] | None = None,
 ) -> int:
     def pgwire_dataframes(connection: Any) -> XtdbDataframeOps:
@@ -177,8 +177,8 @@ def _delete_xtdb_missing_rows(
     table_name: str,
     table_config: TableConfig,
     dataframe_ops: "XtdbDataframeOps",
-    update_time: Optional[datetime],
-    dropout_close_time: Optional[datetime],
+    update_time: datetime | None,
+    dropout_close_time: datetime | None,
 ) -> int:
     document_id_columns = _xtdb_document_id_columns(table_config)
     incoming_ids = _prepare_xtdb_insert_dataframe(
@@ -235,8 +235,8 @@ def _delete_xtdb_missing_rows(
 
 def _xtdb_dropout_close_time(
     df: pl.DataFrame,
-    dropout_close_time: Optional[datetime],
-    update_time: Optional[datetime],
+    dropout_close_time: datetime | None,
+    update_time: datetime | None,
 ) -> datetime | None:
     if dropout_close_time is not None:
         return dropout_close_time
@@ -254,7 +254,7 @@ def _xtdb_dropout_close_time(
 
     close_time = close_times.item()
     if not isinstance(close_time, datetime):
-        raise ValueError(
+        raise TypeError(
             "XTDB row_finality='dropout' _valid_from values must be datetimes"
         )
     return close_time
@@ -299,7 +299,7 @@ def _filter_xtdb_unchanged_rows(
     table_name: str,
     table_config: TableConfig,
     dataframe_ops: Any,
-    update_time: Optional[datetime],
+    update_time: datetime | None,
 ) -> pl.DataFrame:
     if df.is_empty():
         return df
@@ -369,11 +369,11 @@ def _filter_xtdb_unchanged_rows(
     )
 
 
-_XTDB_NON_TEMPORAL_VALID_FROM = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_XTDB_NON_TEMPORAL_VALID_FROM = datetime(1970, 1, 1, tzinfo=UTC)
 
 
 def _apply_xtdb_valid_time_mapping(
-    df: pl.DataFrame, valid_time: Optional[ValidTimeConfig]
+    df: pl.DataFrame, valid_time: ValidTimeConfig | None
 ) -> pl.DataFrame:
     if valid_time is None:
         return df
@@ -414,8 +414,8 @@ def _apply_xtdb_valid_time_mapping(
 
 def _apply_xtdb_non_temporal_valid_from(
     df: pl.DataFrame,
-    table_config: Optional[TableConfig],
-    valid_time: Optional[ValidTimeConfig],
+    table_config: TableConfig | None,
+    valid_time: ValidTimeConfig | None,
 ) -> pl.DataFrame:
     """Reference tables (``is_temporal: false``) with no ``valid_time`` mapping
     must be readable as-of any historical timestamp — they represent an

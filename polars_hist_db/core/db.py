@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
 import logging
 import time
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import polars as pl
 from sqlalchemy import (
@@ -13,7 +13,6 @@ from sqlalchemy import (
 from sqlalchemy.engine.interfaces import _CoreAnyExecuteParams
 
 from ..utils.clock import Clock
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -40,9 +39,9 @@ class DbOps:
         self,
         description: str,
         statement: Executable,
-        parameters: Optional[_CoreAnyExecuteParams] = None,
+        parameters: _CoreAnyExecuteParams | None = None,
         disable_foreign_key_checks: bool = False,
-        disable_keys: Optional[str] = None,
+        disable_keys: str | None = None,
     ) -> CursorResult[Any]:
         timings = Clock()
         try:
@@ -69,7 +68,7 @@ class DbOps:
         timings.add_timing(description, sql_time)
         return result
 
-    def get_all_variables(self, filter: Optional[str] = None) -> pl.DataFrame:
+    def get_all_variables(self, filter: str | None = None) -> pl.DataFrame:
         if filter is None:
             sql = text("SHOW variables;")
         else:
@@ -81,10 +80,10 @@ class DbOps:
 
     def get_system_versioning_time(self) -> datetime:
         t_as_str = self.get_all_variables("timestamp").item()
-        t = datetime.fromtimestamp(float(t_as_str), tz=timezone.utc)
+        t = datetime.fromtimestamp(float(t_as_str), tz=UTC)
         return t
 
-    def set_system_versioning_time(self, t: Optional[datetime]):
+    def set_system_versioning_time(self, t: datetime | None):
         if t is None:
             arg = "DEFAULT"
         else:

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -13,7 +13,6 @@ from polars_hist_db.overrides import (
 
 from ..utils.dsv_helper import mariadb_engine_test
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -25,7 +24,7 @@ def test_mariadb_access_store_persists_lifecycle_and_idempotency():
         commands_table="access_commands_store_test",
     )
     tables = build_document_access_table_configs(config)
-    now = datetime(2026, 7, 12, 11, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 12, 11, tzinfo=UTC)
     engine = mariadb_engine_test()
     with engine.begin() as connection:
         table_ops = TableConfigOps(connection)

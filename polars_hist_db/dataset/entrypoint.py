@@ -1,22 +1,20 @@
 import asyncio
-from dataclasses import dataclass
-from datetime import datetime
 import logging
 import time
 import warnings
-from typing import List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import datetime
 
-from nats.js.client import JetStreamContext
 import polars as pl
+from nats.js.client import JetStreamContext
 from sqlalchemy import Engine
 
 from ..backends import backend_from_config
-from ..loaders.input_source_factory import InputSourceFactory
-from ..utils.clock import Clock
-
-from ..config import PolarsHistDbConfig, DatasetConfig, TableConfig, TableConfigs
+from ..config import DatasetConfig, PolarsHistDbConfig, TableConfig, TableConfigs
 from ..config.config import IngestionConfig
 from ..config.input.input_source import InputConfig
+from ..loaders.input_source_factory import InputSourceFactory
+from ..utils.clock import Clock
 from .scrape import _to_thread_joined, try_run_pipeline_as_transaction
 
 LOGGER = logging.getLogger(__name__)
@@ -31,10 +29,10 @@ class RunResult:
 
 async def run_datasets(
     config: PolarsHistDbConfig,
-    engine: Optional[Engine] = None,
-    dataset_name: Optional[str] = None,
-    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]] = None,
-    js: Optional[JetStreamContext] = None,
+    engine: Engine | None = None,
+    dataset_name: str | None = None,
+    debug_capture_output: list[tuple[datetime, pl.DataFrame]] | None = None,
+    js: JetStreamContext | None = None,
     raise_on_error: bool = False,
 ):
     if not raise_on_error:
@@ -60,7 +58,7 @@ async def run_datasets(
         return RunResult(0, 0, ())
 
     ingestion = getattr(config, "ingestion", IngestionConfig())
-    errors: list[Optional[Exception]] = [None] * len(selected_datasets)
+    errors: list[Exception | None] = [None] * len(selected_datasets)
     try:
         await _to_thread_joined(_create_config_tables, engine, config.tables, backend)
         await _run_dataset_workers(
@@ -95,13 +93,13 @@ async def _run_dataset_workers(
     engine: Engine,
     backend,
     ingestion: IngestionConfig,
-    errors: list[Optional[Exception]],
-    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
-    js: Optional[JetStreamContext],
+    errors: list[Exception | None],
+    debug_capture_output: list[tuple[datetime, pl.DataFrame]] | None,
+    js: JetStreamContext | None,
     raise_on_error: bool,
 ) -> None:
     worker_count = min(ingestion.max_workers, len(datasets))
-    queue: asyncio.Queue[Optional[tuple[int, DatasetConfig]]] = asyncio.Queue(
+    queue: asyncio.Queue[tuple[int, DatasetConfig] | None] = asyncio.Queue(
         maxsize=ingestion.queue_size
     )
     table_locks = {
@@ -191,10 +189,10 @@ async def _run_dataset(
     dataset: DatasetConfig,
     tables: TableConfigs,
     engine: Engine,
-    debug_capture_output: Optional[List[Tuple[datetime, pl.DataFrame]]],
+    debug_capture_output: list[tuple[datetime, pl.DataFrame]] | None,
     backend,
     ingest_connection=None,
-    js: Optional[JetStreamContext] = None,
+    js: JetStreamContext | None = None,
     raise_on_error: bool = False,
 ):
     LOGGER.info("starting %s ingest for %s", input_config.type, dataset.name)

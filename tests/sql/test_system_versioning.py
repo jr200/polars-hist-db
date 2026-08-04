@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
 
@@ -39,15 +39,15 @@ def test_long_write(fixture_with_simple_table_1, fixture_with_simple_table_2):
     # verify the system_versioning time is not affected on engine_2
     with engine_2.begin() as connection:
         t = DbOps(connection).get_system_versioning_time()
-        assert t.date() == datetime.now(tz=timezone.utc).date()
+        assert t.date() == datetime.now(tz=UTC).date()
 
     # set the engine_1 time back to 'now'
     with engine_1.begin() as connection:
         DbOps(connection).set_system_versioning_time(None)
         t = DbOps(connection).get_system_versioning_time()
-        assert t.date() == datetime.now(tz=timezone.utc).date()
+        assert t.date() == datetime.now(tz=UTC).date()
 
     # verify the system_versioning time for engine_2 is still unaffected
     with engine_2.begin() as connection:
         t = DbOps(connection).get_system_versioning_time()
-        assert t.date() == datetime.now(tz=timezone.utc).date()
+        assert t.date() == datetime.now(tz=UTC).date()

@@ -1,6 +1,7 @@
 from datetime import datetime
-import pytest
+
 import polars as pl
+import pytest
 from polars.testing import assert_frame_equal
 
 from ..utils.dsv_helper import (

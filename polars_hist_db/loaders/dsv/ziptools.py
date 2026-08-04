@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Mapping
+from collections.abc import Mapping
 from zipfile import ZipFile
 
 import polars as pl

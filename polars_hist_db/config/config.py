@@ -1,11 +1,11 @@
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Optional
+from typing import Any
 
-from .helpers import get_nested_key, load_yaml
-
-from .dataset import DatasetsConfig
-from .table import TableConfigs
 from ..backends.config import DbEngineConfig
+from .dataset import DatasetsConfig
+from .helpers import get_nested_key, load_yaml
+from .table import TableConfigs
 
 
 @dataclass(frozen=True)
@@ -69,7 +69,7 @@ class PolarsHistDbConfig:
         cfg_dict: Mapping[str, Any],
         table_configs_path: Iterable[str],
         datasets_path: Iterable[str],
-        config_file_path: Optional[str] = None,
+        config_file_path: str | None = None,
     ):
         self.config_file_path = config_file_path
         dataset_params = get_nested_key(cfg_dict, datasets_path)

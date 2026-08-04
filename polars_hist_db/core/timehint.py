@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Literal, Optional, Union
+from typing import Literal
 
 from sqlalchemy import Select, Subquery, Table
 from sqlalchemy.dialects import mysql
@@ -10,10 +10,10 @@ from sqlalchemy.dialects import mysql
 class TimeHint:
     mode: Literal["none", "all", "asof", "span"] = "none"
     all: bool = False
-    asof_utc: Optional[datetime] = field(default=None)
-    history_span: Optional[timedelta] = field(default=None)
+    asof_utc: datetime | None = field(default=None)
+    history_span: timedelta | None = field(default=None)
 
-    def build(self) -> Optional[str]:
+    def build(self) -> str | None:
         match self.mode:
             case "none":
                 return None
@@ -36,7 +36,7 @@ class TimeHint:
 
         raise ValueError(f"invalid TimeHint mode: {self.mode}")
 
-    def apply(self, query: Select, tbl: Union[Table, Subquery]) -> Select:
+    def apply(self, query: Select, tbl: Table | Subquery) -> Select:
         hint = self.build()
         if not hint:
             return query

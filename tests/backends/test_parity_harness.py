@@ -1,29 +1,29 @@
-from datetime import datetime
 import asyncio
 import sys
+from datetime import datetime
 from types import SimpleNamespace
 
 import polars as pl
 
 from polars_hist_db.backends.config import DbEngineConfig
+from polars_hist_db.config import TableColumnConfig, TableConfig
 from polars_hist_db.parity import (
-    BackendParityTarget,
     BackendParityResult,
+    BackendParityTarget,
     SemanticForeignKey,
     TableParityMismatch,
-    format_backend_parity_result,
-    _parse_backend_target,
     _parse_args,
+    _parse_backend_target,
     _parse_ignore_column,
     _parse_semantic_foreign_key,
     _should_prepare_backend_tables,
     _table_read_sql,
     compare_backend_tables,
+    format_backend_parity_result,
     main,
     prepare_parity_config,
     run_backend_parity,
 )
-from polars_hist_db.config import TableColumnConfig, TableConfig
 
 
 class _InputConfig:
@@ -48,7 +48,7 @@ def test_prepare_parity_config_overrides_backend_without_mutating_source_config(
         name="xtdb-local",
         db_config=DbEngineConfig(backend="xtdb", hostname="127.0.0.1", port=5432),
     )
-    payload_time = datetime(2030, 1, 1, 12, 0)
+    payload_time = datetime.fromisoformat("2030-01-01T12:00:00")
 
     prepared = prepare_parity_config(
         source,
@@ -101,8 +101,10 @@ def test_compare_backend_tables_reports_row_count_and_value_mismatches():
             right_rows=2,
             details=(
                 "differing_columns=trade_status",
-                "sample[0] left={'id': 2, 'trade_status': 'Loaded'} "
-                "right={'id': 2, 'trade_status': 'Ballast'}",
+                (
+                    "sample[0] left={'id': 2, 'trade_status': 'Loaded'} "
+                    "right={'id': 2, 'trade_status': 'Ballast'}"
+                ),
             ),
         ),
         TableParityMismatch(
@@ -134,10 +136,14 @@ def test_compare_backend_tables_caps_value_mismatch_samples():
 
     assert result.mismatches[0].details == (
         "differing_columns=trade_status",
-        "sample[0] left={'id': 1, 'trade_status': 'A'} "
-        "right={'id': 1, 'trade_status': 'X'}",
-        "sample[1] left={'id': 2, 'trade_status': 'B'} "
-        "right={'id': 2, 'trade_status': 'Y'}",
+        (
+            "sample[0] left={'id': 1, 'trade_status': 'A'} "
+            "right={'id': 1, 'trade_status': 'X'}"
+        ),
+        (
+            "sample[1] left={'id': 2, 'trade_status': 'B'} "
+            "right={'id': 2, 'trade_status': 'Y'}"
+        ),
         "1 additional differing rows omitted",
     )
 
@@ -171,12 +177,16 @@ def test_compare_backend_tables_reports_unresolved_semantic_foreign_keys():
     )
 
     assert result.semantic_foreign_key_diagnostics == (
-        "mariadb unresolved semantic_fk "
-        "sample.trades.origin_location_id -> sample.location_info.id "
-        "using name: 1/2 source rows",
-        "xtdb unresolved semantic_fk "
-        "sample.trades.origin_location_id -> sample.location_info.id "
-        "using name: 1/2 source rows",
+        (
+            "mariadb unresolved semantic_fk "
+            "sample.trades.origin_location_id -> sample.location_info.id "
+            "using name: 1/2 source rows"
+        ),
+        (
+            "xtdb unresolved semantic_fk "
+            "sample.trades.origin_location_id -> sample.location_info.id "
+            "using name: 1/2 source rows"
+        ),
     )
 
 
@@ -195,17 +205,21 @@ def test_format_backend_parity_result_includes_details_and_diagnostics():
             )
         ],
         semantic_foreign_key_diagnostics=(
-            "xtdb unresolved semantic_fk "
-            "sample.trades.origin_location_id -> sample.location_info.id "
-            "using name: 1/2 source rows",
+            (
+                "xtdb unresolved semantic_fk "
+                "sample.trades.origin_location_id -> sample.location_info.id "
+                "using name: 1/2 source rows"
+            ),
         ),
     )
 
     assert list(format_backend_parity_result(result)) == [
         "PASS sample.entity_info",
-        "WARN xtdb unresolved semantic_fk "
-        "sample.trades.origin_location_id -> sample.location_info.id "
-        "using name: 1/2 source rows",
+        (
+            "WARN xtdb unresolved semantic_fk "
+            "sample.trades.origin_location_id -> sample.location_info.id "
+            "using name: 1/2 source rows"
+        ),
         "FAIL sample.trades: data mismatch (mariadb=1, xtdb=1)",
         "  differing_columns=trade_status",
     ]
@@ -537,7 +551,7 @@ def test_table_read_sql_uses_valid_time_all_for_xtdb_tables():
         columns=[TableColumnConfig("trades", "id", "INT")],
     )
 
-    system_time = datetime(2035, 1, 1, 0, 0, 1)
+    system_time = datetime.fromisoformat("2035-01-01T00:00:01")
 
     assert _table_read_sql("xtdb", table_config, system_time=system_time) == (
         "SELECT * FROM sample.trades FOR VALID_TIME ALL "
@@ -554,7 +568,7 @@ def test_table_read_sql_uses_valid_time_asof_for_xtdb_non_temporal_tables():
         primary_keys=["id"],
         columns=[TableColumnConfig("entity_info", "id", "INT")],
     )
-    system_time = datetime(2035, 1, 1, 0, 0, 1)
+    system_time = datetime.fromisoformat("2035-01-01T00:00:01")
 
     assert _table_read_sql("xtdb", table_config, system_time=system_time) == (
         "SELECT * FROM sample.entity_info "

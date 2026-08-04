@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from ..config import TableConfig
 from ..core import TimeHint
@@ -9,11 +8,10 @@ from .xtdb_transport import (
     _xtdb_timestamp_literal,
 )
 
-
 _XTDB_SYSTEM_COLUMNS = {"_valid_from", "_valid_to", "_system_from", "_system_to"}
 
 
-def _xtdb_temporal_basis_clause(update_time: Optional[datetime]) -> str:
+def _xtdb_temporal_basis_clause(update_time: datetime | None) -> str:
     if update_time is None:
         return ""
     return (
@@ -22,7 +20,7 @@ def _xtdb_temporal_basis_clause(update_time: Optional[datetime]) -> str:
     )
 
 
-def _xtdb_valid_time_clause(time_hint: Optional[TimeHint]) -> str:
+def _xtdb_valid_time_clause(time_hint: TimeHint | None) -> str:
     if time_hint is None or time_hint.mode == "none":
         return ""
     if time_hint.mode == "all":
@@ -61,7 +59,7 @@ def _xtdb_single_primary_key_alias(table_config: TableConfig) -> str | None:
 
 def _xtdb_table_query_output_columns(
     table_config: TableConfig,
-    column_selection: Optional[list[str]],
+    column_selection: list[str] | None,
 ) -> list[str]:
     if column_selection is not None:
         return column_selection

@@ -46,7 +46,7 @@ dev = [
     "types-pyyaml>=6.0.12.20260724",
     "pyarrow-stubs>=20.0.0.20260625",
     "pycrdt>=0.14.2",
-    "hypothesis>=6.165.0",
+    "hypothesis>=6.165.1",
 ]
 
 [tool.setuptools.package-data]

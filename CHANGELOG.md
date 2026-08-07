@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.76](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.75...v0.12.76) (2026-08-07)
+
+
+### Bug Fixes
+
+* avoid rejected historical XTDB transactions ([#324](https://github.com/jr200-labs/polars-hist-db/issues/324)) ([d82115d](https://github.com/jr200-labs/polars-hist-db/commit/d82115d37f54fb0b1b1de7c484c3566bc92f89d5))
+* **deps:** update all non-major dependencies ([#317](https://github.com/jr200-labs/polars-hist-db/issues/317)) ([535a3f9](https://github.com/jr200-labs/polars-hist-db/commit/535a3f9522d2563218ea8ef51fa82a6aac78c527))
+* **deps:** update dependency hypothesis to &gt;=6.165.1 ([#323](https://github.com/jr200-labs/polars-hist-db/issues/323)) ([6d594e0](https://github.com/jr200-labs/polars-hist-db/commit/6d594e011116ce1f5ec7b6c419852a3c6f7d20f5))
+* **deps:** update dependency ruff to &gt;=0.16.1,&lt;0.17 ([#320](https://github.com/jr200-labs/polars-hist-db/issues/320)) ([87b0042](https://github.com/jr200-labs/polars-hist-db/commit/87b00425842e65cf6b97ecd7e3e2b265d5ab1fd2))
+* **deps:** update quarto-cli digest to 55389ba ([#316](https://github.com/jr200-labs/polars-hist-db/issues/316)) ([796c3e9](https://github.com/jr200-labs/polars-hist-db/commit/796c3e9dd3d8bf47574c33d4bf9a1e1f61f8ed8f))
+* **deps:** update quarto-cli digest to f9dd09c ([#319](https://github.com/jr200-labs/polars-hist-db/issues/319)) ([d9879bc](https://github.com/jr200-labs/polars-hist-db/commit/d9879bca7aeebaa5a89d026ec83e5ef8ceeac0fa))
+
 ## [0.12.75](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.74...v0.12.75) (2026-07-24)
 
 

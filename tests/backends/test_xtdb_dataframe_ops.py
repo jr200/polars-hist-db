@@ -98,6 +98,30 @@ def test_xtdb_dml_retries_with_append_time_when_system_time_is_too_old():
     ]
 
 
+def test_xtdb_dml_uses_append_time_without_submitting_known_old_system_time():
+    driver_connection = Mock()
+    connection = Mock()
+    connection.info = {}
+    connection.connection.driver_connection = driver_connection
+    connection.in_transaction.return_value = False
+    connection.execute.return_value.scalar_one_or_none.return_value = datetime(
+        2026, 1, 1, tzinfo=UTC
+    )
+
+    _execute_xtdb_dml(
+        connection,
+        "INSERT INTO test.records (_id) VALUES (1)",
+        system_time=datetime(2025, 1, 1, tzinfo=UTC),
+    )
+
+    assert "FROM xt.txs" in str(connection.execute.call_args.args[0])
+    assert [call.args[0] for call in driver_connection.execute.call_args_list] == [
+        "BEGIN READ WRITE",
+        "INSERT INTO test.records (_id) VALUES (1)",
+        "COMMIT",
+    ]
+
+
 def test_xtdb_dataframe_ops_reads_table_as_sql():
     connection = object()
     ops = XtdbDataframeOps(connection)

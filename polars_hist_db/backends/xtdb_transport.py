@@ -222,8 +222,7 @@ def _xtdb_transaction_scope(
     begin_sql = "BEGIN READ WRITE"
     if system_time is not None:
         system_time = _next_xtdb_system_time(connection, system_time)
-        if system_time is not None:
-            begin_sql += f" WITH (SYSTEM_TIME = {_xtdb_timestamp_literal(system_time)})"
+        begin_sql += f" WITH (SYSTEM_TIME = {_xtdb_timestamp_literal(system_time)})"
     try:
         driver_connection.execute(begin_sql)
     except Exception as exc:
@@ -310,28 +309,12 @@ def _xtdb_timestamp_literal(value: datetime) -> str:
     return f"{timestamp_type} '{escaped}'"
 
 
-def _latest_xtdb_system_time(connection: Any) -> datetime | None:
-    execute = getattr(connection, "execute", None)
-    if not callable(execute):
-        return None
-    result = execute(
-        text("SELECT system_time FROM xt.txs ORDER BY system_time DESC LIMIT 1")
-    )
-    latest = result.scalar_one_or_none()
-    _rollback_xtdb_connection(connection)
-    return latest if isinstance(latest, datetime) else None
-
-
-def _next_xtdb_system_time(connection: Any, system_time: datetime) -> datetime | None:
+def _next_xtdb_system_time(connection: Any, system_time: datetime) -> datetime:
     info = getattr(connection, "info", None)
     if not isinstance(info, dict):
         return system_time
 
     last_system_time = info.get(_XTDB_LAST_SYSTEM_TIME_KEY)
-    if not isinstance(last_system_time, datetime):
-        latest_system_time = _latest_xtdb_system_time(connection)
-        if latest_system_time is not None and system_time < latest_system_time:
-            return None
     if isinstance(last_system_time, datetime) and system_time <= last_system_time:
         system_time = last_system_time + timedelta(microseconds=1)
     info[_XTDB_LAST_SYSTEM_TIME_KEY] = system_time
@@ -454,11 +437,10 @@ def _execute_xtdb_dml(
     begin_sql = "BEGIN READ WRITE"
     if system_time is not None:
         system_time = _next_xtdb_system_time(connection, system_time)
-        if system_time is not None:
-            begin_sql = (
-                "BEGIN READ WRITE WITH "
-                f"(SYSTEM_TIME = {_xtdb_timestamp_literal(system_time)})"
-            )
+        begin_sql = (
+            "BEGIN READ WRITE WITH "
+            f"(SYSTEM_TIME = {_xtdb_timestamp_literal(system_time)})"
+        )
     driver_connection.execute(begin_sql)
     try:
         if rows is None:
@@ -528,11 +510,10 @@ def _execute_xtdb_arrow_copy(
             driver_connection.autocommit = True
         if system_time is not None:
             system_time = _next_xtdb_system_time(connection, system_time)
-            if system_time is not None:
-                begin_sql = (
-                    "BEGIN READ WRITE WITH "
-                    f"(SYSTEM_TIME = {_xtdb_timestamp_literal(system_time)})"
-                )
+            begin_sql = (
+                "BEGIN READ WRITE WITH "
+                f"(SYSTEM_TIME = {_xtdb_timestamp_literal(system_time)})"
+            )
 
     arrow_table = _normalize_xtdb_ingest_arrow(df.to_arrow())
     require_unique_arrow_field_names(

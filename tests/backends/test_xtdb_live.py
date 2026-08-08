@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from datetime import time as datetime_time
 from decimal import Decimal
+from uuid import uuid4
 
 import polars as pl
 import pytest
@@ -28,6 +29,10 @@ from polars_hist_db.loaders.input_source import BatchFinalizer
 from polars_hist_db.overrides import (
     AccessGrantInput,
     DocumentAccessStoreConfig,
+    OverrideLedgerConfig,
+    OverrideOperation,
+    OverrideTypedValue,
+    SqlOverrideLedgerStore,
     XtdbDocumentAccessStore,
     build_document_access_table_configs,
 )
@@ -132,6 +137,43 @@ def test_xtdb_live_create_append_read_roundtrip():
         "destination": ["Alpha", "Beta"],
         "amount_value": [10.5, 20.25],
     }
+
+
+def test_xtdb_live_override_ledger_materializes_on_first_write():
+    config = OverrideLedgerConfig(
+        schema="public",
+        table=f"override_operations_{uuid4().hex}",
+    )
+    operation = OverrideOperation(
+        operation_id="operation-1",
+        change_set_id="change-1",
+        owner_user_id="owner-1",
+        actor_user_id="actor-1",
+        feed_id="feed-1",
+        entity_id="entity-1",
+        field_path="status",
+        operation_type="set",
+        value=OverrideTypedValue("enum", {"value": "active"}),
+        observed_canonical_value_json={"value": "pending"},
+        created_against_stale_source=False,
+        valid_from=datetime(2026, 8, 8, tzinfo=UTC),
+        valid_to=None,
+    )
+
+    with _xtdb_engine() as engine:
+        backend = XtdbBackend()
+        with backend.connection_scope(engine) as connection:
+            store = SqlOverrideLedgerStore(connection, "xtdb", config)
+
+            assert store.projected_history_for_owner("owner-1", "feed-1") == []
+
+            store.append(operation)
+
+            history = store.projected_history_for_owner("owner-1", "feed-1")
+
+            assert len(history) == 1
+            assert history[0].operation_id == "operation-1"
+            assert history[0].value == OverrideTypedValue("enum", {"value": "active"})
 
 
 def test_xtdb_live_document_access_create():

@@ -147,20 +147,6 @@ Those properties are directly relevant because the data platform is already
 Polars/Arrow-oriented and needs historical views. XTDB also enforces a
 strongly ordered write path, so batching and workload shape matter for throughput.
 
-## Reuse From `polars-xtdb`
-
-The existing `polars-xtdb` prototype was useful prior art for XTDB reads,
-system-time columns, and basic type mapping. The shipped backend now tracks the
-same contract through `polars-hist-db` adapters:
-
-- Prototype scope remains limited to isolated XTDB proof-of-concept helpers.
-- Production coverage lives in `polars-hist-db` adapter pathways for schema
-  reflection, ingestion, audit tracking, temporal upsert, and override stores.
-- Contract-owned methods remain stable even when adapter internals differ.
-
-The XTDB backend reuses lessons and test fixtures while owning a contract-first
-adapter interface in this repository.
-
 The current `XtdbBackend` exposes:
 
 - `dataframes(connection)` and `adbc_dataframes(connection)` for reads and

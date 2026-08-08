@@ -447,8 +447,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>backend</code> defaults to <code>mariadb</code> when omitted. Supported backend names are:</p>
 <ul>
 <li><code>mariadb</code> - the default and currently complete production backend.</li>
-<li><code>xtdb</code> - experimental backend path for the XTDB spike. Install with the <code>xtdb</code> optional dependency before creating an XTDB engine. The optional dependency includes the binary psycopg wrapper for pgwire and the ADBC FlightSQL driver for Arrow-native bulk ingest.</li>
-<li><code>mssql</code> - reserved for a future MS SQL adapter.</li>
+<li><code>xtdb</code> - supported XTDB adapter. Install with the <code>xtdb</code> optional dependency before creating an XTDB engine. The optional dependency includes the binary psycopg wrapper for pgwire and the ADBC FlightSQL driver for Arrow-native bulk ingest.</li>
+<li><code>mssql</code> - currently reserved for a future MS SQL adapter.</li>
 </ul>
 <p>XTDB uses two ports when both backend paths are enabled:</p>
 <ul>

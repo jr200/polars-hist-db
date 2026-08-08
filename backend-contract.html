@@ -412,9 +412,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#delta-and-finality-semantics" id="toc-delta-and-finality-semantics" class="nav-link" data-scroll-target="#delta-and-finality-semantics">Delta and Finality Semantics</a></li>
   <li><a href="#audit-and-update-visibility" id="toc-audit-and-update-visibility" class="nav-link" data-scroll-target="#audit-and-update-visibility">Audit and Update Visibility</a></li>
   </ul></li>
-  <li><a href="#xtdb-evaluation-requirements" id="toc-xtdb-evaluation-requirements" class="nav-link" data-scroll-target="#xtdb-evaluation-requirements">XTDB Evaluation Requirements</a></li>
+  <li><a href="#xtdb-adapter-capabilities" id="toc-xtdb-adapter-capabilities" class="nav-link" data-scroll-target="#xtdb-adapter-capabilities">XTDB Adapter Capabilities</a></li>
   <li><a href="#reuse-from-polars-xtdb" id="toc-reuse-from-polars-xtdb" class="nav-link" data-scroll-target="#reuse-from-polars-xtdb">Reuse From <code>polars-xtdb</code></a></li>
-  <li><a href="#migration-decision" id="toc-migration-decision" class="nav-link" data-scroll-target="#migration-decision">Migration Decision</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/jr200-labs/polars-hist-db/blob/main/backend-contract.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jr200-labs/polars-hist-db/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -441,11 +440,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>This document defines the storage-backend contract for <code>polars-hist-db</code>. The current implementation uses MariaDB system-versioned tables, but the consuming application should treat the stable product surface as typed Polars dataframes over temporal tables. A second backend, such as XTDB, should be evaluated against this contract before any migration is attempted.</p>
+<p>This document defines the storage-backend contract for <code>polars-hist-db</code>. <code>polars-hist-db</code> exposes one backend contract and two shipping adapters: <code>mariadb</code> (default, complete) and <code>xtdb</code> (implemented and configurable). The public surface stays a typed Polars-first temporal table contract regardless of which adapter is active.</p>
 <section id="goal" class="level2">
 <h2 class="anchored" data-anchor-id="goal">Goal</h2>
 <p>The backend layer must support repeatable ingestion of raw and derived data, typed dataframe reads and writes, and point-in-time views of historical state. It must also provide enough update visibility for downstream services to invalidate caches, publish events, and build user-facing projections.</p>
-<p>The goal of an XTDB spike is not to reproduce MariaDB SQL mechanics. The goal is to prove that the same <code>polars-hist-db</code> behaviours can be implemented with equivalent or better correctness, performance, and operability.</p>
+<p>The goal for both adapters is the same: equivalent or better correctness, performance, and operability for the typed temporal-table contract.</p>
 </section>
 <section id="public-behaviour" class="level2">
 <h2 class="anchored" data-anchor-id="public-behaviour">Public Behaviour</h2>
@@ -483,7 +482,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="backend-interface-shape" class="level2">
 <h2 class="anchored" data-anchor-id="backend-interface-shape">Backend Interface Shape</h2>
 <p>A backend adapter should own the operations below. Naming can change during implementation, but the boundary should remain explicit.</p>
-<p>Backends are selected through the parsed <code>db.backend</code> configuration field. <code>mariadb</code> is the default and complete backend. <code>xtdb</code> is experimental while the spike proves parity. <code>mssql</code> is reserved for a future MS SQL adapter because MS SQL also has temporal-table support, but it should not be exposed as implemented until it passes the same contract tests.</p>
+<p>Backends are selected through the parsed <code>db.backend</code> configuration field. <code>mariadb</code> is the default and complete backend. <code>xtdb</code> is implemented for database-agnostic parity and advanced temporal workloads. <code>mssql</code> is validated by name but not implemented in this codebase yet.</p>
 <section id="connection-and-transactions" class="level3">
 <h3 class="anchored" data-anchor-id="connection-and-transactions">Connection and Transactions</h3>
 <ul>
@@ -555,37 +554,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 </section>
 </section>
-<section id="xtdb-evaluation-requirements" class="level2">
-<h2 class="anchored" data-anchor-id="xtdb-evaluation-requirements">XTDB Evaluation Requirements</h2>
+<section id="xtdb-adapter-capabilities" class="level2">
+<h2 class="anchored" data-anchor-id="xtdb-adapter-capabilities">XTDB Adapter Capabilities</h2>
 <p>Official XTDB materials describe XTDB as an open-source immutable SQL database with comprehensive time-travel, bitemporal records, a columnar engine built on Apache Arrow, and object-storage-oriented architecture:</p>
 <ul>
 <li><a href="https://github.com/xtdb/xtdb" class="uri">https://github.com/xtdb/xtdb</a></li>
 <li><a href="https://docs.xtdb.com/intro/what-is-xtdb.html" class="uri">https://docs.xtdb.com/intro/what-is-xtdb.html</a></li>
 </ul>
-<p>Those properties are directly relevant to the consuming application because the data platform is already Polars/Arrow-oriented and needs historical views. The same materials also describe a strongly ordered transaction path, with writes for a database processed through a single leader. That is a valuable consistency model, but it means write throughput and batching must be measured on representative feeds.</p>
-<p>XTDB should only move beyond spike status if it passes the following gates:</p>
-<ul>
-<li>The adapter can run representative <code>polars-hist-db</code> ingestion tests without weakening type checks.</li>
-<li>Temporal query parity tests pass against MariaDB and XTDB for latest, all, as-of, and span reads.</li>
-<li>Delta upsert parity tests pass for inserts, updates, duplicate handling, unchanged-row dropping, and row-finality dropout.</li>
-<li>Finance-shaped data preserves decimal precision and timestamp semantics.</li>
-<li>application-shaped record and entity tables can be read into Arrow/Polars without row-by-row conversion becoming the bottleneck.</li>
-<li>Netbacks-style high-frequency update streams can be batched without violating freshness requirements.</li>
-<li>Operational work is understood: deployment, backup, restore, object storage, schema evolution, monitoring, and failure recovery.</li>
-<li>Migration can be run table-by-table with dual-read or dual-write validation.</li>
-</ul>
+<p>Those properties are directly relevant because the data platform is already Polars/Arrow-oriented and needs historical views. XTDB also enforces a strongly ordered write path, so batching and workload shape matter for throughput.</p>
 </section>
 <section id="reuse-from-polars-xtdb" class="level2">
 <h2 class="anchored" data-anchor-id="reuse-from-polars-xtdb">Reuse From <code>polars-xtdb</code></h2>
-<p>The existing <code>polars-xtdb</code> prototype is useful prior art, but it should not be treated as a completed backend. It already explores XTDB reads, system-time columns, and basic type mapping. The current gaps are the important parts for the consuming application:</p>
+<p>The existing <code>polars-xtdb</code> prototype was useful prior art for XTDB reads, system-time columns, and basic type mapping. The shipped backend now tracks the same contract through <code>polars-hist-db</code> adapters:</p>
 <ul>
-<li>Type mapping is incomplete for the schemas now used by <code>polars-hist-db</code>.</li>
-<li>Dataset ingestion, audit tracking, delta upserts, and finality are not wired into the prototype.</li>
-<li>The prototype exposes XTDB-specific helper functions rather than a storage adapter that implements the <code>polars-hist-db</code> contract.</li>
+<li>Prototype scope remains limited to isolated XTDB proof-of-concept helpers.</li>
+<li>Production coverage lives in <code>polars-hist-db</code> adapter pathways for schema reflection, ingestion, audit tracking, temporal upsert, and override stores.</li>
+<li>Contract-owned methods remain stable even when adapter internals differ.</li>
 </ul>
-<p>The XTDB spike should reuse lessons and test fixtures from that repo, not replace <code>polars-hist-db</code> with the prototype directly.</p>
-<p>The first adapter slice in <code>polars-hist-db</code> exposes an experimental <code>XtdbBackend.dataframes(connection)</code> helper for raw SQL reads, table reads, and dataframe appends. Temporal upsert, delta/finality, schema management, audit tracking, and update visibility remain explicit unsupported operations until the parity tickets prove them.</p>
-<p>The first temporal parity slice shares backend-level system-time hint clause generation between MariaDB and XTDB for <code>none</code>, <code>all</code>, <code>asof</code>, and <code>span</code>. MariaDB still applies those hints through its existing SQLAlchemy/MariaDB <code>TimeHint.apply</code> path. XTDB applies the same clause string to experimental table reads. This is query-shape parity only; live XTDB result parity still requires the dedicated parity tests and fixture data in JRL-240.</p>
+<p>The XTDB backend reuses lessons and test fixtures while owning a contract-first adapter interface in this repository.</p>
+<p>The current <code>XtdbBackend</code> exposes:</p>
+<ul>
+<li><code>dataframes(connection)</code> and <code>adbc_dataframes(connection)</code> for reads and dataframe writes.</li>
+<li><code>table_configs(connection)</code> for schema reflection and lifecycle operations.</li>
+<li><code>temporal_upsert(...)</code> for temporal writes.</li>
+<li><code>staging(...)</code> hooks for staged ingest.</li>
+<li>Audit and override stores via the standard override integration points.</li>
+</ul>
+<p>The first temporal parity slice shares backend-level system-time hint clause generation between MariaDB and XTDB for <code>none</code>, <code>all</code>, <code>asof</code>, and <code>span</code>. MariaDB still applies those hints through its existing SQLAlchemy/MariaDB <code>TimeHint.apply</code> path. XTDB applies the same clause string to table reads so both adapters honor the same historical-query contract.</p>
 <p><code>XtdbBackend.table_configs(connection)</code> exists as the schema-management seam. Table reflection reads <code>information_schema.columns</code>, maps XTDB type names into <code>TableConfig</code>, filters XTDB system-time columns, and treats <code>_id</code> as the reflected key. Configured table creation declares XTDB’s required <code>_id</code> plus the configured columns with XTDB’s bare-column <code>CREATE TABLE schema.table (...)</code> form. For a table config with exactly one primary key, that key is mapped to XTDB’s required <code>_id</code> document identifier. For composite primary keys, the adapter generates a deterministic text <code>_id</code> using the configured key order and the <code>xtdb-pk-v1:</code> encoding while preserving the original key columns as normal data columns. Table creation records the original primary-key list in an internal XTDB adapter metadata table so <code>from_table(...)</code> can recover composite keys when reflecting tables created by <code>polars-hist-db</code>. Legacy XTDB tables without that metadata still fall back to <code>_id</code> as the reflected key.</p>
 <p>The same mapping is applied on experimental dataframe appends when callers pass the <code>TableConfig</code> to <code>XtdbDataframeOps.table_insert(...)</code>: a configured key such as <code>id</code> is renamed to <code>_id</code> before Polars writes to XTDB, while composite-key tables receive a synthetic <code>_id</code> column and keep their original key columns. Existing MariaDB insert behaviour remains unchanged.</p>
 <p>XTDB remains dynamically typed internally, so the adapter enforces the stable contract at its boundary. Configured writes require matching Polars dtypes by default, use native typed parameters or Arrow columns, and never convert bad values to null. Reflection compares XTDB’s inferred physical type family with the configured type and rejects heterogeneous scalar unions. Explicit forced conversion uses Polars strict casts and emits a warning, metric, and trace event; rejected contracts emit an error, metric, and trace event.</p>
@@ -596,7 +591,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>The SQLAlchemy PostgreSQL dialect needs small XTDB-specific startup adjustments: connect to the <code>xtdb</code> database, disable native hstore probing, and skip the <code>SHOW standard_conforming_strings</code> dialect probe.</li>
 <li>XTDB separates query and DML transactions more strictly than PostgreSQL. The adapter leaves reads in normal read-only transactions and wraps DML in explicit <code>BEGIN READ WRITE</code> blocks.</li>
-<li>Psycopg parameter OIDs are not sufficient for the current DML path, so the spike emits typed SQL literals for inserts. This proves create/append/read viability, but bulk ingestion should move to XTDB ADBC because it is the Arrow-native path documented by XTDB and avoids row-by-row SQL literal work.</li>
+<li>Psycopg parameter OIDs are not sufficient for this DML path, so the adapter emits typed SQL literals for inserts. This proves create/append/read viability, and bulk ingestion uses XTDB ADBC as the Arrow-native path.</li>
 </ul>
 <p>The first live ADBC/FlightSQL round trip also passes against the same nightly image:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">POLARS_HIST_DB_XTDB_LIVE</span><span class="op">=</span>1 <span class="ex">uv</span> run <span class="at">--extra</span> xtdb <span class="dt">\</span></span>
@@ -624,17 +619,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Dataset ingestion keeps each XTDB partition in a process-local Polars dataframe until the pipeline finishes, then discards it. It does not persist a staging table in XTDB.</li>
 <li>XTDB staging preserves pipeline source-to-target column mapping, duplicate removal, default filling, <code>update_time</code> system-time import, per-table valid-time mapping, and <code>deduce_foreign_key</code> normalization. Parent lookups fetch only uploaded natural keys. Missing textual rows get deterministic IDs of the form <code>xtdb-fk-v1:&lt;schema&gt;.&lt;table&gt;:&lt;natural-key-json&gt;</code>. Missing numeric rows use deterministic negative IDs, probe existing IDs, and resolve any collisions before insert.</li>
 <li>MariaDB continues to treat <code>__valid_from</code> / <code>__valid_to</code> as system-version history. Dataset valid-time mappings are XTDB business valid-time inputs and are not equivalent to MariaDB’s generated system-time columns.</li>
-</ul>
-</section>
-<section id="migration-decision" class="level2">
-<h2 class="anchored" data-anchor-id="migration-decision">Migration Decision</h2>
-<p>Do not start by replacing MariaDB. Start by extracting the backend contract and building a minimal XTDB adapter behind it. The decision to migrate should be based on parity tests, representative benchmarks, and operational confidence.</p>
-<p>For the consuming application, the practical default is:</p>
-<ul>
-<li>Keep MariaDB as the production backend while the adapter boundary is created.</li>
-<li>Build XTDB as an experimental backend.</li>
-<li>Compare both backends with record, entity, netbacks, and pipe/storage-shaped datasets.</li>
-<li>Migrate only after typed temporal reads, writes, update visibility, and operational recovery are proven.</li>
 </ul>
 
 

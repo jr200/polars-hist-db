@@ -434,13 +434,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="polars-hist-db" class="level1">
 <h1>polars-hist-db</h1>
-<p>A Python library for building bitemporal data pipelines with <a href="https://pola.rs/">Polars</a> and <a href="https://mariadb.com/">MariaDB</a>.</p>
-<p>It ingests data from DSV files or <a href="https://docs.nats.io/nats-concepts/jetstream">NATS JetStream</a> subjects, tracks history using MariaDB’s system-versioned tables, and exposes everything as strongly-typed Polars DataFrames.</p>
+<p>A Python library for building bitemporal data pipelines with <a href="https://pola.rs/">Polars</a>, MariaDB, and optional XTDB backend support.</p>
+<p>It ingests data from DSV files or <a href="https://docs.nats.io/nats-concepts/jetstream">NATS JetStream</a> subjects, tracks history through a typed temporal table contract, and exposes everything as strongly-typed Polars DataFrames.</p>
 <section id="features" class="level3">
 <h3 class="anchored" data-anchor-id="features">Features</h3>
 <ul>
-<li><strong>Typed uploads</strong> — push Polars DataFrames into MariaDB with automatic type mapping between Polars, SQL, and SQLAlchemy.</li>
-<li><strong>Typed queries</strong> — read tables back into DataFrames with column types inferred from the database schema. Temporal query hints (<code>asof</code>, <code>span</code>, <code>all</code>) let you slice history without writing SQL.</li>
+<li><strong>Typed uploads</strong> — push Polars DataFrames into MariaDB or XTDB with automatic type mapping between Polars, SQL, and SQLAlchemy/ADBC.</li>
+<li><strong>Typed queries</strong> — read tables back into DataFrames with column types inferred from the configured backend schema. Temporal query hints (<code>asof</code>, <code>span</code>, <code>all</code>) let you slice history without writing SQL.</li>
 <li><strong>YAML-driven pipelines</strong> — define scrape specifications that handle column typing, enrichment via custom transform functions, normalization across tables, and foreign-key deduction.</li>
 <li><strong>Deduplication</strong> — an audit log tracks what has already been ingested so re-runs skip previously processed files or messages.</li>
 <li><strong>Transactional ingestion</strong> — each file or message is processed in its own transaction; failures roll back cleanly without affecting other items.</li>

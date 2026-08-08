@@ -520,6 +520,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="dbengineconfig">DbEngineConfig</h3>
 <p>Database connection and engine settings.</p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 17%">
+<col style="width: 25%">
+<col style="width: 37%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Field</th>
@@ -530,22 +536,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><code>database</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+<td>Optional database/schema name</td>
+</tr>
+<tr class="even">
 <td><code>hostname</code></td>
 <td><code>str</code></td>
 <td>—</td>
 <td>Database host</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>backend</code></td>
 <td><code>str</code></td>
 <td><code>"mariadb"</code></td>
 <td>Database backend</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>port</code></td>
 <td><code>int</code></td>
-<td><code>3306</code></td>
+<td><code>3306</code> (MariaDB), <code>5432</code> (XTDB)</td>
 <td>Connection port</td>
+</tr>
+<tr class="odd">
+<td><code>adbc_port</code></td>
+<td><code>int | None</code></td>
+<td><code>9832</code> (XTDB), otherwise <code>None</code></td>
+<td>FlightSQL/ADBC ingest port</td>
 </tr>
 <tr class="even">
 <td><code>username</code></td>
@@ -560,18 +578,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Database password</td>
 </tr>
 <tr class="even">
+<td><code>max_rows_per_insert</code></td>
+<td><code>int | None</code></td>
+<td><code>10000</code> (XTDB), otherwise <code>None</code></td>
+<td>Chunk size for XTDB inserts</td>
+</tr>
+<tr class="odd">
 <td><code>ssl_config</code></td>
 <td><code>SslConfig</code></td>
 <td><code>None</code></td>
 <td>Optional SSL configuration</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>pool_size</code></td>
 <td><code>int</code></td>
 <td><code>3</code></td>
 <td>Connection pool size</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>max_overflow</code></td>
 <td><code>int</code></td>
 <td><code>2</code></td>
@@ -586,14 +610,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="backends-polars_hist_db.backends" class="level3">
 <h3 class="anchored" data-anchor-id="backends-polars_hist_db.backends">Backends (<code>polars_hist_db.backends</code>)</h3>
-<p>Backend adapters provide the storage boundary used to keep MariaDB support while adding experimental XTDB support and future database engines.</p>
+<p>Backend adapters provide the storage boundary used by the core project for MariaDB and XTDB.</p>
 <ul>
 <li><code>DbEngineConfig.from_mapping(cfg) -&gt; DbEngineConfig</code></li>
 <li><code>get_backend(name="mariadb") -&gt; HistoricalDbBackend</code></li>
 <li><code>backend_from_config(config: DbEngineConfig) -&gt; HistoricalDbBackend</code></li>
 <li><code>backend.time_hint_clause(time_hint: TimeHint) -&gt; str | None</code></li>
-<li><code>MariaDbBackend</code> — complete adapter that delegates to existing core ops</li>
-<li><code>XtdbBackend</code> — experimental adapter with typed dataframe read/append helpers; unsupported temporal and delta methods fail explicitly until parity work is complete</li>
+<li><code>MariaDbBackend</code> — complete adapter with default support and SQLAlchemy compatibility.</li>
+<li><code>XtdbBackend</code> — XTDB adapter with SQL/pgwire + ADBC/FlightSQL paths for reads, inserts, and temporal upserts.</li>
 </ul>
 </section>
 <section id="tableconfig" class="level3">

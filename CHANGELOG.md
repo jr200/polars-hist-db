@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.78](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.77...v0.12.78) (2026-08-08)
+
+
+### Bug Fixes
+
+* do not auto-merge benchmark history ([#333](https://github.com/jr200-labs/polars-hist-db/issues/333)) ([1658d2d](https://github.com/jr200-labs/polars-hist-db/commit/1658d2d2d9775e2e7ea4a3be9d4c3b1c8de1f4d1))
+* rollback absent XTDB ledger reads ([#336](https://github.com/jr200-labs/polars-hist-db/issues/336)) ([dbb0549](https://github.com/jr200-labs/polars-hist-db/commit/dbb05490b9411acceec041dd5662ad6531ecfe19))
+
 ## [0.12.77](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.76...v0.12.77) (2026-08-08)
 
 

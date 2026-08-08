@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.77](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.76...v0.12.77) (2026-08-08)
+
+
+### Features
+
+* add SQL override ledger store ([#331](https://github.com/jr200-labs/polars-hist-db/issues/331)) ([13829cc](https://github.com/jr200-labs/polars-hist-db/commit/13829cc57106e2fe02606898951f1a9ee366a642))
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#326](https://github.com/jr200-labs/polars-hist-db/issues/326)) ([665e417](https://github.com/jr200-labs/polars-hist-db/commit/665e4170cffda79deffd354d4101315a97b1d478))
+
 ## [0.12.76](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.75...v0.12.76) (2026-08-07)
 
 

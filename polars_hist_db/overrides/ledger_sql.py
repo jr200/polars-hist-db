@@ -290,6 +290,7 @@ class SqlOverrideLedgerStore:
         except Exception as error:
             if self.db_backend != "xtdb" or not _is_xtdb_table_not_found_error(error):
                 raise
+            self.connection.rollback()
             logger.info(
                 "Override ledger table is not available yet; treating it as empty"
             )

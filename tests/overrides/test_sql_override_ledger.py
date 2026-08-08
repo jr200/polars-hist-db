@@ -9,8 +9,20 @@ from polars_hist_db.overrides import OverrideOperation, SqlOverrideLedgerStore
 
 
 class MissingTableConnection:
+    failed_transaction = False
+    committed = False
+
     def execute(self, *_args, **_kwargs):
+        self.failed_transaction = True
         raise RuntimeError("Table not found: overrides.data_override_operations")
+
+    def rollback(self):
+        self.failed_transaction = False
+
+    def commit(self):
+        if self.failed_transaction:
+            raise RuntimeError("transaction failed")
+        self.committed = True
 
 
 def _missing_table_store(monkeypatch) -> SqlOverrideLedgerStore:
@@ -22,6 +34,8 @@ def test_absent_xtdb_ledger_has_empty_projected_owner_history(monkeypatch):
     store = _missing_table_store(monkeypatch)
 
     assert store.projected_history_for_owner("owner-1", "feed-1") == []
+    store.connection.commit()
+    assert store.connection.committed is True
 
 
 def test_projected_owner_history_propagates_non_missing_table_errors(monkeypatch):

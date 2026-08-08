@@ -71,6 +71,7 @@ from .crdt import (
     prepare_crdt_update,
 )
 from .ledger import InMemoryOverrideLedgerStore, OverrideLedger
+from .ledger_sql import SqlOverrideLedgerStore
 from .operations import (
     CompositionRevision,
     CorrectionPreview,
@@ -191,6 +192,7 @@ __all__ = [
     "ReplicatedOverrideOperation",
     "RepositoryArrowOverrideOperationStore",
     "RowGuard",
+    "SqlOverrideLedgerStore",
     "XtdbArrowOverrideRepository",
     "XtdbCrdtDocumentStore",
     "XtdbDocumentAccessStore",

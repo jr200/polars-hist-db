@@ -1,13 +1,14 @@
 # polars-hist-db
 
-A Python library for building bitemporal data pipelines with [Polars](https://pola.rs/) and [MariaDB](https://mariadb.com/).
+A Python library for building bitemporal data pipelines with [Polars](https://pola.rs/),
+MariaDB, and optional XTDB backend support.
 
-It ingests data from DSV files or [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) subjects, tracks history using MariaDB's system-versioned tables, and exposes everything as strongly-typed Polars DataFrames.
+It ingests data from DSV files or [NATS JetStream](https://docs.nats.io/nats-concepts/jetstream) subjects, tracks history through a typed temporal table contract, and exposes everything as strongly-typed Polars DataFrames.
 
 ### Features
 
-- **Typed uploads** — push Polars DataFrames into MariaDB with automatic type mapping between Polars, SQL, and SQLAlchemy.
-- **Typed queries** — read tables back into DataFrames with column types inferred from the database schema. Temporal query hints (`asof`, `span`, `all`) let you slice history without writing SQL.
+- **Typed uploads** — push Polars DataFrames into MariaDB or XTDB with automatic type mapping between Polars, SQL, and SQLAlchemy/ADBC.
+- **Typed queries** — read tables back into DataFrames with column types inferred from the configured backend schema. Temporal query hints (`asof`, `span`, `all`) let you slice history without writing SQL.
 - **YAML-driven pipelines** — define scrape specifications that handle column typing, enrichment via custom transform functions, normalization across tables, and foreign-key deduction.
 - **Deduplication** — an audit log tracks what has already been ingested so re-runs skip previously processed files or messages.
 - **Transactional ingestion** — each file or message is processed in its own transaction; failures roll back cleanly without affecting other items.

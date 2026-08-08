@@ -21,11 +21,11 @@ db:
 `backend` defaults to `mariadb` when omitted. Supported backend names are:
 
 - `mariadb` - the default and currently complete production backend.
-- `xtdb` - experimental backend path for the XTDB spike. Install with the
-  `xtdb` optional dependency before creating an XTDB engine. The optional
-  dependency includes the binary psycopg wrapper for pgwire and the ADBC
-  FlightSQL driver for Arrow-native bulk ingest.
-- `mssql` - reserved for a future MS SQL adapter.
+- `xtdb` - supported XTDB adapter. Install with the `xtdb` optional dependency
+  before creating an XTDB engine. The optional dependency includes the binary
+  psycopg wrapper for pgwire and the ADBC FlightSQL driver for Arrow-native
+  bulk ingest.
+- `mssql` - currently reserved for a future MS SQL adapter.
 
 XTDB uses two ports when both backend paths are enabled:
 

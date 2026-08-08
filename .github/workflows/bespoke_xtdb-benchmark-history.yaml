@@ -76,14 +76,3 @@ jobs:
           body: |
             ## Summary
             - Record the latest ingestion benchmark results.
-
-      - name: Enable auto-merge for benchmark history PR
-        if: steps.create-pull-request.outputs.pull-request-number != ''
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          PR_NUMBER: ${{ steps.create-pull-request.outputs.pull-request-number }}
-        run: |
-          set -euo pipefail
-          test "$(gh pr view "${PR_NUMBER}" --json headRefName --jq .headRefName)" = "chore/benchmark-history"
-          test "$(gh pr view "${PR_NUMBER}" --json files --jq '.files[].path')" = "docs/benchmark-history.json"
-          gh pr merge "${PR_NUMBER}" --squash --auto --delete-branch # lint-no-auto-merge:allow

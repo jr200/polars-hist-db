@@ -1492,7 +1492,7 @@ wheels = [
 
 [[package]]
 name = "polars-hist-db"
-version = "0.12.76"
+version = "0.12.77"
 source = { editable = "." }
 dependencies = [
     { name = "nats-py" },

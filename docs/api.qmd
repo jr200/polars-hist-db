@@ -37,11 +37,14 @@ Database connection and engine settings.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
+| `database` | `str | None` | `None` | Optional database/schema name |
 | `hostname` | `str` | — | Database host |
 | `backend` | `str` | `"mariadb"` | Database backend |
-| `port` | `int` | `3306` | Connection port |
+| `port` | `int` | `3306` (MariaDB), `5432` (XTDB) | Connection port |
+| `adbc_port` | `int | None` | `9832` (XTDB), otherwise `None` | FlightSQL/ADBC ingest port |
 | `username` | `str` | — | Database user |
 | `password` | `str` | — | Database password |
+| `max_rows_per_insert` | `int | None` | `10000` (XTDB), otherwise `None` | Chunk size for XTDB inserts |
 | `ssl_config` | `SslConfig` | `None` | Optional SSL configuration |
 | `pool_size` | `int` | `3` | Connection pool size |
 | `max_overflow` | `int` | `2` | Max overflow connections |
@@ -51,17 +54,17 @@ Database connection and engine settings.
 
 ### Backends (`polars_hist_db.backends`)
 
-Backend adapters provide the storage boundary used to keep MariaDB support while
-adding experimental XTDB support and future database engines.
+Backend adapters provide the storage boundary used by the core project for
+MariaDB and XTDB.
 
 - `DbEngineConfig.from_mapping(cfg) -> DbEngineConfig`
 - `get_backend(name="mariadb") -> HistoricalDbBackend`
 - `backend_from_config(config: DbEngineConfig) -> HistoricalDbBackend`
 - `backend.time_hint_clause(time_hint: TimeHint) -> str | None`
-- `MariaDbBackend` — complete adapter that delegates to existing core ops
-- `XtdbBackend` — experimental adapter with typed dataframe read/append helpers;
-  unsupported temporal and delta methods fail explicitly until parity work is
-  complete
+- `MariaDbBackend` — complete adapter with default support and SQLAlchemy
+  compatibility.
+- `XtdbBackend` — XTDB adapter with SQL/pgwire + ADBC/FlightSQL paths for
+  reads, inserts, and temporal upserts.
 
 ### TableConfig
 

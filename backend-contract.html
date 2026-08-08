@@ -413,7 +413,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#audit-and-update-visibility" id="toc-audit-and-update-visibility" class="nav-link" data-scroll-target="#audit-and-update-visibility">Audit and Update Visibility</a></li>
   </ul></li>
   <li><a href="#xtdb-adapter-capabilities" id="toc-xtdb-adapter-capabilities" class="nav-link" data-scroll-target="#xtdb-adapter-capabilities">XTDB Adapter Capabilities</a></li>
-  <li><a href="#reuse-from-polars-xtdb" id="toc-reuse-from-polars-xtdb" class="nav-link" data-scroll-target="#reuse-from-polars-xtdb">Reuse From <code>polars-xtdb</code></a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/jr200-labs/polars-hist-db/blob/main/backend-contract.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/jr200-labs/polars-hist-db/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -562,16 +561,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><a href="https://docs.xtdb.com/intro/what-is-xtdb.html" class="uri">https://docs.xtdb.com/intro/what-is-xtdb.html</a></li>
 </ul>
 <p>Those properties are directly relevant because the data platform is already Polars/Arrow-oriented and needs historical views. XTDB also enforces a strongly ordered write path, so batching and workload shape matter for throughput.</p>
-</section>
-<section id="reuse-from-polars-xtdb" class="level2">
-<h2 class="anchored" data-anchor-id="reuse-from-polars-xtdb">Reuse From <code>polars-xtdb</code></h2>
-<p>The existing <code>polars-xtdb</code> prototype was useful prior art for XTDB reads, system-time columns, and basic type mapping. The shipped backend now tracks the same contract through <code>polars-hist-db</code> adapters:</p>
-<ul>
-<li>Prototype scope remains limited to isolated XTDB proof-of-concept helpers.</li>
-<li>Production coverage lives in <code>polars-hist-db</code> adapter pathways for schema reflection, ingestion, audit tracking, temporal upsert, and override stores.</li>
-<li>Contract-owned methods remain stable even when adapter internals differ.</li>
-</ul>
-<p>The XTDB backend reuses lessons and test fixtures while owning a contract-first adapter interface in this repository.</p>
 <p>The current <code>XtdbBackend</code> exposes:</p>
 <ul>
 <li><code>dataframes(connection)</code> and <code>adbc_dataframes(connection)</code> for reads and dataframe writes.</li>

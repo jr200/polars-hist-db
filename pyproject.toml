@@ -9,7 +9,7 @@ requires-python = ">=3.12,<4.0"
 dependencies = [
     "nats-py>=2.15.0",
     "polars>=1.43.0",
-    "pyarrow>=25.0.0",
+    "pyarrow>=25.0.1",
     "pymysql>=1.2.0",
     "pytz>=2026.3.post1",
     "pyyaml>=6.0.3",
@@ -46,7 +46,7 @@ dev = [
     "types-pyyaml>=6.0.12.20260724",
     "pyarrow-stubs>=20.0.0.20260625",
     "pycrdt>=0.14.2",
-    "hypothesis>=6.165.2",
+    "hypothesis>=6.165.3",
     "psycopg[binary]>=3.3.4",
 ]
 
@@ -69,7 +69,7 @@ testpaths = [
 ]
 
 [tool.uv.sources]
-quarto-cli = { git = "https://github.com/quarto-dev/quarto-cli", rev = "f9dd09cd2aee9f107a6c3f497e9210d55ceeebca" }
+quarto-cli = { git = "https://github.com/quarto-dev/quarto-cli", rev = "abc6a78ed68f9e8bc9d54e27851093bd687a1cb7" }
 
 [tool.mypy]
 warn_unused_configs = true

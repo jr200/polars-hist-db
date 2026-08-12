@@ -355,7 +355,7 @@ def test_xtdb_temporal_upsert_dropout_deletes_missing_current_keys(monkeypatch):
         "FROM UNNEST(%s) AS q(key))"
     )
     parameter = execute_options["parameters"][0]
-    assert getattr(parameter, "obj", parameter) == [{"_id": 1}]
+    assert parameter.obj == [{"_id": 1}]
     executed_sql = [call.args[0] for call in driver_connection.execute.call_args_list]
     assert executed_sql[1] == (
         "DELETE FROM test.records FOR PORTION OF VALID_TIME FROM "
@@ -364,7 +364,7 @@ def test_xtdb_temporal_upsert_dropout_deletes_missing_current_keys(monkeypatch):
         "FROM UNNEST(%s) AS q(key))"
     )
     parameter = driver_connection.execute.call_args_list[1].args[1][0]
-    assert getattr(parameter, "obj", parameter) == [{"_id": 1}]
+    assert parameter.obj == [{"_id": 1}]
     insert_call = driver_connection.cursor.return_value.executemany.call_args
     assert insert_call.args[0] == (
         "INSERT INTO test.records (_id, id, destination, _valid_from) "

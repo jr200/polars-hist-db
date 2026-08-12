@@ -1511,7 +1511,7 @@ def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch, use
         assert "JOIN UNNEST(%s) AS q(key)" in query
         assert "t._id = CAST((q.key).id AS INTEGER)" in query
         parameter = execute_options["parameters"][0]
-        assert getattr(parameter, "obj", parameter) == [{"id": -42}, {"id": -43}]
+        assert parameter.obj == [{"id": -42}, {"id": -43}]
 
 
 def test_xtdb_staging_rejects_explicit_numeric_key_collisions(monkeypatch):

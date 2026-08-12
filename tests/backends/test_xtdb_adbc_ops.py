@@ -1,3 +1,4 @@
+from datetime import date
 from unittest.mock import Mock
 
 import polars as pl
@@ -123,6 +124,17 @@ def test_xtdb_adbc_dataframe_ops_reads_arrow_into_polars():
 
     assert result.to_dict(as_series=False) == {"_id": [1], "destination": ["Alpha"]}
     assert connection.cursor_instance.executed == [("SELECT * FROM public.records", {})]
+
+
+def test_xtdb_adbc_dataframe_ops_decodes_schema_after_arrow_read():
+    connection = _FakeAdbcConnection()
+    connection.cursor_instance.arrow_result = pa.table({"day": ["1985-01-01"]})
+    ops = XtdbAdbcDataframeOps(connection)
+
+    result = ops.from_raw_sql("SELECT day FROM records", {"day": pl.Date})
+
+    assert result.schema == {"day": pl.Date}
+    assert result.item() == date(1985, 1, 1)
 
 
 def test_xtdb_adbc_table_query_binds_arrow_key_relation_once():

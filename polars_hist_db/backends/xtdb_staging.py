@@ -20,8 +20,6 @@ from .xtdb_arrow import _xtdb_cast_type
 from .xtdb_dataframe import (
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
-    _xtdb_key_expression,
-    _xtdb_key_parameters,
 )
 from .xtdb_query import _xtdb_table_query_target_column
 from .xtdb_transport import (
@@ -518,9 +516,8 @@ class XtdbStagingOps:
             table_name = _qualified_table_name(table_config.schema, table_config.name)
             minimum_column = "__xtdb_minimum_id"
             dataframe_ops = self._bulk_dataframes()
-            placeholder, parameters = _xtdb_key_parameters(dataframe_ops, candidates)
-            key_expression = _xtdb_key_expression(
-                dataframe_ops,
+            key_relation = dataframe_ops._bind_key_relation(candidates)
+            key_expression = key_relation.field_expression(
                 target,
                 _xtdb_cast_type(
                     next(
@@ -533,7 +530,8 @@ class XtdbStagingOps:
             existing = dataframe_ops.from_raw_sql(
                 "WITH occupied AS ("
                 f"SELECT t.{physical_target} AS {target_column} "
-                f"FROM {table_name} AS t JOIN UNNEST({placeholder}) AS q(key) "
+                f"FROM {table_name} AS t "
+                f"JOIN UNNEST({key_relation.placeholder}) AS q(key) "
                 f"ON t.{physical_target} = {key_expression}"
                 "), bounds AS ("
                 f"SELECT MIN(t.{physical_target}) AS {minimum_column} "
@@ -545,7 +543,7 @@ class XtdbStagingOps:
                     target: resolved.schema[target],
                     minimum_column: resolved.schema[target],
                 },
-                {"parameters": parameters},
+                {"parameters": key_relation.parameters},
             )
             occupied = existing.get_column(target).drop_nulls()
             minimum_values = existing.get_column(minimum_column).drop_nulls()

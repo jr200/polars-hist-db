@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import subprocess
 import time
@@ -46,9 +47,7 @@ pytestmark = [
 ]
 
 
-try:
-    import psycopg
-except ImportError:
+if importlib.util.find_spec("psycopg") is None:
     pytestmark = [
         *pytestmark,
         pytest.mark.skip(reason="install the xtdb extra to run live XTDB tests"),

@@ -1,5 +1,4 @@
 import builtins
-import sys
 from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from types import SimpleNamespace
@@ -25,20 +24,46 @@ def _single_executemany_call(driver_connection: Mock):
 
 
 def test_xtdb_dataframe_ops_reads_raw_sql_with_schema_overrides(monkeypatch):
-    expected_df = pl.DataFrame({"id": [1]})
-    read_database = Mock(return_value=expected_df)
+    read_database = Mock(
+        return_value=pl.DataFrame(
+            {
+                "day": ["1985-01-01"],
+                "seen_at": ["1985-01-01T12:00:00Z"],
+                "local_time": ["12:34:56"],
+                "amount": ["123.45"],
+            }
+        )
+    )
     monkeypatch.setattr(pl, "read_database", read_database)
 
     connection = object()
     ops = XtdbDataframeOps(connection)
 
-    result = ops.from_raw_sql("select * from test.records", {"id": pl.Int64})
+    result = ops.from_raw_sql(
+        "select * from test.records",
+        {
+            "day": pl.Date,
+            "seen_at": pl.Datetime("us", "UTC"),
+            "local_time": pl.Time,
+            "amount": pl.Decimal(10, 2),
+        },
+    )
 
-    assert result is expected_df
+    assert result.schema == {
+        "day": pl.Date,
+        "seen_at": pl.Datetime("us", "UTC"),
+        "local_time": pl.Time,
+        "amount": pl.Decimal(10, 2),
+    }
+    assert result.row(0) == (
+        date(1985, 1, 1),
+        datetime(1985, 1, 1, 12, tzinfo=UTC),
+        time(12, 34, 56),
+        Decimal("123.45"),
+    )
     read_database.assert_called_once_with(
         "select * from test.records",
         connection,
-        schema_overrides={"id": pl.Int64},
     )
 
 
@@ -157,7 +182,18 @@ def test_xtdb_dataframe_ops_applies_table_time_hint():
 
 
 def test_xtdb_dataframe_ops_reads_table_with_configured_schema_overrides(monkeypatch):
-    read_database = Mock(return_value=pl.DataFrame())
+    read_database = Mock(
+        return_value=pl.DataFrame(
+            {
+                "_id": [1],
+                "id": [1],
+                "destination_date": ["1985-01-01T12:00:00Z"],
+                "amount_value": [1.5],
+                "_valid_from": ["1985-01-01T12:00:00Z"],
+                "_valid_to": [None],
+            }
+        )
+    )
     monkeypatch.setattr(pl, "read_database", read_database)
     table_config = TableConfig(
         schema="test",
@@ -177,19 +213,19 @@ def test_xtdb_dataframe_ops_reads_table_with_configured_schema_overrides(monkeyp
     connection = object()
     ops = XtdbDataframeOps(connection)
 
-    ops.from_table("test", "records")
+    result = ops.from_table("test", "records")
 
+    assert result.schema == {
+        "_id": pl.Int64,
+        "id": pl.Int64,
+        "destination_date": pl.Datetime("us", "UTC"),
+        "amount_value": pl.Float64,
+        "_valid_from": pl.Datetime("us", "UTC"),
+        "_valid_to": pl.Datetime("us", "UTC"),
+    }
     read_database.assert_called_once_with(
         "SELECT * FROM test.records",
         connection,
-        schema_overrides={
-            "_id": pl.Int64,
-            "id": pl.Int64,
-            "destination_date": pl.Datetime("us", "UTC"),
-            "amount_value": pl.Float64,
-            "_valid_from": pl.Datetime("us", "UTC"),
-            "_valid_to": pl.Datetime("us", "UTC"),
-        },
     )
 
 
@@ -224,16 +260,10 @@ def test_xtdb_dataframe_ops_restores_logical_columns_with_slashes(monkeypatch):
     result = ops.from_table("test", "records")
 
     assert result.columns == ["_id", "id", "capacity/bcm"]
+    assert result.schema["capacity/bcm"] == pl.Decimal(15, 3)
     read_database.assert_called_once_with(
         "SELECT * FROM test.records",
         connection,
-        schema_overrides={
-            "_id": pl.Int64,
-            "id": pl.Int64,
-            "capacity_bcm": pl.Decimal(15, 3),
-            "_valid_from": pl.Datetime("us", "UTC"),
-            "_valid_to": pl.Datetime("us", "UTC"),
-        },
     )
 
 
@@ -399,7 +429,6 @@ def test_xtdb_dataframe_ops_splits_pgwire_insert_by_max_rows():
 
 
 def test_xtdb_dataframe_ops_binds_table_query_keys_once(monkeypatch):
-    monkeypatch.setitem(sys.modules, "psycopg.types.json", None)
     table_config = TableConfig(
         schema="test",
         name="records",
@@ -427,7 +456,7 @@ def test_xtdb_dataframe_ops_binds_table_query_keys_once(monkeypatch):
     assert "JOIN UNNEST(%s) AS q(key)" in query
     assert "t._id = CAST((q.key).id AS BIGINT)" in query
     parameter = execute_options["parameters"][0]
-    assert getattr(parameter, "obj", parameter) == [
+    assert parameter.obj == [
         {"id": 1},
         {"id": 2},
         {"id": 3},
@@ -473,7 +502,7 @@ def test_xtdb_dataframe_ops_preserves_bound_key_types():
     assert "CAST((q.key).amount AS DECIMAL(10,2))" in query
     assert "CAST((q.key).raw AS VARBINARY)" in query
     parameter = execute_options["parameters"][0]
-    assert getattr(parameter, "obj", parameter) == [
+    assert parameter.obj == [
         {
             "day": "2026-01-02",
             "seen_at": "2026-01-02T03:04:00+00:00",

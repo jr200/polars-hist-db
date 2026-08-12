@@ -16,8 +16,6 @@ from .xtdb_arrow import (
 from .xtdb_dataframe import (
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
-    _xtdb_key_expression,
-    _xtdb_key_parameters,
 )
 from .xtdb_query import _xtdb_temporal_basis_clause
 from .xtdb_staging import _fill_xtdb_defaults, _materialize_xtdb_missing_columns
@@ -233,15 +231,15 @@ def _delete_xtdb_missing_rows(
     if incoming_ids.is_empty():
         return delete_missing("TRUE")
     incoming_df = pl.DataFrame({"_id": incoming_ids})
-    placeholder, parameters = _xtdb_key_parameters(dataframe_ops, incoming_df)
-    key_expression = _xtdb_key_expression(
-        dataframe_ops,
+    key_relation = dataframe_ops._bind_key_relation(incoming_df)
+    key_expression = key_relation.field_expression(
         "_id",
         _xtdb_document_id_cast_type(table_config),
     )
     return delete_missing(
-        f"_id NOT IN (SELECT {key_expression} FROM UNNEST({placeholder}) AS q(key))",
-        parameters,
+        f"_id NOT IN (SELECT {key_expression} "
+        f"FROM UNNEST({key_relation.placeholder}) AS q(key))",
+        key_relation.parameters,
     )
 
 

@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any, cast
@@ -35,10 +36,8 @@ def _xtdb_pgwire_key_parameters(df: pl.DataFrame) -> tuple[Any, ...]:
         {column: _xtdb_json_key_value(value) for column, value in row.items()}
         for row in df.iter_rows(named=True)
     ]
-    try:
-        from psycopg.types.json import Jsonb
-    except ModuleNotFoundError:
-        return (rows,)
+    from psycopg.types.json import Jsonb
+
     return (Jsonb(rows),)
 
 
@@ -56,24 +55,15 @@ def _xtdb_adbc_key_parameters(df: pl.DataFrame) -> Any:
     return pa.record_batch({"v0": values})
 
 
-def _xtdb_key_parameters(
-    dataframe_ops: Any,
-    df: pl.DataFrame,
-) -> tuple[str, Any]:
-    if isinstance(dataframe_ops, XtdbAdbcDataframeOps):
-        return "?", _xtdb_adbc_key_parameters(df)
-    return "%s", _xtdb_pgwire_key_parameters(df)
+@dataclass(frozen=True)
+class _XtdbBoundKeyRelation:
+    placeholder: str
+    parameters: Any
+    cast_fields: bool
 
-
-def _xtdb_key_expression(
-    dataframe_ops: Any,
-    column: str,
-    cast_type: str,
-) -> str:
-    expression = f"(q.key).{_xtdb_column_identifier(column)}"
-    if isinstance(dataframe_ops, XtdbAdbcDataframeOps):
-        return expression
-    return f"CAST({expression} AS {cast_type})"
+    def field_expression(self, column: str, cast_type: str) -> str:
+        expression = f"(q.key).{_xtdb_column_identifier(column)}"
+        return f"CAST({expression} AS {cast_type})" if self.cast_fields else expression
 
 
 def _table_config_ops(connection: Any) -> Any:
@@ -97,15 +87,21 @@ class XtdbDataframeOps:
         schema_overrides: Mapping[str, pl.DataType] | None = None,
         execute_options: dict[str, Any] | None = None,
     ) -> pl.DataFrame:
-        if schema_overrides is None:
-            schema_overrides = {}
-        kwargs: dict[str, Any] = {"schema_overrides": schema_overrides}
+        from .xtdb_arrow import _decode_xtdb_result
+
+        kwargs: dict[str, Any] = {}
         if execute_options is not None:
             kwargs["execute_options"] = execute_options
-        return pl.read_database(
-            query,
-            self.connection,
-            **kwargs,
+        return _decode_xtdb_result(
+            pl.read_database(query, self.connection, **kwargs),
+            schema_overrides,
+        )
+
+    def _bind_key_relation(self, df: pl.DataFrame) -> _XtdbBoundKeyRelation:
+        return _XtdbBoundKeyRelation(
+            placeholder="%s",
+            parameters=_xtdb_pgwire_key_parameters(df),
+            cast_fields=True,
         )
 
     def from_table(
@@ -187,7 +183,7 @@ class XtdbDataframeOps:
             )
         for temporal_column in ["__valid_from", "__valid_to"]:
             if temporal_column in output_columns:
-                schema_overrides[temporal_column] = pl.Datetime("us")
+                schema_overrides[temporal_column] = pl.Datetime("us", "UTC")
         if query_df.is_empty():
             return pl.DataFrame(schema=schema_overrides)
         select_sql = ", ".join(
@@ -219,11 +215,11 @@ class XtdbDataframeOps:
                 if column != _xtdb_physical_column_name(column)
             }
         )
-        placeholder, parameters = _xtdb_key_parameters(self, parameter_df)
+        key_relation = self._bind_key_relation(parameter_df)
         join_clause = " AND ".join(
             "t."
             f"{_xtdb_table_query_target_column(column, table_config)} = "
-            f"{_xtdb_key_expression(self, column, cast_type)}"
+            f"{key_relation.field_expression(column, cast_type)}"
             for column, cast_type in zip(
                 query_df.columns,
                 _xtdb_insert_casts(query_df, table_config),
@@ -236,12 +232,12 @@ class XtdbDataframeOps:
             "SELECT *, _valid_from, _valid_to "
             f"FROM {table_sql}{valid_time_clause}"
             ") AS t "
-            f"JOIN UNNEST({placeholder}) AS q(key) ON {join_clause}"
+            f"JOIN UNNEST({key_relation.placeholder}) AS q(key) ON {join_clause}"
         )
         df = self.from_raw_sql(
             query,
             schema_overrides,
-            {"parameters": parameters},
+            {"parameters": key_relation.parameters},
         )
         for temporal_column in ["__valid_from", "__valid_to"]:
             if (
@@ -361,15 +357,22 @@ class XtdbAdbcDataframeOps(XtdbDataframeOps):
         schema_overrides: Mapping[str, pl.DataType] | None = None,
         execute_options: dict[str, Any] | None = None,
     ) -> pl.DataFrame:
-        from .xtdb_arrow import _apply_schema_overrides
+        from .xtdb_arrow import _decode_xtdb_result
 
         with self.connection.cursor() as cursor:
             cursor.execute(query, **(execute_options or {}))
             arrow_table = cursor.fetch_arrow_table()
 
-        return _apply_schema_overrides(
+        return _decode_xtdb_result(
             cast(pl.DataFrame, pl.from_arrow(arrow_table)),
             schema_overrides,
+        )
+
+    def _bind_key_relation(self, df: pl.DataFrame) -> _XtdbBoundKeyRelation:
+        return _XtdbBoundKeyRelation(
+            placeholder="?",
+            parameters=_xtdb_adbc_key_parameters(df),
+            cast_fields=False,
         )
 
     def from_table(

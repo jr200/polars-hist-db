@@ -18,13 +18,14 @@ from pathlib import Path
 from statistics import median
 from time import perf_counter
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import polars as pl
 import pyarrow as pa
 
 from polars_hist_db.backends.xtdb import (
+    XtdbDataframeOps,
     XtdbStagingOps,
     _filter_xtdb_unchanged_rows,
 )
@@ -49,6 +50,12 @@ class CurrentRows:
 
     def table_insert(self, df: pl.DataFrame, *_args: Any, **_kwargs: Any) -> int:
         return len(df)
+
+    def _bind_key_relation(self, df: pl.DataFrame) -> Any:
+        return XtdbDataframeOps._bind_key_relation(
+            cast(XtdbDataframeOps, self),
+            df,
+        )
 
     def execute(self, *_args: Any, **_kwargs: Any) -> None:
         pass

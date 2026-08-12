@@ -164,11 +164,12 @@ def _xtdb_buffered_transaction_scope(
                 with _xtdb_transaction_scope(connection, transaction_time):
                     for operation, arguments in operations:
                         if operation == "dml":
-                            sql, rows, operation_time = arguments
+                            sql, rows, parameters, operation_time = arguments
                             _execute_xtdb_dml(
                                 connection,
                                 sql,
                                 rows,
+                                parameters=parameters,
                                 system_time=(
                                     operation_time
                                     if transaction_time is not None
@@ -404,8 +405,11 @@ def _execute_xtdb_dml(
     sql: str,
     rows: list[tuple[Any, ...]] | None = None,
     *,
+    parameters: tuple[Any, ...] | None = None,
     system_time: datetime | None = None,
 ) -> int:
+    if rows is not None and parameters is not None:
+        raise ValueError("XTDB DML accepts rows or parameters, not both")
     info = getattr(connection, "info", None)
     if (
         isinstance(info, dict)
@@ -415,12 +419,12 @@ def _execute_xtdb_dml(
         transaction_time, operations = info[_XTDB_BUFFERED_TRANSACTION_KEY]
         if system_time is not None and transaction_time != system_time:
             raise ValueError("XTDB transaction cannot mix system times")
-        operations.append(("dml", (sql, rows, system_time)))
+        operations.append(("dml", (sql, rows, parameters, system_time)))
         return len(rows) if rows is not None else 0
 
     driver_connection = _driver_connection(connection)
     if driver_connection is None:
-        if rows is not None or system_time is not None:
+        if rows is not None or parameters is not None or system_time is not None:
             raise ValueError(
                 "XTDB dataframe writes with rows or system-time require a live "
                 "DBAPI connection"
@@ -433,10 +437,14 @@ def _execute_xtdb_dml(
         transaction_time = info[_XTDB_ACTIVE_TRANSACTION_KEY]
         if system_time is not None and transaction_time != system_time:
             raise ValueError("XTDB transaction cannot mix system times")
-        if rows is None:
+        if rows is None and parameters is None:
             driver_connection.execute(sql)
             return 0
         _configure_xtdb_pgwire_parameter_adapters(driver_connection)
+        if parameters is not None:
+            driver_connection.execute(sql, parameters)
+            return 0
+        assert rows is not None
         cursor = driver_connection.cursor()
         try:
             cursor.executemany(sql, rows)
@@ -461,10 +469,15 @@ def _execute_xtdb_dml(
             )
     driver_connection.execute(begin_sql)
     try:
-        if rows is None:
+        if rows is None and parameters is None:
             driver_connection.execute(sql)
             row_count = 0
+        elif parameters is not None:
+            _configure_xtdb_pgwire_parameter_adapters(driver_connection)
+            driver_connection.execute(sql, parameters)
+            row_count = 0
         else:
+            assert rows is not None
             _configure_xtdb_pgwire_parameter_adapters(driver_connection)
             cursor = driver_connection.cursor()
             try:
@@ -479,7 +492,13 @@ def _execute_xtdb_dml(
         driver_connection.execute("ROLLBACK")
         driver_connection.rollback()
         if system_time is not None and _is_xtdb_invalid_system_time_error(exc):
-            return _execute_xtdb_dml(connection, sql, rows, system_time=None)
+            return _execute_xtdb_dml(
+                connection,
+                sql,
+                rows,
+                parameters=parameters,
+                system_time=None,
+            )
         raise
     finally:
         if autocommit is not None:

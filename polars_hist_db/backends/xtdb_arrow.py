@@ -49,27 +49,43 @@ def _restore_xtdb_logical_columns(
     return df.rename(rename_map)
 
 
-def _apply_schema_overrides(
+def _decode_xtdb_result(
     df: pl.DataFrame,
     schema_overrides: Mapping[str, pl.DataType] | None,
 ) -> pl.DataFrame:
     if not schema_overrides:
         return df
 
-    casts = {
-        column: dtype
-        for column, dtype in schema_overrides.items()
-        if column in df.columns
-    }
-    if not casts:
-        return df
-    return df.with_columns(
-        pl.col(column).cast(dtype) for column, dtype in casts.items()
-    )
+    expressions = []
+    for column, dtype in schema_overrides.items():
+        if column not in df.columns or df.schema[column] == dtype:
+            continue
+        expression = pl.col(column)
+        if df.schema[column] == pl.String and dtype == pl.Date:
+            expression = expression.str.to_date()
+        elif df.schema[column] == pl.String and dtype == pl.Time:
+            expression = expression.str.to_time()
+        elif df.schema[column] == pl.String and (
+            isinstance(dtype, pl.Datetime) or dtype == pl.Datetime
+        ):
+            expression = expression.str.to_datetime(
+                time_unit=getattr(dtype, "time_unit", "us"),
+                time_zone=getattr(dtype, "time_zone", None),
+            )
+        else:
+            expression = expression.cast(dtype)
+        expressions.append(expression)
+    return df.with_columns(expressions) if expressions else df
 
 
 def _normalize_xtdb_ingest_arrow(table: pa.Table) -> pa.Table:
     for index, field in enumerate(table.schema):
+        if pa.types.is_large_binary(field.type):
+            table = table.set_column(
+                index,
+                field.with_type(pa.binary()),
+                table.column(field.name).cast(pa.binary()),
+            )
         if (
             pa.types.is_large_string(field.type)
             or pa.types.is_dictionary(field.type)

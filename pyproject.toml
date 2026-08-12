@@ -15,7 +15,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "scandir-rs>=2.9.9",
     "sql-metadata>=3.0.1",
-    "sqlalchemy[asyncio]>=2.0.51",
+    "sqlalchemy[asyncio]>=2.0.52",
 ]
 
 [project.optional-dependencies]

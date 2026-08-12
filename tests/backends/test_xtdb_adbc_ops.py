@@ -23,8 +23,8 @@ class _FakeCursor:
     def adbc_ingest(self, table_name, arrow_table, mode, **kwargs):
         self.ingests.append((table_name, arrow_table, mode, kwargs))
 
-    def execute(self, query):
-        self.executed.append(query)
+    def execute(self, query, **options):
+        self.executed.append((query, options))
 
     def fetch_arrow_table(self):
         return self.arrow_result
@@ -122,7 +122,26 @@ def test_xtdb_adbc_dataframe_ops_reads_arrow_into_polars():
     result = ops.from_table("public", "records")
 
     assert result.to_dict(as_series=False) == {"_id": [1], "destination": ["Alpha"]}
-    assert connection.cursor_instance.executed == ["SELECT * FROM public.records"]
+    assert connection.cursor_instance.executed == [("SELECT * FROM public.records", {})]
+
+
+def test_xtdb_adbc_table_query_binds_arrow_key_relation_once():
+    connection = _FakeAdbcConnection()
+    connection.cursor_instance.arrow_result = pa.table({"id": [1]})
+    ops = XtdbAdbcDataframeOps(connection)
+
+    result = ops.table_query(
+        "public",
+        "records",
+        pl.DataFrame({"id": [1, 2]}),
+        ["id"],
+        table_config=_record_config(),
+    )
+
+    assert result.to_dict(as_series=False) == {"id": [1]}
+    query, options = connection.cursor_instance.executed[0]
+    assert "JOIN UNNEST(?) AS q(key)" in query
+    assert options["parameters"].to_pylist() == [{"v0": [{"id": 1}, {"id": 2}]}]
 
 
 def test_xtdb_adbc_dataframe_ops_targets_configured_schema():

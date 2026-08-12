@@ -1,5 +1,4 @@
-from contextlib import contextmanager
-from datetime import UTC, date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -40,11 +39,6 @@ from polars_hist_db.config import (
 from polars_hist_db.overrides import CrdtDocumentStoreConfig, OverrideLedgerConfig
 
 _NON_TEMPORAL_VALID_FROM = _XTDB_NON_TEMPORAL_VALID_FROM
-
-
-@contextmanager
-def _uploaded_keys(dataframe_ops, df, table_schema):
-    yield f"{table_schema}.__uploaded_keys"
 
 
 def test_xtdb_casts_mediumtext_as_text():
@@ -187,6 +181,27 @@ def test_xtdb_buffered_transaction_retries_invalid_system_time_at_commit():
     assert statements.count("ROLLBACK") == 1
 
 
+def test_xtdb_buffered_transaction_preserves_bound_dml_parameters():
+    driver_connection = Mock()
+    connection = Mock()
+    connection.info = {}
+    connection.connection.driver_connection = driver_connection
+    connection.in_transaction.return_value = False
+    parameters = (object(),)
+
+    with _xtdb_buffered_transaction_scope(connection):
+        _execute_xtdb_dml(
+            connection,
+            "DELETE FROM test.records WHERE _id IN (SELECT * FROM UNNEST(%s))",
+            parameters=parameters,
+        )
+
+    assert driver_connection.execute.call_args_list[1].args == (
+        "DELETE FROM test.records WHERE _id IN (SELECT * FROM UNNEST(%s))",
+        parameters,
+    )
+
+
 def test_xtdb_dml_uses_driver_autocommit_for_explicit_begin():
     driver_connection = Mock()
     driver_connection.autocommit = False
@@ -303,9 +318,6 @@ def test_xtdb_temporal_upsert_rejects_manual_finality():
 
 
 def test_xtdb_temporal_upsert_dropout_deletes_missing_current_keys(monkeypatch):
-    monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb_delta._uploaded_xtdb_relation", _uploaded_keys
-    )
     backend = XtdbBackend()
     driver_connection = Mock()
     connection = Mock()
@@ -333,18 +345,24 @@ def test_xtdb_temporal_upsert_dropout_deletes_missing_current_keys(monkeypatch):
     )
 
     assert result == 2
-    assert ops.from_raw_sql.call_args.args[0] == (
-        "SELECT COUNT(*) AS missing_count FROM test.records "
-        "WHERE _id NOT IN (SELECT _id FROM test.__uploaded_keys "
-        "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL)"
+    query, execute_options = (
+        ops.from_raw_sql.call_args.args[0],
+        ops.from_raw_sql.call_args.args[2],
     )
+    assert query == (
+        "SELECT COUNT(*) AS missing_count FROM test.records "
+        "WHERE _id NOT IN (SELECT CAST((q.key)._id AS BIGINT) "
+        "FROM UNNEST(%s) AS q(key))"
+    )
+    assert execute_options["parameters"][0].obj == [{"_id": 1}]
     executed_sql = [call.args[0] for call in driver_connection.execute.call_args_list]
     assert executed_sql[1] == (
         "DELETE FROM test.records FOR PORTION OF VALID_TIME FROM "
         "TIMESTAMP WITH TIME ZONE '1970-01-01T00:00:00+00:00' TO NULL "
-        "WHERE _id NOT IN (SELECT _id FROM test.__uploaded_keys "
-        "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL)"
+        "WHERE _id NOT IN (SELECT CAST((q.key)._id AS BIGINT) "
+        "FROM UNNEST(%s) AS q(key))"
     )
+    assert driver_connection.execute.call_args_list[1].args[1][0].obj == [{"_id": 1}]
     insert_call = driver_connection.cursor.return_value.executemany.call_args
     assert insert_call.args[0] == (
         "INSERT INTO test.records (_id, id, destination, _valid_from) "
@@ -354,10 +372,7 @@ def test_xtdb_temporal_upsert_dropout_deletes_missing_current_keys(monkeypatch):
     assert insert_call.args[1] == [(1, 1, "Alpha", _NON_TEMPORAL_VALID_FROM)]
 
 
-def test_xtdb_temporal_upsert_dropout_closes_missing_keys_at_valid_time(monkeypatch):
-    monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb_delta._uploaded_xtdb_relation", _uploaded_keys
-    )
+def test_xtdb_temporal_upsert_dropout_closes_missing_keys_at_valid_time():
     backend = XtdbBackend()
     driver_connection = Mock()
     connection = Mock()
@@ -395,8 +410,8 @@ def test_xtdb_temporal_upsert_dropout_closes_missing_keys_at_valid_time(monkeypa
     assert executed_sql[1] == (
         "DELETE FROM test.records FOR PORTION OF VALID_TIME FROM "
         "TIMESTAMP WITH TIME ZONE '2030-01-02T00:00:00+00:00' TO NULL "
-        "WHERE _id NOT IN (SELECT _id FROM test.__uploaded_keys "
-        "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL)"
+        "WHERE _id NOT IN (SELECT CAST((q.key)._id AS BIGINT) "
+        "FROM UNNEST(%s) AS q(key))"
     )
 
 

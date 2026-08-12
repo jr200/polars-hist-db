@@ -16,7 +16,8 @@ from .xtdb_arrow import (
 from .xtdb_dataframe import (
     XtdbAdbcDataframeOps,
     XtdbDataframeOps,
-    _uploaded_xtdb_relation,
+    _xtdb_key_expression,
+    _xtdb_key_parameters,
 )
 from .xtdb_query import _xtdb_temporal_basis_clause
 from .xtdb_staging import _fill_xtdb_defaults, _materialize_xtdb_missing_columns
@@ -187,13 +188,21 @@ def _delete_xtdb_missing_rows(
     ).get_column("_id")
     table_sql = _qualified_table_name(table_schema, table_name)
 
-    def delete_missing(missing_predicate: str) -> int:
+    def delete_missing(
+        missing_predicate: str,
+        parameters: tuple[Any, ...] | None = None,
+    ) -> int:
         try:
+            execute_options = (
+                {"parameters": parameters} if parameters is not None else None
+            )
             missing_count = int(
                 dataframe_ops.from_raw_sql(
                     "SELECT COUNT(*) AS missing_count FROM "
                     f"{table_sql}{_xtdb_temporal_basis_clause(update_time)} "
-                    f"WHERE {missing_predicate}"
+                    f"WHERE {missing_predicate}",
+                    None,
+                    execute_options,
                 ).item()
             )
         except Exception as exc:
@@ -216,21 +225,24 @@ def _delete_xtdb_missing_rows(
         _execute_xtdb_dml(
             dataframe_ops.connection,
             delete_sql,
+            parameters=parameters,
             system_time=update_time,
         )
         return missing_count
 
     if incoming_ids.is_empty():
         return delete_missing("TRUE")
-    with _uploaded_xtdb_relation(
+    incoming_df = pl.DataFrame({"_id": incoming_ids})
+    placeholder, parameters = _xtdb_key_parameters(dataframe_ops, incoming_df)
+    key_expression = _xtdb_key_expression(
         dataframe_ops,
-        pl.DataFrame({"_id": incoming_ids}),
-        table_schema,
-    ) as key_table:
-        return delete_missing(
-            "_id NOT IN (SELECT _id FROM "
-            f"{key_table} FOR VALID_TIME ALL FOR SYSTEM_TIME ALL)"
-        )
+        "_id",
+        _xtdb_document_id_cast_type(table_config),
+    )
+    return delete_missing(
+        f"_id NOT IN (SELECT {key_expression} FROM UNNEST({placeholder}) AS q(key))",
+        parameters,
+    )
 
 
 def _xtdb_dropout_close_time(

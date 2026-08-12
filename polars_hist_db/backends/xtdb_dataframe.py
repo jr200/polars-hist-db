@@ -1,9 +1,7 @@
-import logging
-from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
-from datetime import datetime
+from collections.abc import Mapping
+from datetime import date, datetime, time
+from decimal import Decimal
 from typing import Any, cast
-from uuid import uuid4
 
 import polars as pl
 
@@ -17,13 +15,66 @@ from .xtdb_transport import (
     _execute_xtdb_dml,
     _qualified_table_name,
     _validate_identifier,
-    _xtdb_buffering_paused,
     _xtdb_column_identifier,
     _xtdb_parameter_value,
 )
 
-_XTDB_QUERY_ROWS_PER_CHUNK = 10_000
-LOGGER = logging.getLogger(__name__)
+
+def _xtdb_json_key_value(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return value.hex()
+    if isinstance(value, (date, datetime, time)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return str(value)
+    return value
+
+
+def _xtdb_pgwire_key_parameters(df: pl.DataFrame) -> tuple[Any, ...]:
+    from psycopg.types.json import Jsonb
+
+    return (
+        Jsonb(
+            [
+                {column: _xtdb_json_key_value(value) for column, value in row.items()}
+                for row in df.iter_rows(named=True)
+            ]
+        ),
+    )
+
+
+def _xtdb_adbc_key_parameters(df: pl.DataFrame) -> Any:
+    import pyarrow as pa
+
+    from .xtdb_arrow import _normalize_xtdb_ingest_arrow
+
+    table = _normalize_xtdb_ingest_arrow(df.to_arrow())
+    rows = pa.StructArray.from_arrays(
+        [table.column(column).combine_chunks() for column in table.column_names],
+        names=table.column_names,
+    )
+    values = pa.ListArray.from_arrays([0, len(rows)], rows)
+    return pa.record_batch({"v0": values})
+
+
+def _xtdb_key_parameters(
+    dataframe_ops: Any,
+    df: pl.DataFrame,
+) -> tuple[str, Any]:
+    if isinstance(dataframe_ops, XtdbAdbcDataframeOps):
+        return "?", _xtdb_adbc_key_parameters(df)
+    return "%s", _xtdb_pgwire_key_parameters(df)
+
+
+def _xtdb_key_expression(
+    dataframe_ops: Any,
+    column: str,
+    cast_type: str,
+) -> str:
+    expression = f"(q.key).{_xtdb_column_identifier(column)}"
+    if isinstance(dataframe_ops, XtdbAdbcDataframeOps):
+        return expression
+    return f"CAST({expression} AS {cast_type})"
 
 
 def _table_config_ops(connection: Any) -> Any:
@@ -160,30 +211,39 @@ class XtdbDataframeOps:
             id_dtype = _xtdb_polars_type_or_none(id_column.data_type)
             if id_dtype is not None:
                 schema_overrides[single_key_alias] = id_dtype
-        chunk_size = self.max_rows_per_insert or _XTDB_QUERY_ROWS_PER_CHUNK
-        chunks = []
-        for query_chunk in query_df.iter_slices(chunk_size):
-            join_clause = " AND ".join(
-                "t."
-                f"{_xtdb_table_query_target_column(column, table_config)} = "
-                f"q.{_xtdb_column_identifier(column)}"
-                for column in query_chunk.columns
+        from .xtdb_arrow import _xtdb_insert_casts, _xtdb_physical_column_name
+
+        parameter_df = query_df.rename(
+            {
+                column: _xtdb_physical_column_name(column)
+                for column in query_df.columns
+                if column != _xtdb_physical_column_name(column)
+            }
+        )
+        placeholder, parameters = _xtdb_key_parameters(self, parameter_df)
+        join_clause = " AND ".join(
+            "t."
+            f"{_xtdb_table_query_target_column(column, table_config)} = "
+            f"{_xtdb_key_expression(self, column, cast_type)}"
+            for column, cast_type in zip(
+                query_df.columns,
+                _xtdb_insert_casts(query_df, table_config),
+                strict=True,
             )
-            with _uploaded_xtdb_relation(
-                self, query_chunk, table_schema
-            ) as query_table:
-                query = (
-                    f"SELECT {select_sql} "
-                    "FROM ("
-                    "SELECT *, _valid_from, _valid_to "
-                    f"FROM {table_sql}{valid_time_clause}"
-                    ") AS t "
-                    f"JOIN {query_table} "
-                    "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL AS q "
-                    f"ON {join_clause}"
-                )
-                chunks.append(self.from_raw_sql(query, schema_overrides))
-        df = pl.concat(chunks, how="vertical_relaxed")
+        )
+        query = (
+            f"SELECT {select_sql} "
+            "FROM ("
+            "SELECT *, _valid_from, _valid_to "
+            f"FROM {table_sql}{valid_time_clause}"
+            ") AS t "
+            f"JOIN UNNEST({placeholder}) AS q(key) ON {join_clause}"
+        )
+        df = self.from_raw_sql(
+            query,
+            schema_overrides,
+            {"parameters": parameters},
+        )
         for temporal_column in ["__valid_from", "__valid_to"]:
             if (
                 temporal_column in df.columns
@@ -300,11 +360,12 @@ class XtdbAdbcDataframeOps:
         self,
         query: str,
         schema_overrides: Mapping[str, pl.DataType] | None = None,
+        execute_options: dict[str, Any] | None = None,
     ) -> pl.DataFrame:
         from .xtdb_arrow import _apply_schema_overrides
 
         with self.connection.cursor() as cursor:
-            cursor.execute(query)
+            cursor.execute(query, **(execute_options or {}))
             arrow_table = cursor.fetch_arrow_table()
 
         return _apply_schema_overrides(
@@ -375,56 +436,3 @@ class XtdbAdbcDataframeOps:
                     db_schema_name=table_schema,
                 )
         return df.height
-
-
-@contextmanager
-def _uploaded_xtdb_relation(
-    dataframe_ops: XtdbDataframeOps | XtdbAdbcDataframeOps,
-    df: pl.DataFrame,
-    table_schema: str,
-) -> Iterator[str]:
-    from .xtdb_arrow import _xtdb_physical_column_name
-    from .xtdb_transport import _is_xtdb_table_not_found_error
-
-    table_name = f"__polars_hist_db_keys_{uuid4().hex}"
-    table_sql = _qualified_table_name(table_schema, table_name)
-    physical_columns = {
-        column: _xtdb_physical_column_name(column)
-        for column in df.columns
-        if column != _xtdb_physical_column_name(column)
-    }
-    upload_df = df.rename(physical_columns)
-    if "_id" not in upload_df.columns:
-        upload_df = upload_df.with_row_index("_id").with_columns(
-            pl.col("_id").cast(pl.Int64)
-        )
-
-    with _xtdb_buffering_paused(dataframe_ops.connection):
-        failed = False
-        try:
-            dataframe_ops.table_insert(upload_df, table_schema, table_name)
-            yield table_sql
-        except BaseException:
-            failed = True
-            raise
-        finally:
-            try:
-                if isinstance(dataframe_ops, XtdbAdbcDataframeOps):
-                    with dataframe_ops.connection.cursor() as cursor:
-                        cursor.execute(f"ERASE FROM {table_sql}")
-                else:
-                    _execute_xtdb_dml(
-                        dataframe_ops.connection,
-                        f"ERASE FROM {table_sql}",
-                    )
-            except Exception as exc:
-                if _is_xtdb_table_not_found_error(exc):
-                    pass
-                elif failed:
-                    LOGGER.warning(
-                        "Failed to erase XTDB uploaded key relation %s",
-                        table_sql,
-                        exc_info=True,
-                    )
-                else:
-                    raise

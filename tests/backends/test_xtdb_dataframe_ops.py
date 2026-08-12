@@ -1,6 +1,5 @@
 import builtins
-from contextlib import contextmanager
-from datetime import UTC, datetime, time
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
@@ -10,13 +9,11 @@ import pyarrow as pa
 import pytest
 
 from polars_hist_db.backends.xtdb import (
-    XtdbAdbcDataframeOps,
     XtdbDataframeOps,
     XtdbTableConfigOps,
     _execute_xtdb_arrow_copy,
     _execute_xtdb_dml,
 )
-from polars_hist_db.backends.xtdb_dataframe import _uploaded_xtdb_relation
 from polars_hist_db.config import TableColumnConfig, TableConfig
 from polars_hist_db.core import TimeHint
 from polars_hist_db.types import TypeContractError
@@ -400,7 +397,7 @@ def test_xtdb_dataframe_ops_splits_pgwire_insert_by_max_rows():
     assert cursor.executemany.call_args.args[1] == [(5, "E")]
 
 
-def test_xtdb_dataframe_ops_chunks_table_query(monkeypatch):
+def test_xtdb_dataframe_ops_binds_table_query_keys_once(monkeypatch):
     table_config = TableConfig(
         schema="test",
         name="records",
@@ -413,24 +410,7 @@ def test_xtdb_dataframe_ops_chunks_table_query(monkeypatch):
         lambda self, table_schema, table_name: table_config,
     )
     ops = XtdbDataframeOps(object(), max_rows_per_insert=2)
-    ops.from_raw_sql = Mock(
-        side_effect=[
-            pl.DataFrame({"id": [1, 2]}),
-            pl.DataFrame({"id": [3, 4]}),
-            pl.DataFrame({"id": [5]}),
-        ]
-    )
-    uploaded = []
-
-    @contextmanager
-    def uploaded_relation(dataframe_ops, df, table_schema):
-        uploaded.append(df)
-        yield f"{table_schema}.__uploaded_keys_{len(uploaded)}"
-
-    monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb_dataframe._uploaded_xtdb_relation",
-        uploaded_relation,
-    )
+    ops.from_raw_sql = Mock(return_value=pl.DataFrame({"id": [1, 2, 3, 4, 5]}))
 
     result = ops.table_query(
         "test",
@@ -440,53 +420,63 @@ def test_xtdb_dataframe_ops_chunks_table_query(monkeypatch):
     )
 
     assert result.to_dict(as_series=False) == {"id": [1, 2, 3, 4, 5]}
-    assert ops.from_raw_sql.call_count == 3
-    assert [chunk.height for chunk in uploaded] == [2, 2, 1]
-    assert all(
-        "UNION ALL" not in call.args[0] for call in ops.from_raw_sql.call_args_list
+    ops.from_raw_sql.assert_called_once()
+    query, _, execute_options = ops.from_raw_sql.call_args.args
+    assert "JOIN UNNEST(%s) AS q(key)" in query
+    assert "t._id = CAST((q.key).id AS BIGINT)" in query
+    assert execute_options["parameters"][0].obj == [
+        {"id": 1},
+        {"id": 2},
+        {"id": 3},
+        {"id": 4},
+        {"id": 5},
+    ]
+
+
+def test_xtdb_dataframe_ops_preserves_bound_key_types():
+    table_config = TableConfig(
+        schema="test",
+        name="records",
+        primary_keys=["day", "seen_at", "amount", "raw"],
+        columns=[
+            TableColumnConfig("records", "day", "DATE", nullable=False),
+            TableColumnConfig("records", "seen_at", "TIMESTAMPTZ", nullable=False),
+            TableColumnConfig("records", "amount", "DECIMAL(10,2)", nullable=False),
+            TableColumnConfig("records", "raw", "VARBINARY", nullable=False),
+        ],
     )
-    assert all(
-        f"JOIN test.__uploaded_keys_{index} "
-        "FOR VALID_TIME ALL FOR SYSTEM_TIME ALL AS q" in call.args[0]
-        for index, call in enumerate(ops.from_raw_sql.call_args_list, 1)
+    ops = XtdbDataframeOps(object())
+    ops.from_raw_sql = Mock(return_value=pl.DataFrame(schema={"day": pl.Date}))
+
+    ops.table_query(
+        "test",
+        "records",
+        pl.DataFrame(
+            {
+                "day": [date(2026, 1, 2)],
+                "seen_at": [datetime(2026, 1, 2, 3, 4, tzinfo=UTC)],
+                "amount": [Decimal("1.20")],
+                "raw": [b"\x00\xff"],
+            },
+            schema_overrides={"amount": pl.Decimal(10, 2)},
+        ),
+        ["day"],
+        table_config=table_config,
     )
 
-
-def test_uploaded_xtdb_relation_adds_document_ids_and_erases_on_failure(monkeypatch):
-    connection = Mock()
-    ops = XtdbDataframeOps(connection)
-    ops.table_insert = Mock(return_value=2)  # type: ignore[method-assign]
-    erase = Mock()
-    monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb_dataframe._execute_xtdb_dml", erase
-    )
-
-    with (
-        pytest.raises(RuntimeError, match="query failed"),
-        _uploaded_xtdb_relation(
-            ops, pl.DataFrame({"id": [10, 20]}), "test"
-        ) as table_sql,
-    ):
-        assert table_sql.startswith("test.__polars_hist_db_keys_")
-        raise RuntimeError("query failed")
-
-    uploaded = ops.table_insert.call_args.args[0]
-    assert uploaded.to_dict(as_series=False) == {"_id": [0, 1], "id": [10, 20]}
-    assert uploaded.schema["_id"] == pl.Int64
-    erase.assert_called_once_with(connection, f"ERASE FROM {table_sql}")
-
-
-def test_uploaded_xtdb_relation_uses_adbc_for_upload_and_cleanup():
-    connection = MagicMock()
-    ops = XtdbAdbcDataframeOps(connection)
-    ops.table_insert = Mock(return_value=1)  # type: ignore[method-assign]
-
-    with _uploaded_xtdb_relation(ops, pl.DataFrame({"_id": [10]}), "test") as table_sql:
-        assert table_sql.startswith("test.__polars_hist_db_keys_")
-
-    connection.cursor.return_value.__enter__.return_value.execute.assert_called_once_with(
-        f"ERASE FROM {table_sql}"
-    )
+    query, _, execute_options = ops.from_raw_sql.call_args.args
+    assert "CAST((q.key).day AS DATE)" in query
+    assert "CAST((q.key).seen_at AS TIMESTAMP WITH TIME ZONE)" in query
+    assert "CAST((q.key).amount AS DECIMAL(10,2))" in query
+    assert "CAST((q.key).raw AS VARBINARY)" in query
+    assert execute_options["parameters"][0].obj == [
+        {
+            "day": "2026-01-02",
+            "seen_at": "2026-01-02T03:04:00+00:00",
+            "amount": "1.20",
+            "raw": "00ff",
+        }
+    ]
 
 
 def test_xtdb_arrow_copy_writes_one_arrow_stream_transaction():

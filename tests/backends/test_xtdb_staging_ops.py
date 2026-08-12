@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from unittest.mock import Mock
@@ -34,11 +33,6 @@ def _empty_numeric_key_occupancy():
     )
 
 
-@contextmanager
-def _uploaded_keys(dataframe_ops, df, table_schema):
-    yield f"{table_schema}.__uploaded_keys"
-
-
 @pytest.mark.parametrize(
     ("sql_type", "expected_bits"),
     [("TINYINT", 8), ("SMALLINT", 16), ("INT", 32), ("BIGINT", 64)],
@@ -57,14 +51,6 @@ def test_xtdb_generated_numeric_keys_fit_configured_integer_width(
     ).item()
 
     assert -(1 << (expected_bits - 1)) <= generated < 0
-
-
-@pytest.fixture(autouse=True)
-def _mock_uploaded_keys(monkeypatch):
-    monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb_staging._uploaded_xtdb_relation",
-        _uploaded_keys,
-    )
 
 
 def test_xtdb_generated_foreign_key_payload_preserves_canonical_ids():
@@ -1511,6 +1497,10 @@ def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch):
 
     assert result.get_column("id").to_list() == [-42, -44, -43]
     assert from_raw_sql.call_count == 1
+    query, _, execute_options = from_raw_sql.call_args.args
+    assert "JOIN UNNEST(%s) AS q(key)" in query
+    assert "t._id = CAST((q.key).id AS INTEGER)" in query
+    assert execute_options["parameters"][0].obj == [{"id": -42}, {"id": -43}]
 
 
 def test_xtdb_staging_rejects_explicit_numeric_key_collisions(monkeypatch):

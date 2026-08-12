@@ -31,16 +31,15 @@ def _xtdb_json_key_value(value: Any) -> Any:
 
 
 def _xtdb_pgwire_key_parameters(df: pl.DataFrame) -> tuple[Any, ...]:
-    from psycopg.types.json import Jsonb
-
-    return (
-        Jsonb(
-            [
-                {column: _xtdb_json_key_value(value) for column, value in row.items()}
-                for row in df.iter_rows(named=True)
-            ]
-        ),
-    )
+    rows = [
+        {column: _xtdb_json_key_value(value) for column, value in row.items()}
+        for row in df.iter_rows(named=True)
+    ]
+    try:
+        from psycopg.types.json import Jsonb
+    except ModuleNotFoundError:
+        return (rows,)
+    return (Jsonb(rows),)
 
 
 def _xtdb_adbc_key_parameters(df: pl.DataFrame) -> Any:

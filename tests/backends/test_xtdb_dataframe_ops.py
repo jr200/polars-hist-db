@@ -1,4 +1,5 @@
 import builtins
+import sys
 from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from types import SimpleNamespace
@@ -398,6 +399,7 @@ def test_xtdb_dataframe_ops_splits_pgwire_insert_by_max_rows():
 
 
 def test_xtdb_dataframe_ops_binds_table_query_keys_once(monkeypatch):
+    monkeypatch.setitem(sys.modules, "psycopg.types.json", None)
     table_config = TableConfig(
         schema="test",
         name="records",
@@ -424,7 +426,8 @@ def test_xtdb_dataframe_ops_binds_table_query_keys_once(monkeypatch):
     query, _, execute_options = ops.from_raw_sql.call_args.args
     assert "JOIN UNNEST(%s) AS q(key)" in query
     assert "t._id = CAST((q.key).id AS BIGINT)" in query
-    assert execute_options["parameters"][0].obj == [
+    parameter = execute_options["parameters"][0]
+    assert getattr(parameter, "obj", parameter) == [
         {"id": 1},
         {"id": 2},
         {"id": 3},
@@ -469,7 +472,8 @@ def test_xtdb_dataframe_ops_preserves_bound_key_types():
     assert "CAST((q.key).seen_at AS TIMESTAMP WITH TIME ZONE)" in query
     assert "CAST((q.key).amount AS DECIMAL(10,2))" in query
     assert "CAST((q.key).raw AS VARBINARY)" in query
-    assert execute_options["parameters"][0].obj == [
+    parameter = execute_options["parameters"][0]
+    assert getattr(parameter, "obj", parameter) == [
         {
             "day": "2026-01-02",
             "seen_at": "2026-01-02T03:04:00+00:00",

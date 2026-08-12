@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from importlib.util import find_spec
 from typing import Any
 
 import polars as pl
@@ -25,10 +26,7 @@ pytestmark = [
 ]
 
 
-try:
-    import adbc_driver_flightsql  # noqa: F401
-    import psycopg  # noqa: F401
-except ImportError:
+if find_spec("adbc_driver_flightsql") is None or find_spec("psycopg") is None:
     pytestmark = [
         *pytestmark,
         pytest.mark.skip(reason="install the xtdb extra to run live XTDB ADBC tests"),

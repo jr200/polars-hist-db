@@ -786,7 +786,7 @@ def test_xtdb_staging_inserts_missing_parent_with_adbc_bulk_connection(monkeypat
         Mock(return_value=stage_df),
     )
     monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb.XtdbDataframeOps.table_query",
+        "polars_hist_db.backends.xtdb.XtdbAdbcDataframeOps.table_query",
         Mock(return_value=parent_df),
     )
     monkeypatch.setattr(
@@ -1465,7 +1465,8 @@ def test_xtdb_staging_deduces_foreign_keys_with_null_typed_empty_parent(
     }
 
 
-def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch):
+@pytest.mark.parametrize("use_adbc", [False, True])
+def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch, use_adbc):
     table_config = TableConfig(
         schema="ref",
         name="parents",
@@ -1478,9 +1479,9 @@ def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch):
             schema={"id": pl.Int64, "__xtdb_minimum_id": pl.Int64},
         )
     )
+    ops_class = "XtdbAdbcDataframeOps" if use_adbc else "XtdbDataframeOps"
     monkeypatch.setattr(
-        "polars_hist_db.backends.xtdb.XtdbDataframeOps.from_raw_sql",
-        from_raw_sql,
+        f"polars_hist_db.backends.xtdb.{ops_class}.from_raw_sql", from_raw_sql
     )
     rows = pl.DataFrame(
         {
@@ -1489,7 +1490,9 @@ def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch):
         }
     )
 
-    result = XtdbStagingOps(object())._resolve_numeric_foreign_key_collisions(
+    result = XtdbStagingOps(
+        object(), adbc_connection=object() if use_adbc else None
+    )._resolve_numeric_foreign_key_collisions(
         rows,
         table_config,
         ["id"],
@@ -1498,9 +1501,16 @@ def test_xtdb_staging_resolves_generated_numeric_key_collisions(monkeypatch):
     assert result.get_column("id").to_list() == [-42, -44, -43]
     assert from_raw_sql.call_count == 1
     query, _, execute_options = from_raw_sql.call_args.args
-    assert "JOIN UNNEST(%s) AS q(key)" in query
-    assert "t._id = CAST((q.key).id AS INTEGER)" in query
-    assert execute_options["parameters"][0].obj == [{"id": -42}, {"id": -43}]
+    if use_adbc:
+        assert "JOIN UNNEST(?) AS q(key)" in query
+        assert "t._id = (q.key).id" in query
+        assert execute_options["parameters"].to_pylist() == [
+            {"v0": [{"id": -42}, {"id": -43}]}
+        ]
+    else:
+        assert "JOIN UNNEST(%s) AS q(key)" in query
+        assert "t._id = CAST((q.key).id AS INTEGER)" in query
+        assert execute_options["parameters"][0].obj == [{"id": -42}, {"id": -43}]
 
 
 def test_xtdb_staging_rejects_explicit_numeric_key_collisions(monkeypatch):

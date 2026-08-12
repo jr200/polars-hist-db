@@ -70,6 +70,12 @@ def _apply_schema_overrides(
 
 def _normalize_xtdb_ingest_arrow(table: pa.Table) -> pa.Table:
     for index, field in enumerate(table.schema):
+        if pa.types.is_large_binary(field.type):
+            table = table.set_column(
+                index,
+                field.with_type(pa.binary()),
+                table.column(field.name).cast(pa.binary()),
+            )
         if (
             pa.types.is_large_string(field.type)
             or pa.types.is_dictionary(field.type)

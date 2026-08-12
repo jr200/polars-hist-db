@@ -347,7 +347,7 @@ class XtdbDataframeOps:
         return inserted_count
 
 
-class XtdbAdbcDataframeOps:
+class XtdbAdbcDataframeOps(XtdbDataframeOps):
     def __init__(
         self,
         connection: Any,
@@ -390,8 +390,6 @@ class XtdbAdbcDataframeOps:
             query,
             schema_overrides,
         )
-
-    table_query = XtdbDataframeOps.table_query
 
     def table_insert(
         self,

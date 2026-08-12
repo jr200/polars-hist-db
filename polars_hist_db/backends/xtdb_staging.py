@@ -517,7 +517,7 @@ class XtdbStagingOps:
             physical_target = _xtdb_table_query_target_column(target, table_config)
             table_name = _qualified_table_name(table_config.schema, table_config.name)
             minimum_column = "__xtdb_minimum_id"
-            dataframe_ops = self._dataframes()
+            dataframe_ops = self._bulk_dataframes()
             placeholder, parameters = _xtdb_key_parameters(dataframe_ops, candidates)
             key_expression = _xtdb_key_expression(
                 dataframe_ops,
@@ -689,7 +689,7 @@ class XtdbStagingOps:
                     pl.coalesce(target_column, generated_value).alias(target_column)
                 )
 
-        parent_lookup = self._dataframes().table_query(
+        parent_lookup = self._bulk_dataframes().table_query(
             table_config.schema,
             table_config.name,
             generated.select(value_targets).unique(maintain_order=True),

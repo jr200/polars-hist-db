@@ -3,7 +3,8 @@ import subprocess
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime, timezone
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from typing import Any
 
 import polars as pl
@@ -11,6 +12,7 @@ import pytest
 from sqlalchemy import text
 
 from polars_hist_db.backends import DbEngineConfig, XtdbBackend
+from polars_hist_db.backends.xtdb import _execute_xtdb_dml
 from polars_hist_db.config import TableColumnConfig, TableConfig
 from polars_hist_db.core import TimeHint
 
@@ -24,8 +26,8 @@ pytestmark = [
 
 
 try:
-    import adbc_driver_flightsql
-    import psycopg
+    import adbc_driver_flightsql  # noqa: F401
+    import psycopg  # noqa: F401
 except ImportError:
     pytestmark = [
         *pytestmark,
@@ -169,6 +171,73 @@ def test_xtdb_adbc_live_arrow_ingest_read_roundtrip():
         "destination": ["Alpha", "Beta"],
         "amount_value": [10.5, 20.25],
     }
+
+
+def test_xtdb_live_table_query_binds_typed_duplicate_keys_without_catalog_tables():
+    table_config = TableConfig(
+        schema="public",
+        name=f"live_bound_key_records_{time.time_ns()}",
+        primary_keys=["id"],
+        columns=[
+            TableColumnConfig("records", "id", "BIGINT", nullable=False),
+            TableColumnConfig("records", "trade_date", "DATE", nullable=False),
+            TableColumnConfig("records", "seen_at", "TIMESTAMPTZ", nullable=False),
+            TableColumnConfig("records", "amount", "DECIMAL(10,2)", nullable=False),
+            TableColumnConfig("records", "raw", "VARBINARY", nullable=False),
+            TableColumnConfig("records", "destination", "VARCHAR(255)"),
+        ],
+    )
+    key = {
+        "trade_date": date(2026, 1, 2),
+        "seen_at": datetime(2026, 1, 2, 3, 4, tzinfo=UTC),
+        "amount": Decimal("1.20"),
+        "raw": b"\x00\xff",
+    }
+    row = pl.DataFrame(
+        {
+            "id": [1],
+            **{column: [value] for column, value in key.items()},
+            "destination": ["Alpha"],
+        },
+        schema_overrides={"amount": pl.Decimal(10, 2)},
+    )
+    duplicate_keys = pl.concat([row.select(list(key)), row.select(list(key))])
+
+    with _xtdb_pgwire_and_adbc_connections() as (pgwire_connection, adbc_connection):
+        backend = XtdbBackend()
+        adbc_ops = backend.adbc_dataframes(adbc_connection)
+        pgwire_ops = backend.dataframes(pgwire_connection)
+        _execute_xtdb_dml(
+            pgwire_connection,
+            f"INSERT INTO public.{table_config.name} RECORDS "
+            "{_id: 1, id: 1, trade_date: CAST('2026-01-02' AS DATE), "
+            "seen_at: CAST('2026-01-02T03:04:00+00:00' AS TIMESTAMP WITH TIME ZONE), "
+            "amount: CAST('1.20' AS DECIMAL(10,2)), "
+            "raw: CAST('00ff' AS VARBINARY), destination: 'Alpha'}",
+        )
+
+        pgwire_result = pgwire_ops.table_query(
+            table_config.schema,
+            table_config.name,
+            duplicate_keys,
+            ["destination"],
+            table_config=table_config,
+        )
+        adbc_result = adbc_ops.table_query(
+            table_config.schema,
+            table_config.name,
+            duplicate_keys,
+            ["destination"],
+            table_config=table_config,
+        )
+        uploaded_relations = adbc_ops.from_raw_sql(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_name LIKE '__polars_hist_db_keys_%'"
+        )
+
+    assert pgwire_result.to_dict(as_series=False) == {"destination": ["Alpha", "Alpha"]}
+    assert adbc_result.to_dict(as_series=False) == {"destination": ["Alpha", "Alpha"]}
+    assert uploaded_relations.is_empty()
 
 
 def test_xtdb_adbc_live_temporal_upsert_supports_system_time_asof():

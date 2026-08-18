@@ -36,17 +36,17 @@ polars-hist-db-parity = "polars_hist_db.parity:main"
 dev = [
     "coverage>=7.15.4",
     "ipykernel>=7.3.0",
-    "mypy>=2.3.0",
+    "mypy>=2.3.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "quarto-cli",
     "ruff>=0.16.3,<0.17",
     "types-python-dateutil>=2.9.0.20260807",
     "types-pytz>=2026.3.1.20260727",
-    "types-pyyaml>=6.0.12.20260724",
+    "types-pyyaml>=6.0.12.20260815",
     "pyarrow-stubs>=20.0.0.20260625",
     "pycrdt>=0.14.2",
-    "hypothesis>=6.165.5",
+    "hypothesis>=6.165.10",
     "psycopg[binary]>=3.3.4",
 ]
 

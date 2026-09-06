@@ -8,12 +8,12 @@ requires-python = ">=3.12,<4.0"
 
 dependencies = [
     "nats-py>=2.15.0",
-    "polars>=1.43.0",
+    "polars>=1.44.1",
     "pyarrow>=25.0.1",
     "pymysql>=1.2.0",
     "pytz>=2026.3.post1",
     "pyyaml>=6.0.3",
-    "scandir-rs>=2.9.9",
+    "scandir-rs>=2.10.1",
     "sql-metadata>=3.0.1",
     "sqlalchemy[asyncio]>=2.0.52",
 ]
@@ -21,9 +21,9 @@ dependencies = [
 [project.optional-dependencies]
 sqlalchemy = ["polars"]
 nats = ["nats-py"]
-xtdb = ["adbc-driver-flightsql>=1.12.0", "psycopg[binary]>=3.3.4"]
+xtdb = ["adbc-driver-flightsql>=1.12.0", "psycopg[binary]>=3.3.5"]
 crdt = [
-    "pycrdt>=0.14.2",
+    "pycrdt>=0.14.4",
 ]
 
 [project.urls]
@@ -34,20 +34,20 @@ polars-hist-db-parity = "polars_hist_db.parity:main"
 
 [dependency-groups]
 dev = [
-    "coverage>=7.15.4",
+    "coverage>=7.16.0",
     "ipykernel>=7.3.0",
     "mypy>=2.3.1",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "quarto-cli",
-    "ruff>=0.16.3,<0.17",
+    "ruff>=0.16.6,<0.17",
     "types-python-dateutil>=2.9.0.20260807",
     "types-pytz>=2026.3.1.20260727",
-    "types-pyyaml>=6.0.12.20260815",
-    "pyarrow-stubs>=20.0.0.20260625",
-    "pycrdt>=0.14.2",
-    "hypothesis>=6.165.10",
-    "psycopg[binary]>=3.3.4",
+    "types-pyyaml>=6.0.12.20260906",
+    "pyarrow-stubs>=20.0.0.20260819",
+    "pycrdt>=0.14.4",
+    "hypothesis>=6.167.1",
+    "psycopg[binary]>=3.3.5",
 ]
 
 [tool.setuptools.package-data]

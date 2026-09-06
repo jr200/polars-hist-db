@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.80](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.79...v0.12.80) (2026-09-06)
+
+
+### Features
+
+* **deps:** update astral-sh/setup-uv action to v10 ([#347](https://github.com/jr200-labs/polars-hist-db/issues/347)) ([458b2d1](https://github.com/jr200-labs/polars-hist-db/commit/458b2d19c4ded400f0be99b9837b8acdcdfa4add))
+
+
+### Bug Fixes
+
+* **deps:** update all non-major dependencies ([#349](https://github.com/jr200-labs/polars-hist-db/issues/349)) ([9c80b7e](https://github.com/jr200-labs/polars-hist-db/commit/9c80b7e998142d108ccc0c309903bf14c361a18b))
+* **deps:** update all non-major dependencies ([#352](https://github.com/jr200-labs/polars-hist-db/issues/352)) ([27fb998](https://github.com/jr200-labs/polars-hist-db/commit/27fb998637412dfa4ec21b15d693dc33be98259a))
+* **deps:** update astral-sh/setup-uv action to v10.0.1 ([#351](https://github.com/jr200-labs/polars-hist-db/issues/351)) ([8e210e8](https://github.com/jr200-labs/polars-hist-db/commit/8e210e868f7c7de5d90c141f263ea24c20431e87))
+* **deps:** update dependency jr200-labs/github-action-templates to shared-v0.1.37 ([#345](https://github.com/jr200-labs/polars-hist-db/issues/345)) ([2ddc3d8](https://github.com/jr200-labs/polars-hist-db/commit/2ddc3d865cd8d2dd0fce59dd83511788632126c6))
+* **deps:** update dependency jr200-labs/github-action-templates to shared-v0.1.38 ([#353](https://github.com/jr200-labs/polars-hist-db/issues/353)) ([d5ec181](https://github.com/jr200-labs/polars-hist-db/commit/d5ec181030f19a672047735de4a9ce9f7abd1917))
+* **deps:** update dependency jr200-labs/github-action-templates to shared-v0.1.46 ([#357](https://github.com/jr200-labs/polars-hist-db/issues/357)) ([eb3439a](https://github.com/jr200-labs/polars-hist-db/commit/eb3439ae7dbd52c3671382b88d3e1e58a9afb043))
+* **deps:** update dependency sqlalchemy to &gt;=2.0.52 ([#346](https://github.com/jr200-labs/polars-hist-db/issues/346)) ([abef27d](https://github.com/jr200-labs/polars-hist-db/commit/abef27d353330c820b95d298fbb055a551cb5f87))
+
 ## [0.12.79](https://github.com/jr200-labs/polars-hist-db/compare/v0.12.78...v0.12.79) (2026-08-12)
 
 

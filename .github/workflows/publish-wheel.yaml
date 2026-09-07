@@ -1,6 +1,7 @@
 # GENERATED/SHARED WORKFLOW: copied into consuming repos by sync-shared.
 # Do not edit in consuming repos; change jr200-labs/github-action-templates and sync.
 name: publish-wheel
+run-name: ${{ github.event.client_payload['release-tag'] || format('{0} by @{1}', github.event_name, github.actor) }}
 
 # Triggered by release-please publishing a tag. Builds the wheel and
 # uploads to PyPI via uv publish. Verbatim across consumers; each
